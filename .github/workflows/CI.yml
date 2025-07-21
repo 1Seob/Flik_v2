@@ -1,0 +1,76 @@
+name: Continuous Integration
+
+on:
+  push:
+    branches-ignore:
+      - 'main'
+
+permissions: write-all
+
+jobs:
+  CI:
+    runs-on: ubuntu-latest
+    environment: development
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          ref: ${{ github.head_ref }}
+
+      # Yarn module 설치 + 모듈 캐싱
+      - name: Cache yarn modules
+        id: yarn-cache
+        uses: actions/cache@v3
+        env:
+          cache-name: cache-yarn-modules
+        with:
+          path: ~/.yarn
+          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-yarn-
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '22.x'
+
+      - name: Install Yarn
+        run: npm install -g yarn
+
+      - name: Install dependencies
+        # if: steps.yarn-cache.outputs.cache-hit != 'true'
+        run: yarn install
+
+      # code formatting 후 commit
+      - name: Run Prettier
+        run: yarn format
+
+      - name: Commit changes
+        uses: EndBug/add-and-commit@v9
+        with:
+          default_author: github_actions
+          message: 'Format code'
+          add: '.'
+
+      # 빌드 테스트
+
+      # Github secrets를 이용하여 .dev.env 파일을 생성합니다.
+      # 미리 Github environment에 secrets를 등록해놓아야 합니다.
+      - name: Create .env file
+        run: |
+          # copy all secrets from github secrets, and create .dev.env file
+          jq -r 'to_entries|map("\(.key)=\(.value|tostring)")|.[]' <<< "$SECRETS_CONTEXT" > .dev.env
+        env:
+          SECRETS_CONTEXT: ${{ toJson(secrets) }}
+
+      - name: Create .env file
+        run: |
+          jq -r 'to_entries|map("\(.key)=\(.value|tostring)")|.[]' <<< "$SECRETS_CONTEXT" > .env
+        env:
+          SECRETS_CONTEXT: ${{ toJson(secrets) }}
+
+      # Docker image를 빌드합니다.
+      - name: Build Image
+        id: build-image
+        run: |
+          # Build a docker container and
+          docker build -f dev.dockerfile -t build_test .
