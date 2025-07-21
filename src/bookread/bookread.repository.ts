@@ -31,17 +31,19 @@ export class BookReadRepository {
     );
 
     // 4. 이미 기록된 문단 조회 (optional 중복 방지)
-    const existingActivities = await this.prisma.userReadingActivity.findMany({
-      where: {
-        userId,
-        bookId: bookReadData.bookId,
-        paragraphId: { in: targetParagraphs.map((p) => p.id) },
+    const existingActivities = await this.prisma.user_reading_activity.findMany(
+      {
+        where: {
+          user_id: userId,
+          book_id: bookReadData.bookId,
+          paragraph_id: { in: targetParagraphs.map((p) => p.id) },
+        },
+        select: { paragraph_id: true },
       },
-      select: { paragraphId: true },
-    });
+    );
 
     const alreadyReadParagraphIds = new Set(
-      existingActivities.map((e) => e.paragraphId),
+      existingActivities.map((e) => e.paragraph_id),
     );
 
     // 5. 일괄 기록 데이터 생성 (completedAt 조건부 추가)
@@ -51,9 +53,9 @@ export class BookReadRepository {
     const activitiesToCreate = targetParagraphs
       .filter((p) => !alreadyReadParagraphIds.has(p.id))
       .map((p) => ({
-        userId,
-        bookId: bookReadData.bookId,
-        paragraphId: p.id,
+        user_id: userId,
+        book_id: bookReadData.bookId,
+        paragraph_id: p.id,
         order: p.order,
         readAt: addHours(new Date(), 9),
         dailyGoal: bookReadData.dailyGoal,
@@ -61,7 +63,7 @@ export class BookReadRepository {
       }));
 
     if (activitiesToCreate.length > 0) {
-      await this.prisma.userReadingActivity.createMany({
+      await this.prisma.user_reading_activity.createMany({
         data: activitiesToCreate,
       });
     }
@@ -86,10 +88,10 @@ export class BookReadRepository {
     console.log('Start UTC:', startUtc.toISOString());
     console.log('End UTC:', endUtc.toISOString());
 
-    const activities = await this.prisma.userReadingActivity.findMany({
+    const activities = await this.prisma.user_reading_activity.findMany({
       where: {
-        userId,
-        readAt: {
+        user_id: userId,
+        read_at: {
           gte: startUtc,
           lte: endUtc,
         },
@@ -116,13 +118,13 @@ export class BookReadRepository {
 
   async completeBookRead(userId: number, bookId: number) {
     const now = new Date();
-    await this.prisma.userReadingActivity.updateMany({
+    await this.prisma.user_reading_activity.updateMany({
       where: {
-        userId,
-        bookId,
+        user_id: userId,
+        book_id: bookId,
       },
       data: {
-        completedAt: addHours(now, 9),
+        completed_at: addHours(now, 9),
       },
     });
 
@@ -142,10 +144,10 @@ export class BookReadRepository {
     const startUtc = addHours(kstStart, 9);
     const endUtc = addHours(kstEnd, 9);
 
-    const activities = await this.prisma.userReadingActivity.findMany({
+    const activities = await this.prisma.user_reading_activity.findMany({
       where: {
-        userId,
-        completedAt: {
+        user_id: userId,
+        completed_at: {
           gte: startUtc,
           lte: endUtc,
         },
@@ -190,10 +192,10 @@ export class BookReadRepository {
     console.log('Start UTC:', startUtc.toISOString());
     console.log('End UTC:', endUtc.toISOString());
 
-    const activities = await this.prisma.userReadingActivity.findMany({
+    const activities = await this.prisma.user_reading_activity.findMany({
       where: {
-        userId,
-        readAt: {
+        user_id: userId,
+        read_at: {
           gte: startUtc,
           lte: endUtc,
         },
@@ -207,8 +209,8 @@ export class BookReadRepository {
             coverImageUrl: true,
           },
         },
-        dailyGoal: true,
-        completedAt: true,
+        daily_goal: true,
+        completed_at: true,
       },
     });
     const pagesRead = new Map<number, number>();
@@ -221,8 +223,8 @@ export class BookReadRepository {
       // book 저장
       uniqueBooksMap.set(bookId, activity.book);
 
-      // dailyGoal 저장
-      dailyGoalsMap.set(bookId, activity.dailyGoal);
+      // daily_goal 저장
+      dailyGoalsMap.set(bookId, activity.daily_goal);
 
       // read count 집계
       pagesRead.set(bookId, (pagesRead.get(bookId) || 0) + 1);
