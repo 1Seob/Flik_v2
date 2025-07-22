@@ -93,10 +93,14 @@ model UserBook {
   id     Int  @id @default(autoincrement())
   userId Int
   bookId Int
+  lastReadParagraphOrder Int     @default(0)
+  updatedAt             DateTime @default(now()) @updatedAt @map("updated_at")
+
   book   Book @relation(fields: [bookId], references: [id])
   user   User @relation(fields: [userId], references: [id])
+  
 
-  @@unique([userId, bookId])
+  @@unique([userId, bookId], name: "userId_bookId")
   @@map("user-book")
 }
 

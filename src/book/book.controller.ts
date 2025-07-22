@@ -55,6 +55,15 @@ export class BookController {
     return this.bookService.getBooksMetadata(offset, limit);
   }
 
+  @Get('streak')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '유저의 연속 독서 일수 반환' })
+  @ApiOkResponse({ schema: { example: 3 } })
+  async getReadingStreak(@CurrentUser() user: UserBaseInfo): Promise<number> {
+    return this.bookService.getReadingStreak(user.id);
+  }
+
   @Get(':bookId')
   @ApiOperation({ summary: '책 정보 가져오기' })
   @ApiOkResponse({ type: BookDto })
@@ -199,5 +208,46 @@ export class BookController {
     @Param('userId', ParseIntPipe) userId: number,
   ): Promise<number[]> {
     return this.bookService.getSavedBookIdsByUser(userId);
+  }
+
+  @Get(':bookId/continue')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '마지막 읽은 문단 순서 조회' })
+  @ApiOkResponse({ schema: { example: { lastReadParagraphOrder: 12 } } })
+  async getLastReadParagraph(
+    @Param('bookId', ParseIntPipe) bookId: number,
+    @CurrentUser() user: UserBaseInfo,
+  ): Promise<{ lastReadParagraphOrder: number }> {
+    return this.bookService.getLastReadParagraph(bookId, user.id);
+  }
+
+  @Patch(':bookId/paragraphs/:order')
+  @HttpCode(204)
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '마지막 읽은 문단 순서 업데이트' })
+  @ApiOkResponse({ description: '업데이트 성공' })
+  async updateLastReadParagraph(
+    @Param('bookId', ParseIntPipe) bookId: number,
+    @Param('order', ParseIntPipe) order: number,
+    @CurrentUser() user: UserBaseInfo,
+  ): Promise<void> {
+    return this.bookService.updateLastReadParagraph(bookId, user.id, order);
+  }
+
+  @Get(':bookId/chapters/:day')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: '지정한 날짜에 해당하는 문단 리스트 조회 (챕터 이동)',
+  })
+  @ApiOkResponse({ type: [String] })
+  async getParagraphsForDay(
+    @Param('bookId', ParseIntPipe) bookId: number,
+    @Param('day', ParseIntPipe) day: number,
+    @CurrentUser() user: UserBaseInfo,
+  ): Promise<string[]> {
+    return this.bookService.getParagraphsForDay(bookId, user.id, day);
   }
 }
