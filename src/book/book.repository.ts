@@ -5,6 +5,7 @@ import { SaveBookData } from './type/save-book-data.type';
 import { UpdateBookData } from './type/update-book-data.type';
 import { MetadataData } from './type/metadata-data.type';
 import { BookQuery } from './query/book.query';
+import { distributeParagraphs } from './parsing';
 
 @Injectable()
 export class BookRepository {
@@ -244,5 +245,97 @@ export class BookRepository {
       },
     });
     return savedBook !== null;
+  }
+
+  async getUserBook(
+    userId: number,
+    bookId: number,
+  ): Promise<{ lastReadParagraphOrder: number } | null> {
+    return this.prisma.userBook.findUnique({
+      where: { userId_bookId: { userId, bookId } },
+      select: { lastReadParagraphOrder: true },
+    });
+  }
+
+  async createUserBook(
+    userId: number,
+    bookId: number,
+    order = 0,
+  ): Promise<void> {
+    await this.prisma.userBook.create({
+      data: {
+        userId,
+        bookId,
+        lastReadParagraphOrder: order,
+      },
+    });
+  }
+
+  async getLastReadParagraph(bookId: number, userId: number): Promise<number> {
+    const record = await this.prisma.userBook.findUnique({
+      where: { userId_bookId: { userId, bookId } },
+      select: { lastReadParagraphOrder: true },
+    });
+    return record?.lastReadParagraphOrder ?? 0;
+  }
+
+  async updateLastReadParagraph(
+    bookId: number,
+    userId: number,
+    order: number,
+  ): Promise<void> {
+    const record = await this.prisma.userBook.findFirst({
+      where: {
+        userId,
+        bookId,
+      },
+    });
+
+    if (!record) throw new Error('해당 레코드 없음');
+
+    await this.prisma.userBook.update({
+      where: {
+        id: record.id, // ← PK로 update
+      },
+      data: {
+        lastReadParagraphOrder: order,
+      },
+    });
+  }
+
+  async getParagraphsByDay(bookId: number, day: number): Promise<string[]> {
+    const all = await this.getParagraphsByBookId(bookId);
+    const distributed = distributeParagraphs(
+      Array.from({ length: all.length }, (_, i) => i),
+    );
+    const chapter = distributed[day - 1] || [];
+    return chapter.map((i) => all[i].content);
+  }
+
+  async getReadingStreak(userId: number): Promise<number> {
+    const records = await this.prisma.userBook.findMany({
+      where: { userId },
+      select: { updatedAt: true },
+      orderBy: { updatedAt: 'desc' },
+    });
+
+    const uniqueDates = new Set(
+      records.map((r) => r.updatedAt.toISOString().slice(0, 10)),
+    );
+
+    let streak = 0;
+    let today = new Date();
+
+    while (true) {
+      const dateStr = today.toISOString().slice(0, 10);
+      if (uniqueDates.has(dateStr)) {
+        streak++;
+        today.setDate(today.getDate() - 1);
+      } else {
+        break;
+      }
+    }
+
+    return streak;
   }
 }

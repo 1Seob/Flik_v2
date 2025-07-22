@@ -249,4 +249,53 @@ export class BookService {
 
     return this.bookRepository.getSavedBookIdsByUser(userId);
   }
+
+  async getLastReadParagraph(
+    bookId: number,
+    userId: number,
+  ): Promise<{ lastReadParagraphOrder: number }> {
+    const userBook = await this.bookRepository.getUserBook(userId, bookId);
+    if (!userBook) throw new NotFoundException('읽은 기록이 없습니다.');
+    return { lastReadParagraphOrder: userBook.lastReadParagraphOrder ?? 0 };
+  }
+
+  async updateLastReadParagraph(
+    bookId: number,
+    userId: number,
+    order: number,
+  ): Promise<void> {
+    const exists = await this.bookRepository.getUserBook(userId, bookId);
+    if (!exists) {
+      console.log('📖 유저의 책 기록이 존재하지 않습니다. 새로 생성합니다.');
+      await this.bookRepository.createUserBook(userId, bookId, order);
+    } else {
+      console.log(
+        '📖 유저의 책 기록이 이미 존재합니다. 업데이트를 진행합니다.',
+      );
+      await this.bookRepository.updateLastReadParagraph(bookId, userId, order);
+    }
+  }
+
+  async getParagraphsForDay(
+    bookId: number,
+    userId: number,
+    day: number,
+  ): Promise<string[]> {
+    const paragraphs = await this.bookRepository.getParagraphsByBookId(bookId);
+    if (paragraphs.length === 0) {
+      throw new NotFoundException('책의 문단을 찾을 수 없습니다.');
+    }
+
+    const indices = distributeParagraphs([...Array(paragraphs.length).keys()]);
+    const dayIndex = day - 1;
+    if (dayIndex < 0 || dayIndex >= indices.length) {
+      throw new BadRequestException('유효하지 않은 날짜입니다. (1~30)');
+    }
+
+    return indices[dayIndex].map((i) => paragraphs[i].content);
+  }
+
+  async getReadingStreak(userId: number): Promise<number> {
+    return this.bookRepository.getReadingStreak(userId);
+  }
 }
