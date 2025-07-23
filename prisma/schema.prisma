@@ -94,7 +94,10 @@ model UserBook {
   userId Int
   bookId Int
   lastReadParagraphOrder Int     @default(0)
-  updatedAt             DateTime @default(now()) @updatedAt @map("updated_at")
+  updatedAt             DateTime? @default(now()) @updatedAt @map("updated_at")
+
+  challengeType            ChallengeType? @default(NONE)
+  challengeStartDate       DateTime?
 
   book   Book @relation(fields: [bookId], references: [id])
   user   User @relation(fields: [userId], references: [id])
@@ -146,4 +149,10 @@ model user_reading_activity {
 enum Gender {
   MALE   @map("MALE")
   FEMALE @map("FEMALE")
+}
+
+enum ChallengeType {
+  NONE
+  WEEKLY
+  MONTHLY
 }
