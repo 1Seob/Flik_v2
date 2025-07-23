@@ -9,6 +9,7 @@ import { AuthModule } from '../auth/auth.module';
 import { BookModule } from '../book/book.module';
 import { ParagraphModule } from '../paragraph/paragraph.module';
 import { BookReadModule } from '../bookread/bookread.module';
+import { ChallengeModule } from '../challenge/challenge.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { BookReadModule } from '../bookread/bookread.module';
     configModule,
     CommonModule,
     BookReadModule,
+    ChallengeModule,
   ],
   controllers: [AppController],
   providers: [AppService],

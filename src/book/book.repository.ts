@@ -298,6 +298,7 @@ export class BookRepository {
         id: record.id, // ← PK로 update
       },
       data: {
+        updatedAt: new Date(),
         lastReadParagraphOrder: order,
       },
     });
@@ -313,14 +314,14 @@ export class BookRepository {
   }
 
   async getReadingStreak(userId: number): Promise<number> {
-    const records = await this.prisma.userBook.findMany({
-      where: { userId },
-      select: { updatedAt: true },
-      orderBy: { updatedAt: 'desc' },
+    const dates = await this.prisma.user_reading_activity.findMany({
+      where: { user_id: userId },
+      select: { read_at: true },
+      orderBy: { read_at: 'desc' },
     });
 
     const uniqueDates = new Set(
-      records.map((r) => r.updatedAt.toISOString().slice(0, 10)),
+      dates.map((r) => r.read_at.toISOString().slice(0, 10)),
     );
 
     let streak = 0;
