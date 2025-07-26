@@ -47,6 +47,13 @@ export class UserService {
     if (payload.email === null) {
       throw new BadRequestException('이메일은 null이 될 수 없습니다.');
     }
+    const BadWordsFilter = require('badwords-ko');
+    const filter = new BadWordsFilter();
+
+    const BadWordsNext = require('bad-words-next');
+    const en = require('bad-words-next/lib/en');
+    const badwords = new BadWordsNext({ data: en });
+
     if (payload.loginId) {
       if (payload.loginId === user.loginId) {
         throw new BadRequestException('현재 사용 중인 로그인 ID와 동일합니다.');
@@ -56,6 +63,14 @@ export class UserService {
       );
       if (isLoginIdExist) {
         throw new ConflictException('이미 사용 중인 로그인 ID입니다.');
+      }
+      if (
+        filter.isProfane(payload.loginId) ||
+        badwords.check(payload.loginId)
+      ) {
+        throw new ConflictException(
+          '로그인 ID에 부적절한 단어가 포함되어 있습니다.',
+        );
       }
     }
     if (payload.email) {
@@ -77,6 +92,11 @@ export class UserService {
 
       if (isNameExist) {
         throw new ConflictException('이미 사용 중인 닉네임입니다.');
+      }
+      if (filter.isProfane(payload.name) || badwords.check(payload.name)) {
+        throw new ConflictException(
+          '닉네임에 부적절한 단어가 포함되어 있습니다.',
+        );
       }
     }
     if (payload.birthday) {
