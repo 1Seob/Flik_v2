@@ -32,6 +32,8 @@
     "@prisma/client": "^6.4.1",
     "@supabase/supabase-js": "^2.49.1",
     "@types/lodash": "^4.17.9",
+    "bad-words-next": "^3.1.1",
+    "badwords-ko": "^1.0.4",
     "bcryptjs": "^2.4.3",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.1",

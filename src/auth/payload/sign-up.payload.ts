@@ -9,7 +9,7 @@ import {
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Gender as PrismaGender } from '@prisma/client';
-import { Type } from 'class-transformer';
+import { Type, Transform } from 'class-transformer';
 
 export enum GenderEnum {
   MALE = 'MALE',
@@ -76,8 +76,23 @@ export class SignUpPayload {
   profileImage?: string;
 
   @IsArray()
+  @Transform(({ value }) => {
+    if (value === undefined || value === null) {
+      return []; // 또는 return undefined; ← @IsOptional일 때만
+    }
+
+    if (Array.isArray(value)) {
+      return value.map(Number);
+    }
+
+    if (typeof value === 'string') {
+      return value.split(',').map((v) => Number(v.trim()));
+    }
+
+    return [Number(value)];
+  })
   @IsInt({ each: true })
-  @ApiProperty({
+  @ApiPropertyOptional({
     description: '관심 카테고리',
     type: [Number],
   })
