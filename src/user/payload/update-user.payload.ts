@@ -88,22 +88,25 @@ export class UpdateUserPayload {
 
   @IsOptional()
   @IsArray()
-  @IsInt({ each: true })
   @Transform(({ value }) => {
-    if (!value) return undefined;
+    if (value === undefined || value === null) {
+      return []; // 또는 return undefined; ← @IsOptional일 때만
+    }
 
-    const values = Array.isArray(value)
-      ? value
-      : typeof value === 'string' && value.includes(',')
-        ? value.split(',')
-        : [value];
+    if (Array.isArray(value)) {
+      return value.map(Number);
+    }
 
-    return values.map((v: any) => parseInt(v, 10));
+    if (typeof value === 'string') {
+      return value.split(',').map((v) => Number(v.trim()));
+    }
+
+    return [Number(value)];
   })
+  @IsInt({ each: true })
   @ApiPropertyOptional({
     description: '관심 카테고리 ID',
     type: [Number],
-    isArray: true,
   })
   interestCategories?: number[] | null;
 }
