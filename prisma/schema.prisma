@@ -146,6 +146,17 @@ model user_reading_activity {
   @@map("user-reading-activity")
 }
 
+model AuthCode {
+  id           Int       @id @default(autoincrement())
+  email        String    @unique
+  code         String
+  createdAt    DateTime  @default(now()) @map("created_at")
+  expiredAt    DateTime  @map("expired_at")
+  tryCount     Int       @default(0) @map("try_count")
+
+  @@map("auth-code")
+}
+
 enum Gender {
   MALE   @map("MALE")
   FEMALE @map("FEMALE")

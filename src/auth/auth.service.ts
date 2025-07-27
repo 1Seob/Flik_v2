@@ -15,6 +15,9 @@ import { ChangePasswordPayload } from './payload/change-password.payload';
 import { UserBaseInfo } from './type/user-base-info.type';
 import { SupabaseService } from 'src/common/services/supabase.service';
 import { v4 as uuidv4 } from 'uuid';
+import * as nodemailer from 'nodemailer';
+import { SendEmailPayload } from './payload/send-email.payload';
+import { VerificationPayload } from './payload/verification.payload';
 
 @Injectable()
 export class AuthService {
@@ -24,6 +27,14 @@ export class AuthService {
     private readonly tokenService: TokenService,
     private readonly supabaseService: SupabaseService,
   ) {}
+
+  private transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: process.env.GMAIL_ID,
+      pass: process.env.GMAIL_APP_PASSWORD,
+    },
+  });
 
   async signUp(
     payload: SignUpPayload,
@@ -198,5 +209,60 @@ export class AuthService {
     });
 
     return tokens;
+  }
+
+  async sendVerificationEmail(emailPayload: SendEmailPayload): Promise<void> {
+    const isEmailExist = await this.authRepository.getUserByEmail(
+      emailPayload.email,
+    );
+    if (isEmailExist) {
+      throw new ConflictException('이미 사용 중인 이메일입니다.');
+    }
+
+    const verificationData = await this.authRepository.getVerificationData(
+      emailPayload.email,
+    );
+    if (verificationData) {
+      const elapsedMs = Date.now() - verificationData.createdAt.getTime();
+      if (verificationData.expiredAt > new Date()) {
+        throw new ConflictException('이미 인증번호가 발급되었습니다.');
+      }
+      if (elapsedMs < 10 * 60 * 1000) {
+        throw new ConflictException('10분 이내로 재시도할 수 없습니다.');
+      }
+    }
+
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    await this.transporter.sendMail({
+      from: process.env.GMAIL_ID,
+      to: emailPayload.email,
+      subject: 'FLIK 회원가입 인증번호',
+      text: `인증번호는 ${code}입니다. 5분 이내로 입력해주세요.`,
+    });
+    await this.authRepository.saveVerificationCode(emailPayload.email, code);
+  }
+
+  async verifyEmail(payload: VerificationPayload): Promise<void> {
+    const verificationData = await this.authRepository.getVerificationData(
+      payload.email,
+    );
+    if (!verificationData) {
+      throw new NotFoundException('인증정보를 찾을 수 없습니다.');
+    }
+
+    if (verificationData.expiredAt < new Date()) {
+      throw new ConflictException('인증번호가 만료되었습니다.');
+    }
+    const count = await this.authRepository.getVerificationTryCount(
+      payload.email,
+    );
+    if (count >= 5) {
+      throw new ConflictException('인증번호 시도 횟수(5회)를 초과했습니다.');
+    }
+    if (verificationData.code !== payload.code) {
+      await this.authRepository.incrementVerificationTryCount(payload.email);
+      throw new ConflictException('인증번호가 일치하지 않습니다.');
+    }
+    await this.authRepository.deleteVerification(payload.email);
   }
 }
