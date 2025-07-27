@@ -2,6 +2,8 @@ import {
   Body,
   Controller,
   HttpCode,
+  Param,
+  ParseIntPipe,
   Post,
   Put,
   Req,
@@ -29,6 +31,8 @@ import { CurrentUser } from './decorator/user.decorator';
 import { UserBaseInfo } from './type/user-base-info.type';
 import { JwtAuthGuard } from './guard/jwt-auth.guard';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { SendEmailPayload } from './payload/send-email.payload';
+import { VerificationPayload } from './payload/verification.payload';
 
 @Controller('auth')
 @ApiTags('Auth API')
@@ -114,5 +118,21 @@ export class AuthController {
     @CurrentUser() user: UserBaseInfo,
   ): Promise<void> {
     return this.authService.changePassword(payload, user);
+  }
+
+  @Post('send-verification-email')
+  @HttpCode(204)
+  @ApiNoContentResponse()
+  @ApiOperation({ summary: '인증용 이메일 전송' })
+  async sendVerificationEmail(@Body() email: SendEmailPayload): Promise<void> {
+    return this.authService.sendVerificationEmail(email);
+  }
+
+  @Post('verify-email')
+  @HttpCode(204)
+  @ApiNoContentResponse()
+  @ApiOperation({ summary: '이메일 인증번호 검증' })
+  async verifyEmail(@Body() payload: VerificationPayload): Promise<void> {
+    return this.authService.verifyEmail(payload);
   }
 }
