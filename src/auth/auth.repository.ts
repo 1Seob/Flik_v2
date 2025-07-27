@@ -3,6 +3,7 @@ import { Injectable } from '@nestjs/common';
 import { UserBaseInfo } from './type/user-base-info.type';
 import { SignUpData } from './type/sign-up-data.type';
 import { UpdateUserData } from './type/update-user-data.type';
+import { VerificationData } from './type/verification-data.type';
 
 @Injectable()
 export class AuthRepository {
@@ -144,6 +145,64 @@ export class AuthRepository {
         name: true,
         refreshToken: true,
       },
+    });
+  }
+
+  async saveVerificationCode(email: string, code: string): Promise<void> {
+    await this.prisma.authCode.upsert({
+      where: { email },
+      update: {
+        code,
+        createdAt: new Date(),
+        expiredAt: new Date(Date.now() + 5 * 60 * 1000), // 5분 후 만료
+        tryCount: 0,
+      },
+      create: {
+        email,
+        code,
+        expiredAt: new Date(Date.now() + 5 * 60 * 1000), // 5분 후 만료
+        tryCount: 0,
+      },
+    });
+  }
+
+  async getVerificationData(email: string): Promise<VerificationData | null> {
+    return this.prisma.authCode.findUnique({
+      where: { email },
+      select: {
+        email: true,
+        code: true,
+        createdAt: true,
+        expiredAt: true,
+        tryCount: true,
+      },
+    });
+  }
+
+  async getVerificationTryCount(email: string): Promise<number> {
+    const verificationData = await this.prisma.authCode.findUnique({
+      where: { email },
+      select: {
+        tryCount: true,
+      },
+    });
+    return verificationData ? verificationData.tryCount : 0;
+  }
+
+  async incrementVerificationTryCount(email: string): Promise<void> {
+    await this.prisma.authCode.update({
+      where: { email },
+      data: {
+        tryCount: {
+          increment: 1,
+        },
+      },
+    });
+  }
+
+  async deleteVerification(email: string): Promise<void> {
+    await this.prisma.authCode.delete({
+      where: { email },
     });
   }
 }
