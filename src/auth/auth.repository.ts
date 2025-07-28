@@ -4,6 +4,8 @@ import { UserBaseInfo } from './type/user-base-info.type';
 import { SignUpData } from './type/sign-up-data.type';
 import { UpdateUserData } from './type/update-user-data.type';
 import { VerificationData } from './type/verification-data.type';
+import { ActionType } from '@prisma/client';
+import { AttemptData } from './type/attempt-data.type';
 
 @Injectable()
 export class AuthRepository {
@@ -203,6 +205,39 @@ export class AuthRepository {
   async deleteVerification(email: string): Promise<void> {
     await this.prisma.authCode.delete({
       where: { email },
+    });
+  }
+
+  async isEmailExist(email: string): Promise<boolean> {
+    const user = await this.prisma.user.findUnique({
+      where: { email, deletedAt: null },
+    });
+    return user !== null;
+  }
+
+  async saveAuthAttempt(email: string, type: ActionType): Promise<void> {
+    await this.prisma.authAttempt.upsert({
+      where: { email },
+      update: {
+        actionType: ActionType[type],
+        attemptedAt: new Date(),
+      },
+      create: {
+        email,
+        actionType: ActionType[type],
+        attemptedAt: new Date(),
+      },
+    });
+  }
+
+  async getAuthAttemptData(email: string): Promise<AttemptData | null> {
+    return this.prisma.authAttempt.findUnique({
+      where: { email },
+      select: {
+        email: true,
+        actionType: true,
+        attemptedAt: true,
+      },
     });
   }
 }
