@@ -20,6 +20,7 @@ import {
   ApiOperation,
   ApiTags,
   ApiConsumes,
+  ApiParam,
 } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { TokenDto } from './dto/token.dto';
@@ -123,7 +124,7 @@ export class AuthController {
   @Post('send-verification-email')
   @HttpCode(204)
   @ApiNoContentResponse()
-  @ApiOperation({ summary: '인증용 이메일 전송' })
+  @ApiOperation({ summary: '회원가입 : 인증번호 이메일 전송' })
   async sendVerificationEmail(@Body() email: SendEmailPayload): Promise<void> {
     return this.authService.sendVerificationEmail(email);
   }
@@ -131,8 +132,37 @@ export class AuthController {
   @Post('verify-email')
   @HttpCode(204)
   @ApiNoContentResponse()
-  @ApiOperation({ summary: '이메일 인증번호 검증' })
+  @ApiOperation({ summary: '회원가입 : 인증번호 검증' })
   async verifyEmail(@Body() payload: VerificationPayload): Promise<void> {
     return this.authService.verifyEmail(payload);
+  }
+
+  @Post('find-id')
+  @HttpCode(204)
+  @ApiNoContentResponse()
+  @ApiOperation({ summary: '아이디 찾기 : 이메일 전송' })
+  async findId(@Body() payload: SendEmailPayload): Promise<void> {
+    return this.authService.findId(payload);
+  }
+
+  @Post('find-password/:loginId')
+  @HttpCode(204)
+  @ApiNoContentResponse()
+  @ApiOperation({ summary: '비밀번호 찾기 : 인증번호 이메일 전송' })
+  @ApiParam({ name: 'loginId', required: true, description: '로그인 ID' })
+  async sendFindPasswordEmail(
+    @Param('loginId') loginId: string,
+    @Body() payload: SendEmailPayload,
+  ): Promise<void> {
+    console.log('Sending find password email for loginId:', loginId);
+    return this.authService.sendFindPasswordEmail(loginId, payload);
+  }
+
+  @Post('verify-password')
+  @HttpCode(204)
+  @ApiNoContentResponse()
+  @ApiOperation({ summary: '비밀번호 찾기 : 인증번호 검증' })
+  async verifyPassword(@Body() payload: VerificationPayload): Promise<void> {
+    return this.authService.verifyPassword(payload);
   }
 }
