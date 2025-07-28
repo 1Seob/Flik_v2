@@ -55,6 +55,21 @@ export class UserService {
     const badwords = new BadWordsNext({ data: en });
 
     if (payload.loginId) {
+      if (isReservedUsername(payload.loginId)) {
+        throw new BadRequestException('사용할 수 없는 아이디입니다.');
+      }
+
+      if (hasConsecutiveSpecialChars(payload.loginId)) {
+        throw new BadRequestException(
+          '아이디에 연속된 특수문자는 사용할 수 없습니다.',
+        );
+      }
+
+      if (startsOrEndsWithSpecialChar(payload.loginId)) {
+        throw new BadRequestException(
+          '아이디는 특수문자로 시작하거나 끝날 수 없습니다.',
+        );
+      }
       if (payload.loginId === user.loginId) {
         throw new BadRequestException('현재 사용 중인 로그인 ID와 동일합니다.');
       }
@@ -200,4 +215,18 @@ export class UserService {
   > {
     return this.userRepository.getAllUsersWithParagraphLikes();
   }
+}
+
+const RESERVED_USERNAMES = ['admin', 'root', 'support', 'manager', 'system'];
+
+function isReservedUsername(username: string): boolean {
+  return RESERVED_USERNAMES.includes(username.toLowerCase());
+}
+
+function hasConsecutiveSpecialChars(username: string): boolean {
+  return /[._]{2,}/.test(username); // 연속된 마침표 또는 밑줄
+}
+
+function startsOrEndsWithSpecialChar(username: string): boolean {
+  return /^[._]|[._]$/.test(username); // 시작 또는 끝이 특수문자
 }
