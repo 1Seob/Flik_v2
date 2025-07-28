@@ -3,6 +3,7 @@ import {
   Injectable,
   NotFoundException,
   UnauthorizedException,
+  BadRequestException,
 } from '@nestjs/common';
 import { AuthRepository } from './auth.repository';
 import { SignUpPayload } from './payload/sign-up.payload';
@@ -20,7 +21,6 @@ import { SendEmailPayload } from './payload/send-email.payload';
 import { VerificationPayload } from './payload/verification.payload';
 import { ActionType } from '@prisma/client';
 import generator from 'generate-password-ts';
-import { userInfo } from 'os';
 
 @Injectable()
 export class AuthService {
@@ -43,6 +43,20 @@ export class AuthService {
     payload: SignUpPayload,
     profileImageFile?: Express.Multer.File,
   ): Promise<Tokens> {
+    if (isReservedUsername(payload.loginId)) {
+      throw new BadRequestException('사용할 수 없는 아이디입니다.');
+    }
+    if (hasConsecutiveSpecialChars(payload.loginId)) {
+      throw new BadRequestException(
+        '아이디에 연속된 특수문자는 사용할 수 없습니다.',
+      );
+    }
+    if (startsOrEndsWithSpecialChar(payload.loginId)) {
+      throw new BadRequestException(
+        '아이디는 특수문자로 시작하거나 끝날 수 없습니다.',
+      );
+    }
+
     const loginId = await this.authRepository.getUserByLoginId(payload.loginId);
     if (loginId) {
       throw new ConflictException('이미 사용중인 로그인 ID입니다.');
@@ -386,4 +400,18 @@ export class AuthService {
     });
     await this.authRepository.deleteVerification(payload.email);
   }
+}
+
+const RESERVED_USERNAMES = ['admin', 'root', 'support', 'manager', 'system'];
+
+function isReservedUsername(username: string): boolean {
+  return RESERVED_USERNAMES.includes(username.toLowerCase());
+}
+
+function hasConsecutiveSpecialChars(username: string): boolean {
+  return /[._]{2,}/.test(username); // 연속된 마침표 또는 밑줄
+}
+
+function startsOrEndsWithSpecialChar(username: string): boolean {
+  return /^[._]|[._]$/.test(username); // 시작 또는 끝이 특수문자
 }
