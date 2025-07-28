@@ -18,6 +18,9 @@ import { v4 as uuidv4 } from 'uuid';
 import * as nodemailer from 'nodemailer';
 import { SendEmailPayload } from './payload/send-email.payload';
 import { VerificationPayload } from './payload/verification.payload';
+import { ActionType } from '@prisma/client';
+import generator from 'generate-password-ts';
+import { userInfo } from 'os';
 
 @Injectable()
 export class AuthService {
@@ -228,7 +231,7 @@ export class AuthService {
         throw new ConflictException('이미 인증번호가 발급되었습니다.');
       }
       if (elapsedMs < 10 * 60 * 1000) {
-        throw new ConflictException('10분 이내로 재시도할 수 없습니다.');
+        throw new ConflictException('인증은 10분 이내로 재시도할 수 없습니다.');
       }
     }
 
@@ -263,6 +266,124 @@ export class AuthService {
       await this.authRepository.incrementVerificationTryCount(payload.email);
       throw new ConflictException('인증번호가 일치하지 않습니다.');
     }
+    await this.authRepository.deleteVerification(payload.email);
+  }
+
+  async findId(emailPayload: SendEmailPayload): Promise<void> {
+    const isEmailExist = await this.authRepository.isEmailExist(
+      emailPayload.email,
+    );
+    if (!isEmailExist) {
+      throw new NotFoundException('존재하지 않는 이메일입니다.');
+    }
+    const user = await this.authRepository.getUserByEmail(emailPayload.email);
+    if (!user) {
+      throw new NotFoundException('존재하지 않는 사용자입니다.');
+    }
+    const attemptData = await this.authRepository.getAuthAttemptData(
+      emailPayload.email,
+    );
+    if (attemptData) {
+      const elapsedMs = Date.now() - attemptData.attemptedAt.getTime();
+      if (elapsedMs < 30 * 60 * 1000) {
+        throw new ConflictException(
+          'ID 찾기는 30분 이내로 재시도할 수 없습니다.',
+        );
+      }
+    }
+    await this.authRepository.saveAuthAttempt(
+      emailPayload.email,
+      ActionType.FIND_ID,
+    );
+    await this.transporter.sendMail({
+      from: process.env.GMAIL_ID,
+      to: emailPayload.email,
+      subject: 'FLIK 아이디 찾기',
+      text: `${user.name}님의 ID는 ${user.loginId}입니다.`,
+    });
+  }
+
+  async sendFindPasswordEmail(
+    loginId: string,
+    emailPayload: SendEmailPayload,
+  ): Promise<void> {
+    const user = await this.authRepository.getUserByLoginId(loginId);
+    if (!user) {
+      throw new NotFoundException('존재하지 않는 로그인 ID입니다.');
+    }
+    if (user.email !== emailPayload.email) {
+      throw new ConflictException('로그인 ID와 이메일이 일치하지 않습니다.');
+    }
+
+    const verificationData = await this.authRepository.getVerificationData(
+      emailPayload.email,
+    );
+    if (verificationData) {
+      const elapsedMs = Date.now() - verificationData.createdAt.getTime();
+      if (verificationData.expiredAt > new Date()) {
+        throw new ConflictException('이미 인증번호가 발급되었습니다.');
+      }
+      if (elapsedMs < 10 * 60 * 1000) {
+        throw new ConflictException('인증은 10분 이내로 재시도할 수 없습니다.');
+      }
+    }
+
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    await this.transporter.sendMail({
+      from: process.env.GMAIL_ID,
+      to: emailPayload.email,
+      subject: 'FLIK 비밀번호 찾기 인증번호',
+      text: `인증번호는 ${code}입니다. 5분 이내로 입력해주세요.`,
+    });
+    await this.authRepository.saveVerificationCode(emailPayload.email, code);
+  }
+
+  async verifyPassword(payload: VerificationPayload): Promise<void> {
+    const user = await this.authRepository.getUserByEmail(payload.email);
+    if (!user) {
+      throw new NotFoundException('존재하지 않는 사용자입니다.');
+    }
+    const verificationData = await this.authRepository.getVerificationData(
+      payload.email,
+    );
+    if (!verificationData) {
+      throw new NotFoundException('인증정보를 찾을 수 없습니다.');
+    }
+
+    if (verificationData.expiredAt < new Date()) {
+      throw new ConflictException('인증번호가 만료되었습니다.');
+    }
+    const count = await this.authRepository.getVerificationTryCount(
+      payload.email,
+    );
+    if (count >= 5) {
+      throw new ConflictException('인증번호 시도 횟수(5회)를 초과했습니다.');
+    }
+    if (verificationData.code !== payload.code) {
+      await this.authRepository.incrementVerificationTryCount(payload.email);
+      throw new ConflictException('인증번호가 일치하지 않습니다.');
+    }
+
+    const newPassword = generator.generate({
+      length: 12,
+      numbers: true,
+      symbols: true,
+      uppercase: true,
+      lowercase: true,
+    });
+    console.log(newPassword);
+    const hashedPassword =
+      await this.passwordService.getEncryptPassword(newPassword);
+    await this.authRepository.updateUser(user.id, {
+      password: hashedPassword,
+    });
+
+    await this.transporter.sendMail({
+      from: process.env.GMAIL_ID,
+      to: payload.email,
+      subject: 'FLIK 비밀번호 찾기',
+      text: `새로운 비밀번호는 ${newPassword}입니다. 로그인 후 반드시 비밀번호를 변경해주세요.`,
+    });
     await this.authRepository.deleteVerification(payload.email);
   }
 }
