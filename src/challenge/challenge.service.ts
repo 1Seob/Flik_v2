@@ -8,7 +8,6 @@ import {
   ChallengeStatusListDto,
 } from './dto/challenge-status.dto';
 import { addDays, endOfDay } from 'date-fns';
-import { last } from 'lodash';
 
 @Injectable()
 export class ChallengeService {
