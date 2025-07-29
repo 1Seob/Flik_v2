@@ -1,12 +1,6 @@
 import { PrismaService } from 'src/common/services/prisma.service';
 import { Injectable } from '@nestjs/common';
-import {
-  startOfMonth,
-  endOfMonth,
-  startOfDay,
-  addHours,
-  endOfDay,
-} from 'date-fns';
+import { startOfMonth, endOfMonth, startOfDay, endOfDay } from 'date-fns';
 import { BookData } from 'src/book/type/book-data.type';
 
 @Injectable()
@@ -57,7 +51,7 @@ export class BookReadRepository {
         book_id: bookReadData.bookId,
         paragraph_id: p.id,
         order: p.order,
-        readAt: addHours(new Date(), 9),
+        readAt: now,
         dailyGoal: bookReadData.dailyGoal,
         completedAt: isCompleted ? now : null, // 완독 처리
       }));
@@ -82,18 +76,13 @@ export class BookReadRepository {
     // KST 월 경계 생성
     const kstStart = startOfMonth(new Date(year, month - 1));
     const kstEnd = endOfMonth(new Date(year, month - 1));
-    const startUtc = addHours(kstStart, 9);
-    const endUtc = addHours(kstEnd, 9);
-
-    console.log('Start UTC:', startUtc.toISOString());
-    console.log('End UTC:', endUtc.toISOString());
 
     const activities = await this.prisma.user_reading_activity.findMany({
       where: {
         user_id: userId,
         read_at: {
-          gte: startUtc,
-          lte: endUtc,
+          gte: kstStart,
+          lte: kstEnd,
         },
       },
       select: {
@@ -124,7 +113,7 @@ export class BookReadRepository {
         book_id: bookId,
       },
       data: {
-        completed_at: addHours(now, 9),
+        completed_at: now, // 현재 시간으로 완독 처리
       },
     });
 
@@ -138,18 +127,16 @@ export class BookReadRepository {
     year: number,
     month: number,
   ): Promise<number[]> {
+    // KST 월 경계 생성
     const kstStart = startOfMonth(new Date(year, month - 1));
     const kstEnd = endOfMonth(new Date(year, month - 1));
-
-    const startUtc = addHours(kstStart, 9);
-    const endUtc = addHours(kstEnd, 9);
 
     const activities = await this.prisma.user_reading_activity.findMany({
       where: {
         user_id: userId,
         completed_at: {
-          gte: startUtc,
-          lte: endUtc,
+          gte: kstStart,
+          lte: kstEnd,
         },
       },
       select: {
@@ -183,21 +170,16 @@ export class BookReadRepository {
       progressRate: number;
     }[]
   > {
+    // KST 일 경계 생성
     const kstStart = startOfDay(new Date(year, month - 1, day));
     const kstEnd = endOfDay(new Date(year, month - 1, day));
-
-    const startUtc = addHours(kstStart, 9);
-    const endUtc = addHours(kstEnd, 9);
-
-    console.log('Start UTC:', startUtc.toISOString());
-    console.log('End UTC:', endUtc.toISOString());
 
     const activities = await this.prisma.user_reading_activity.findMany({
       where: {
         user_id: userId,
         read_at: {
-          gte: startUtc,
-          lte: endUtc,
+          gte: kstStart,
+          lte: kstEnd,
         },
       },
       select: {
