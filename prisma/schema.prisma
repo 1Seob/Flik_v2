@@ -19,7 +19,8 @@ model User {
   birthday              DateTime
   gender                Gender
   loginId               String                  @unique @map("login_id")
-  profileImageUrl       String?                 @map("profile_image_url")
+  profileImagePath      String?                 @map("profile_image_path")
+
   bookLikes             BookLike[]
   bookSaves             BookSave[]
   paragraphLikes        ParagraphLike[]

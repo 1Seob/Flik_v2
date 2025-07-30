@@ -5,7 +5,7 @@ export type UserBaseInfo = {
   loginId: string;
   gender: Gender;
   birthday: Date;
-  profileImageUrl?: string | null;
+  profileImagePath?: string | null;
   email: string;
   password: string;
   name: string;

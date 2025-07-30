@@ -15,7 +15,6 @@ import { LoginPayload } from './payload/login.payload';
 import { ChangePasswordPayload } from './payload/change-password.payload';
 import { UserBaseInfo } from './type/user-base-info.type';
 import { SupabaseService } from 'src/common/services/supabase.service';
-import { v4 as uuidv4 } from 'uuid';
 import * as nodemailer from 'nodemailer';
 import { SendEmailPayload } from './payload/send-email.payload';
 import { VerificationPayload } from './payload/verification.payload';
@@ -39,29 +38,28 @@ export class AuthService {
     },
   });
 
-  async signUp(
-    payload: SignUpPayload,
-    profileImageFile?: Express.Multer.File,
-  ): Promise<Tokens> {
-    if (isReservedUsername(payload.loginId)) {
+  async signUp(payload: SignUpPayload): Promise<Tokens> {
+    if (isReservedUsername(payload.username)) {
       throw new BadRequestException('사용할 수 없는 아이디입니다.');
     }
-    if (hasConsecutiveSpecialChars(payload.loginId)) {
+    if (hasConsecutiveSpecialChars(payload.username)) {
       throw new BadRequestException(
         '아이디에 연속된 특수문자는 사용할 수 없습니다.',
       );
     }
-    if (startsOrEndsWithSpecialChar(payload.loginId)) {
+    if (startsOrEndsWithSpecialChar(payload.username)) {
       throw new BadRequestException(
         '아이디는 특수문자로 시작하거나 끝날 수 없습니다.',
       );
     }
 
-    const loginId = await this.authRepository.getUserByLoginId(payload.loginId);
+    const loginId = await this.authRepository.getUserByLoginId(
+      payload.username,
+    );
     if (loginId) {
       throw new ConflictException('이미 사용중인 로그인 ID입니다.');
     }
-    const name = await this.authRepository.getUserByName(payload.name);
+    const name = await this.authRepository.getUserByName(payload.nickname);
     if (name) {
       throw new ConflictException('이미 사용중인 닉네임입니다.');
     }
@@ -72,13 +70,19 @@ export class AuthService {
     const en = require('bad-words-next/lib/en');
     const badwords = new BadWordsNext({ data: en });
 
-    if (filter.isProfane(payload.loginId) || badwords.check(payload.loginId)) {
+    if (
+      filter.isProfane(payload.username) ||
+      badwords.check(payload.username)
+    ) {
       throw new ConflictException(
         '로그인 ID에 부적절한 단어가 포함되어 있습니다.',
       );
     }
 
-    if (filter.isProfane(payload.name) || badwords.check(payload.name)) {
+    if (
+      filter.isProfane(payload.nickname) ||
+      badwords.check(payload.nickname)
+    ) {
       throw new ConflictException(
         '닉네임에 부적절한 단어가 포함되어 있습니다.',
       );
@@ -86,10 +90,6 @@ export class AuthService {
     const email = await this.authRepository.getUserByEmail(payload.email);
     if (email) {
       throw new ConflictException('이미 사용중인 이메일입니다.');
-    }
-
-    if (payload.password !== payload.passwordConfirm) {
-      throw new ConflictException('비밀번호가 일치하지 않습니다.');
     }
 
     if (payload.birthday > new Date()) {
@@ -112,54 +112,17 @@ export class AuthService {
       payload.password,
     );
 
-    let profileImageUrl: string | undefined = undefined;
-    let tempPath: string | undefined = undefined;
-    let finalPath: string | undefined = undefined;
-    if (profileImageFile) {
-      tempPath = `profile-images/temp/${uuidv4()}-${profileImageFile.originalname}`;
-      const { data, error } = await this.supabaseService.uploadImage(
-        'profile-images',
-        tempPath,
-        profileImageFile.buffer,
-      );
-      if (error) {
-        throw new ConflictException('프로필 이미지 업로드에 실패했습니다.');
-      }
-      profileImageUrl = data?.path
-        ? this.supabaseService.getPublicUrl('profile-images', data.path)
-        : undefined;
-    }
-
     const inputData: SignUpData = {
-      loginId: payload.loginId,
+      loginId: payload.username,
       gender: payload.gender,
       birthday: payload.birthday,
-      profileImageUrl: profileImageUrl,
       email: payload.email,
       password: hashedPassword,
-      name: payload.name,
+      name: payload.nickname,
       interestCategories: payload.interestCategories,
     };
 
     const createdUser = await this.authRepository.createUser(inputData);
-
-    if (tempPath && profileImageFile) {
-      finalPath = `profile-images/${createdUser.id}/${profileImageFile.originalname}`;
-      const { data, error } = await this.supabaseService.copyImage(
-        'profile-images',
-        tempPath,
-        finalPath,
-      );
-      if (error) {
-        throw new ConflictException('프로필 이미지 복사에 실패했습니다.');
-      }
-      await this.supabaseService.deleteImage('profile-images', tempPath);
-      profileImageUrl = this.supabaseService.getPublicUrl(
-        'profile-images',
-        finalPath,
-      );
-      await this.authRepository.updateUser(createdUser.id, { profileImageUrl });
-    }
 
     return this.generateTokens(createdUser.id);
   }
