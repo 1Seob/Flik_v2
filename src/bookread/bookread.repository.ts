@@ -80,7 +80,7 @@ export class BookReadRepository {
     const activities = await this.prisma.user_reading_activity.findMany({
       where: {
         user_id: userId,
-        read_at: {
+        ended_at: {
           gte: kstStart,
           lte: kstEnd,
         },
@@ -166,8 +166,6 @@ export class BookReadRepository {
     {
       books: BookData;
       pagesRead: number;
-      dailyGoal: number;
-      progressRate: number;
     }[]
   > {
     // KST 일 경계 생성
@@ -177,7 +175,7 @@ export class BookReadRepository {
     const activities = await this.prisma.user_reading_activity.findMany({
       where: {
         user_id: userId,
-        read_at: {
+        ended_at: {
           gte: kstStart,
           lte: kstEnd,
         },
@@ -191,12 +189,10 @@ export class BookReadRepository {
             coverImageUrl: true,
           },
         },
-        daily_goal: true,
         completed_at: true,
       },
     });
     const pagesRead = new Map<number, number>();
-    const dailyGoalsMap = new Map<number, number | null>();
     const uniqueBooksMap = new Map<number, (typeof activities)[0]['book']>();
 
     for (const activity of activities) {
@@ -205,26 +201,16 @@ export class BookReadRepository {
       // book 저장
       uniqueBooksMap.set(bookId, activity.book);
 
-      // daily_goal 저장
-      dailyGoalsMap.set(bookId, activity.daily_goal);
-
       // read count 집계
       pagesRead.set(bookId, (pagesRead.get(bookId) || 0) + 1);
     }
     return Array.from(uniqueBooksMap.values()).map((book) => {
       const bookId = book.id;
       const pagesReadCount = pagesRead.get(bookId) || 0;
-      const dailyGoal = dailyGoalsMap.get(bookId) || null;
-
-      // progressRate 계산
-      const progressRate =
-        dailyGoal !== null ? (pagesReadCount / dailyGoal) * 100 : 0;
 
       return {
         books: book,
         pagesRead: pagesReadCount,
-        dailyGoal: dailyGoal || 0,
-        progressRate,
       };
     });
   }

@@ -14,45 +14,19 @@ export class ReadingProgressDto {
   })
   pagesRead!: number;
 
-  @ApiProperty({
-    description: '하루 목표 페이지 수',
-    type: Number,
-  })
-  dailyGoal!: number;
-
-  @ApiProperty({
-    description: '달성률(읽은 페이지 수 / 하루 목표 페이지 수)',
-    type: Number,
-  })
-  progressRate!: number;
-
-  static from(
-    book: BookData,
-    pagesRead: number,
-    dailyGoal: number,
-    progressRate: number,
-  ): ReadingProgressDto {
+  static from(book: BookData, pagesRead: number): ReadingProgressDto {
     const dto = new ReadingProgressDto();
     dto.book = book;
     dto.pagesRead = pagesRead;
-    dto.dailyGoal = dailyGoal;
-    dto.progressRate = progressRate;
     return dto;
   }
 
   static fromArray(
     books: BookData[],
     pagesRead: number[],
-    dailyGoal: number[],
-    progressRates: number[],
   ): ReadingProgressDto[] {
     return books.map((book, index) => {
-      return ReadingProgressDto.from(
-        book,
-        pagesRead[index],
-        dailyGoal[index],
-        progressRates[index],
-      );
+      return ReadingProgressDto.from(book, pagesRead[index]);
     });
   }
 }
@@ -64,19 +38,9 @@ export class ReadingProgressListDto {
   })
   books!: ReadingProgressDto[];
 
-  static from(
-    books: BookData[],
-    pagesRead: number[],
-    dailyGoal: number[],
-    progressRates: number[],
-  ): ReadingProgressListDto {
+  static from(books: BookData[], pagesRead: number[]): ReadingProgressListDto {
     const dto = new ReadingProgressListDto();
-    dto.books = ReadingProgressDto.fromArray(
-      books,
-      pagesRead,
-      dailyGoal,
-      progressRates,
-    );
+    dto.books = ReadingProgressDto.fromArray(books, pagesRead);
     return dto;
   }
 }

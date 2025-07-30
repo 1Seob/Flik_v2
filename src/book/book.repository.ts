@@ -330,12 +330,12 @@ export class BookRepository {
   async getReadingStreak(userId: number): Promise<number> {
     const dates = await this.prisma.user_reading_activity.findMany({
       where: { user_id: userId },
-      select: { read_at: true },
-      orderBy: { read_at: 'desc' },
+      select: { ended_at: true },
+      orderBy: { ended_at: 'desc' },
     });
 
     const uniqueDates = new Set(
-      dates.map((r) => r.read_at.toISOString().slice(0, 10)),
+      dates.map((r) => r.ended_at.toISOString().slice(0, 10)),
     );
 
     let streak = 0;
