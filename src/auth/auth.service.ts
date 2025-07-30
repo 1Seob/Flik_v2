@@ -87,6 +87,18 @@ export class AuthService {
         '닉네임에 부적절한 단어가 포함되어 있습니다.',
       );
     }
+
+    if (/[-_]{2,}/.test(payload.nickname)) {
+      throw new BadRequestException(
+        '닉네임에 연속된 밑줄(_) 또는 하이픈(-)은 사용할 수 없습니다.',
+      );
+    }
+    if (/^[-_]|[-_]$/.test(payload.nickname)) {
+      throw new BadRequestException(
+        '닉네임은 밑줄(_) 또는 하이픈(-)으로 시작하거나 끝날 수 없습니다.',
+      );
+    }
+
     const email = await this.authRepository.getUserByEmail(payload.email);
     if (email) {
       throw new ConflictException('이미 사용중인 이메일입니다.');
