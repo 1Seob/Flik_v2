@@ -5,7 +5,7 @@ export type UserData = {
   loginId: string;
   gender: Gender;
   birthday: Date;
-  profileImageUrl?: string | null;
+  profileImagePath?: string | null;
   email: string;
   name: string;
 };

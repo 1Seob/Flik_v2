@@ -4,7 +4,6 @@ export type UpdateUserData = {
   loginId?: string | null;
   birthday?: Date | null;
   gender?: Gender | null;
-  profileImageUrl?: string | null;
   email?: string;
   password?: string;
   name?: string;

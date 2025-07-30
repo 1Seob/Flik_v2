@@ -10,10 +10,8 @@ import { UserBaseInfo } from '../auth/type/user-base-info.type';
 import { UserDto } from './dto/user.dto';
 import { UpdateUserPayload } from './payload/update-user.payload';
 import { UpdateUserData } from '../auth/type/update-user-data.type';
-import {
-  SupabaseService,
-  extractFilePathFromPublicUrl,
-} from '../common/services/supabase.service';
+import { SupabaseService } from '../common/services/supabase.service';
+import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
 export class UserService {
@@ -35,7 +33,6 @@ export class UserService {
   async updateUser(
     payload: UpdateUserPayload,
     user: UserBaseInfo,
-    profileImageFile?: Express.Multer.File,
   ): Promise<UserDto> {
     if (payload.loginId === null) {
       throw new BadRequestException('로그인 ID는 null이 될 수 없습니다.');
@@ -128,65 +125,10 @@ export class UserService {
     }
     console.log(payload.interestCategories);
 
-    let profileImageUrl: string | undefined | null = undefined;
-    if (payload.removeProfileImage) {
-      if (profileImageFile) {
-        throw new BadRequestException(
-          '프로필 이미지 삭제 요청과 파일 업로드는 동시에 처리할 수 없습니다.',
-        );
-      }
-      if (!user.profileImageUrl) {
-        throw new BadRequestException('삭제할 프로필 이미지가 없습니다.');
-      }
-      const filePath = extractFilePathFromPublicUrl(user.profileImageUrl);
-      if (filePath) {
-        const { data: deleteResult, error: deleteError } =
-          await this.supabaseService.deleteImage('profile-images', filePath);
-
-        if (deleteError) {
-          console.error('이미지 삭제 실패:', deleteError.message);
-          throw new BadRequestException(
-            '기존 프로필 이미지 삭제에 실패했습니다.',
-          );
-        }
-        profileImageUrl = null;
-      }
-    }
-    if (user.profileImageUrl) {
-      const filePath = extractFilePathFromPublicUrl(user.profileImageUrl);
-      if (filePath) {
-        const { data: deleteResult, error: deleteError } =
-          await this.supabaseService.deleteImage('profile-images', filePath);
-
-        if (deleteError) {
-          console.error('이미지 삭제 실패:', deleteError.message);
-          throw new BadRequestException(
-            '기존 프로필 이미지 삭제에 실패했습니다.',
-          );
-        }
-      }
-    }
-    if (profileImageFile) {
-      const filePath = `profile-images/${user.id}/${profileImageFile.originalname}`;
-      const { data, error } = await this.supabaseService.uploadImage(
-        'profile-images',
-        filePath,
-        profileImageFile.buffer,
-      );
-      if (error) {
-        console.error('업로드 실패:', error.message);
-        throw new BadRequestException('업로드 실패: ' + error.message);
-      }
-      profileImageUrl = data?.path
-        ? this.supabaseService.getPublicUrl('profile-images', data.path)
-        : undefined;
-    }
-
     const data: UpdateUserData = {
       loginId: payload.loginId,
       birthday: payload.birthday,
       gender: payload.gender,
-      profileImageUrl,
       email: payload.email,
       name: payload.name,
       interestCategories: payload.interestCategories,
@@ -214,6 +156,28 @@ export class UserService {
     { id: number; likedBookIds: number[]; readBookIds: number[] }[]
   > {
     return this.userRepository.getAllUsersWithParagraphLikes();
+  }
+
+  async getPresignedUploadUrl(user: UserBaseInfo): Promise<string> {
+    if (user.profileImagePath) {
+      await this.supabaseService.deleteImage(
+        'profile-images',
+        user.profileImagePath,
+      );
+    }
+    const filePath = `profile-images/${user.id}/${uuidv4()}/profile-image.png`;
+    await this.userRepository.updateProfileImagePath(user.id, filePath);
+    return this.supabaseService.getSignedUploadUrl('profile-images', filePath);
+  }
+
+  async getPresignedDownloadUrl(user: UserBaseInfo): Promise<string> {
+    if (!user.profileImagePath) {
+      throw new NotFoundException('프로필 이미지가 존재하지 않습니다.');
+    }
+    return this.supabaseService.getSignedDownloadUrl(
+      'profile-images',
+      user.profileImagePath,
+    );
   }
 }
 
