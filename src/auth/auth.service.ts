@@ -128,7 +128,7 @@ export class AuthService {
   }
 
   async login(payload: LoginPayload): Promise<Tokens> {
-    const user = await this.authRepository.getUserByLoginId(payload.loginId);
+    const user = await this.authRepository.getUserByLoginId(payload.username);
     if (!user) {
       throw new NotFoundException('존재하지 않는 로그인 ID입니다.');
     }
