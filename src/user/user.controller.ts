@@ -5,11 +5,8 @@ import {
   Get,
   HttpCode,
   Param,
-  ParseIntPipe,
   Patch,
   UseGuards,
-  UseInterceptors,
-  UploadedFile,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import {
@@ -17,7 +14,6 @@ import {
   ApiNoContentResponse,
   ApiOkResponse,
   ApiOperation,
-  ApiConsumes,
 } from '@nestjs/swagger';
 import { UserDto } from './dto/user.dto';
 import { JwtAuthGuard } from '../auth/guard/jwt-auth.guard';
@@ -25,7 +21,6 @@ import { UpdateUserPayload } from './payload/update-user.payload';
 import { CurrentUser } from '../auth/decorator/user.decorator';
 import { UserBaseInfo } from '../auth/type/user-base-info.type';
 import { ApiTags } from '@nestjs/swagger';
-import { FileInterceptor } from '@nestjs/platform-express';
 
 @Controller('users')
 @ApiTags('User API')
@@ -43,15 +38,12 @@ export class UserController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: '유저 정보 수정' })
-  @ApiConsumes('multipart/form-data')
   @ApiOkResponse({ type: UserDto })
-  @UseInterceptors(FileInterceptor('profileImage'))
   async updateUser(
     @Body() payload: UpdateUserPayload,
     @CurrentUser() user: UserBaseInfo,
-    @UploadedFile() profileImageFile?: Express.Multer.File,
   ): Promise<UserDto> {
-    return this.userService.updateUser(payload, user, profileImageFile);
+    return this.userService.updateUser(payload, user);
   }
 
   @Delete(':userId')
@@ -65,6 +57,26 @@ export class UserController {
     @CurrentUser() user: UserBaseInfo,
   ): Promise<void> {
     return this.userService.deleteUser(userId, user);
+  }
+
+  @Get(':userId/presigned-upload-url')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '프로필 사진 : Presigned 업로드 URL 요청' })
+  async getPresignedUploadUrl(
+    @CurrentUser() user: UserBaseInfo,
+  ): Promise<string> {
+    return this.userService.getPresignedUploadUrl(user);
+  }
+
+  @Get(':userId/presigned-download-url')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '프로필 사진 : Presigned 다운로드 URL 요청' })
+  async getPresignedDownloadUrl(
+    @CurrentUser() user: UserBaseInfo,
+  ): Promise<string> {
+    return this.userService.getPresignedDownloadUrl(user);
   }
 
   @Get()

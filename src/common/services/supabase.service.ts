@@ -46,6 +46,31 @@ export class SupabaseService {
       .join('/')
       .replace(/\/{2,}/g, '/');
   }
+
+  async getSignedUploadUrl(bucket: string, filePath: string): Promise<string> {
+    const { data, error } = await this.supabase.storage
+      .from(bucket)
+      .createSignedUploadUrl(filePath);
+    if (error) {
+      throw new Error(`Failed to create signed upload URL: ${error.message}`);
+    }
+
+    return data.signedUrl;
+  }
+
+  async getSignedDownloadUrl(
+    bucket: string,
+    filePath: string,
+  ): Promise<string> {
+    const { data, error } = await this.supabase.storage
+      .from(bucket)
+      .createSignedUrl(filePath, 60 * 60); // 1 hour expiration
+    if (error) {
+      throw new Error(`Failed to create signed download URL: ${error.message}`);
+    }
+
+    return data.signedUrl;
+  }
 }
 
 export function extractFilePathFromPublicUrl(publicUrl: string): string | null {

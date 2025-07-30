@@ -74,14 +74,6 @@ export class UpdateUserPayload {
   birthday?: Date | null;
 
   @IsOptional()
-  @ApiPropertyOptional({
-    description: '프로필 이미지',
-    type: 'string',
-    format: 'binary',
-  })
-  profileImage?: Express.Multer.File;
-
-  @IsOptional()
   @IsBoolean()
   @Transform(({ value }) => {
     if (value === '' || value === undefined || value === null) return undefined;

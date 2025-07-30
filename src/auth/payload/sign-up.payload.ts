@@ -3,7 +3,6 @@ import {
   IsEmail,
   IsString,
   IsEnum,
-  IsOptional,
   IsArray,
   IsInt,
   MinLength,
@@ -31,7 +30,7 @@ export class SignUpPayload {
     description: '로그인 ID',
     type: String,
   })
-  loginId!: string;
+  username!: string;
 
   @IsString()
   @MinLength(8, { message: '비밀번호는 최소 8자 이상이어야 합니다.' })
@@ -46,17 +45,10 @@ export class SignUpPayload {
 
   @IsString()
   @ApiProperty({
-    description: '비밀번호 확인',
-    type: String,
-  })
-  passwordConfirm!: string;
-
-  @IsString()
-  @ApiProperty({
     description: '닉네임',
     type: String,
   })
-  name!: string;
+  nickname!: string;
 
   @IsEmail()
   @ApiProperty({
@@ -79,14 +71,6 @@ export class SignUpPayload {
     type: Date,
   })
   birthday!: Date;
-
-  @IsOptional()
-  @ApiPropertyOptional({
-    description: '프로필 이미지',
-    type: 'string',
-    format: 'binary',
-  })
-  profileImage?: string;
 
   @IsArray()
   @Transform(({ value }) => {

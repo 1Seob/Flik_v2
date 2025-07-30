@@ -25,7 +25,6 @@ export class UserRepository {
         loginId: data.loginId ?? undefined,
         gender: data.gender ?? undefined,
         birthday: data.birthday ?? undefined,
-        profileImageUrl: data.profileImageUrl,
         name: data.name,
         email: data.email,
         userCategories: data.interestCategories
@@ -145,5 +144,19 @@ export class UserRepository {
       },
     });
     return !!user;
+  }
+
+  async updateProfileImagePath(
+    userId: number,
+    profileImagePath: string | null,
+  ): Promise<void> {
+    await this.prisma.user.update({
+      where: {
+        id: userId,
+      },
+      data: {
+        profileImagePath,
+      },
+    });
   }
 }
