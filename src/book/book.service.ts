@@ -15,6 +15,7 @@ import { UpdateBookData } from './type/update-book-data.type';
 import { BookQuery } from './query/book.query';
 import { MetadataListDto } from './dto/metadata.dto';
 import { SupabaseService } from 'src/common/services/supabase.service';
+import { ParagraphListDto } from 'src/paragraph/dto/paragraph.dto';
 
 @Injectable()
 export class BookService {
@@ -82,6 +83,7 @@ export class BookService {
     await this.bookRepository.deleteBook(bookId);
   }
 
+  /*
   async getBookParagraphs(bookId: number, userId: number): Promise<string[][]> {
     const paragraphs = await this.bookRepository.getParagraphsByBookId(bookId);
     if (paragraphs.length === 0) {
@@ -96,6 +98,19 @@ export class BookService {
     return distributed.map((dayIndices) =>
       dayIndices.map((index) => contents[index]),
     );
+  }
+  */
+
+  async getBookParagraphs(
+    bookId: number,
+    userId: number,
+  ): Promise<ParagraphListDto> {
+    const book = await this.bookRepository.getBookById(bookId);
+    if (!book) {
+      throw new NotFoundException('책을 찾을 수 없습니다.');
+    }
+    const paragraphs = await this.bookRepository.getBookParagraphs(bookId);
+    return ParagraphListDto.from(paragraphs);
   }
 
   async patchUpdateBook(
@@ -204,6 +219,7 @@ export class BookService {
     return count;
   }
 
+  /*
   async getParagraphsPerDay(bookId: number): Promise<number> {
     const book = await this.bookRepository.getBookById(bookId);
     if (!book) {
@@ -218,6 +234,7 @@ export class BookService {
     // 가장 많이 할당된 날의 문단 수
     return Math.max(...perDayCounts);
   }
+  */
 
   async saveBookToUser(bookId: number, userId: number): Promise<void> {
     const book = await this.bookRepository.getBookById(bookId);

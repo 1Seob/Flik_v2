@@ -33,6 +33,7 @@ import { MetadataListDto } from './dto/metadata.dto';
 import { JwtAuthGuard } from '../auth/guard/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorator/user.decorator';
 import { UserBaseInfo } from '../auth/type/user-base-info.type';
+import { ParagraphListDto } from 'src/paragraph/dto/paragraph.dto';
 
 @Controller('books')
 @ApiTags('Book API')
@@ -80,6 +81,7 @@ export class BookController {
     return this.bookService.getBooks(query);
   }
 
+  /*
   @Get(':bookId/paragraphs')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
@@ -95,6 +97,19 @@ export class BookController {
   ): Promise<string[][]> {
     return this.bookService.getBookParagraphs(bookId, user.id);
   }
+  */
+
+  @Get(':bookId/paragraphs/download')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOkResponse({ type: ParagraphListDto })
+  @ApiOperation({ summary: '책 원문 다운로드' })
+  async getBookParagraphs(
+    @Param('bookId', ParseIntPipe) bookId: number,
+    @CurrentUser() user: UserBaseInfo,
+  ): Promise<ParagraphListDto> {
+    return this.bookService.getBookParagraphs(bookId, user.id);
+  }
 
   @Get(':bookId/paragraphs/count')
   @ApiOperation({ summary: '책 전체 문단 수 반환' })
@@ -105,6 +120,7 @@ export class BookController {
     return this.bookService.getParagraphCountByBookId(bookId);
   }
 
+  /*
   @Get(':bookId/paragraphs/per-day')
   @ApiOperation({ summary: '책 1일 읽어야 할 문단 수 반환 (30일 기준)' })
   @ApiOkResponse({ type: Number })
@@ -113,6 +129,7 @@ export class BookController {
   ): Promise<number> {
     return this.bookService.getParagraphsPerDay(bookId);
   }
+  */
 
   @Post('save/:fileName')
   @ApiOperation({ summary: 'DB에 책 추가' })
