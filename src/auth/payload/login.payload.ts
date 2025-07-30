@@ -7,7 +7,7 @@ export class LoginPayload {
     description: '로그인 ID',
     type: String,
   })
-  loginId!: string;
+  username!: string;
 
   @IsString()
   @ApiProperty({
