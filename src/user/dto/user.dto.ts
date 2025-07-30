@@ -29,10 +29,10 @@ export class UserDto {
   birthday!: Date;
 
   @ApiProperty({
-    description: '프로필 이미지 URL',
+    description: '프로필 이미지 경로',
     type: String,
   })
-  profileImageUrl?: string | null;
+  profileImagePath?: string | null;
 
   @ApiProperty({
     description: '이메일',
@@ -52,7 +52,7 @@ export class UserDto {
       loginId: data.loginId,
       gender: data.gender,
       birthday: data.birthday,
-      profileImageUrl: data.profileImageUrl,
+      profileImagePath: data.profileImagePath,
       email: data.email,
       name: data.name,
     };
