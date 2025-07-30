@@ -34,4 +34,22 @@ export class ParagraphDto {
       bookId: data.bookId,
     };
   }
+
+  static fromArray(paragraphs: ParagraphData[]): ParagraphDto[] {
+    return paragraphs.map((paragraph) => this.from(paragraph));
+  }
+}
+
+export class ParagraphListDto {
+  @ApiProperty({
+    description: '문단 목록',
+    type: [ParagraphDto],
+  })
+  paragraphs!: ParagraphDto[];
+
+  static from(paragraphs: ParagraphData[]): ParagraphListDto {
+    return {
+      paragraphs: ParagraphDto.fromArray(paragraphs),
+    };
+  }
 }
