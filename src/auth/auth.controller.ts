@@ -137,17 +137,17 @@ export class AuthController {
     return this.authService.findId(payload);
   }
 
-  @Post('find-password/:loginId')
+  @Post('find-password/:username')
   @HttpCode(204)
   @ApiNoContentResponse()
   @ApiOperation({ summary: '비밀번호 찾기 : 인증번호 이메일 전송' })
-  @ApiParam({ name: 'loginId', required: true, description: '로그인 ID' })
+  @ApiParam({ name: 'username', required: true, description: '로그인 ID' })
   async sendFindPasswordEmail(
-    @Param('loginId') loginId: string,
+    @Param('username') username: string,
     @Body() payload: SendEmailPayload,
   ): Promise<void> {
-    console.log('Sending find password email for loginId:', loginId);
-    return this.authService.sendFindPasswordEmail(loginId, payload);
+    console.log('Sending find password email for username:', username);
+    return this.authService.sendFindPasswordEmail(username, payload);
   }
 
   @Post('verify-password')
