@@ -34,10 +34,10 @@ export class UserService {
     payload: UpdateUserPayload,
     user: UserBaseInfo,
   ): Promise<UserDto> {
-    if (payload.loginId === null) {
+    if (payload.username === null) {
       throw new BadRequestException('로그인 ID는 null이 될 수 없습니다.');
     }
-    if (payload.name === null) {
+    if (payload.nickname === null) {
       throw new BadRequestException('닉네임은 null이 될 수 없습니다.');
     }
 
@@ -51,34 +51,34 @@ export class UserService {
     const en = require('bad-words-next/lib/en');
     const badwords = new BadWordsNext({ data: en });
 
-    if (payload.loginId) {
-      if (isReservedUsername(payload.loginId)) {
+    if (payload.username) {
+      if (isReservedUsername(payload.username)) {
         throw new BadRequestException('사용할 수 없는 아이디입니다.');
       }
 
-      if (hasConsecutiveSpecialChars(payload.loginId)) {
+      if (hasConsecutiveSpecialChars(payload.username)) {
         throw new BadRequestException(
           '아이디에 연속된 특수문자는 사용할 수 없습니다.',
         );
       }
 
-      if (startsOrEndsWithSpecialChar(payload.loginId)) {
+      if (startsOrEndsWithSpecialChar(payload.username)) {
         throw new BadRequestException(
           '아이디는 특수문자로 시작하거나 끝날 수 없습니다.',
         );
       }
-      if (payload.loginId === user.loginId) {
+      if (payload.username === user.loginId) {
         throw new BadRequestException('현재 사용 중인 로그인 ID와 동일합니다.');
       }
       const isLoginIdExist = await this.userRepository.isEmailExist(
-        payload.loginId,
+        payload.username,
       );
       if (isLoginIdExist) {
         throw new ConflictException('이미 사용 중인 로그인 ID입니다.');
       }
       if (
-        filter.isProfane(payload.loginId) ||
-        badwords.check(payload.loginId)
+        filter.isProfane(payload.username) ||
+        badwords.check(payload.username)
       ) {
         throw new ConflictException(
           '로그인 ID에 부적절한 단어가 포함되어 있습니다.',
@@ -96,16 +96,21 @@ export class UserService {
         throw new ConflictException('이미 사용 중인 이메일입니다.');
       }
     }
-    if (payload.name) {
-      if (payload.name === user.name) {
+    if (payload.nickname) {
+      if (payload.nickname === user.name) {
         throw new BadRequestException('현재 사용 중인 닉네임과 동일합니다.');
       }
-      const isNameExist = await this.userRepository.isNameExist(payload.name);
+      const isNameExist = await this.userRepository.isNameExist(
+        payload.nickname,
+      );
 
       if (isNameExist) {
         throw new ConflictException('이미 사용 중인 닉네임입니다.');
       }
-      if (filter.isProfane(payload.name) || badwords.check(payload.name)) {
+      if (
+        filter.isProfane(payload.nickname) ||
+        badwords.check(payload.nickname)
+      ) {
         throw new ConflictException(
           '닉네임에 부적절한 단어가 포함되어 있습니다.',
         );
@@ -126,11 +131,11 @@ export class UserService {
     console.log(payload.interestCategories);
 
     const data: UpdateUserData = {
-      loginId: payload.loginId,
+      loginId: payload.username,
       birthday: payload.birthday,
       gender: payload.gender,
       email: payload.email,
-      name: payload.name,
+      name: payload.nickname,
       interestCategories: payload.interestCategories,
     };
     const updatedUser = await this.userRepository.updateUser(user.id, data);

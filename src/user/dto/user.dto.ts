@@ -14,7 +14,7 @@ export class UserDto {
     description: '로그인 ID',
     type: String,
   })
-  loginId!: string;
+  username!: string;
 
   @ApiProperty({
     description: '성별',
@@ -44,17 +44,17 @@ export class UserDto {
     description: '이름',
     type: String,
   })
-  name!: string;
+  nickname!: string;
 
   static from(data: UserData): UserDto {
     return {
       id: data.id,
-      loginId: data.loginId,
+      username: data.loginId,
       gender: data.gender,
       birthday: data.birthday,
       profileImagePath: data.profileImagePath,
       email: data.email,
-      name: data.name,
+      nickname: data.name,
     };
   }
 }

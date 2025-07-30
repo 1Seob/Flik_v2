@@ -30,7 +30,7 @@ export class UpdateUserPayload {
     description: '로그인 ID',
     type: String,
   })
-  loginId?: string | null;
+  username?: string | null;
 
   @IsOptional()
   @IsString()
@@ -39,7 +39,7 @@ export class UpdateUserPayload {
     description: '닉네임',
     type: String,
   })
-  name?: string | null;
+  nickname?: string | null;
 
   @IsOptional()
   @IsEmail()
