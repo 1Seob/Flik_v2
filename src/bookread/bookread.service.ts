@@ -100,13 +100,6 @@ export class BookReadService {
     );
     const books: BookData[] = data.map((item) => item.books);
     const pagesRead: number[] = data.map((item) => item.pagesRead);
-    const dailyGoals: number[] = data.map((item) => item.dailyGoal);
-    const progressRates: number[] = data.map((item) => item.progressRate);
-    return ReadingProgressListDto.from(
-      books,
-      pagesRead,
-      dailyGoals,
-      progressRates,
-    );
+    return ReadingProgressListDto.from(books, pagesRead);
   }
 }

@@ -55,7 +55,7 @@ export class ChallengeRepository {
         book_id: bookId,
       },
       select: {
-        read_at: true,
+        ended_at: true,
       },
     });
   }
