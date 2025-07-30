@@ -136,14 +136,15 @@ model user_reading_activity {
   book_id      Int
   paragraph_id Int
   order        Int
-  read_at      DateTime  @default(now())
-  completed_at DateTime? @default(now())
-  daily_goal   Int?
+  started_at   DateTime  @default(now())
+  ended_at     DateTime  @default(now())
+  completed_at DateTime? 
+  lastReadParagraphOrder Int     @default(0) @map("last_read_paragraph_order")
+
   book         Book      @relation(fields: [book_id], references: [id])
   paragraph    Paragraph @relation(fields: [paragraph_id], references: [id])
   user         User      @relation(fields: [user_id], references: [id])
 
-  @@unique([user_id, book_id, paragraph_id, read_at])
   @@map("user-reading-activity")
 }
 
