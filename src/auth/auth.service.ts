@@ -88,12 +88,15 @@ export class AuthService {
       );
     }
 
-    if (/[-_]{2,}/.test(payload.nickname)) {
+    if (isReservedUsername(payload.nickname)) {
+      throw new BadRequestException('사용할 수 없는 닉네임입니다.');
+    }
+    if (hasConsecutiveSpecialChars(payload.nickname)) {
       throw new BadRequestException(
         '닉네임에 연속된 밑줄(_) 또는 하이픈(-)은 사용할 수 없습니다.',
       );
     }
-    if (/^[-_]|[-_]$/.test(payload.nickname)) {
+    if (startsOrEndsWithSpecialChar(payload.nickname)) {
       throw new BadRequestException(
         '닉네임은 밑줄(_) 또는 하이픈(-)으로 시작하거나 끝날 수 없습니다.',
       );
