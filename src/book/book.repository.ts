@@ -6,6 +6,7 @@ import { UpdateBookData } from './type/update-book-data.type';
 import { MetadataData } from './type/metadata-data.type';
 import { BookQuery } from './query/book.query';
 import { distributeParagraphs } from './parsing';
+import { ParagraphData } from '../paragraph/type/paragraph-type';
 
 @Injectable()
 export class BookRepository {
@@ -84,6 +85,19 @@ export class BookRepository {
       where: { bookId },
       select: {
         content: true,
+      },
+      orderBy: { order: 'asc' },
+    });
+  }
+
+  async getBookParagraphs(bookId: number): Promise<ParagraphData[]> {
+    return this.prisma.paragraph.findMany({
+      where: { bookId },
+      select: {
+        id: true,
+        content: true,
+        order: true,
+        bookId: true,
       },
       orderBy: { order: 'asc' },
     });
