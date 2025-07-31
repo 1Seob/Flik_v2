@@ -77,7 +77,7 @@ export class UpdateUserPayload {
     description: '생년월일',
     type: Date,
   })
-  birthday?: Date | null;
+  birthDate?: Date | null;
 
   @IsOptional()
   @IsBoolean()

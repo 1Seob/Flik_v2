@@ -21,19 +21,32 @@ export class BookDto {
   author!: string;
 
   @ApiProperty({
-    description: '책 표지 이미지 URL',
+    description: 'ISBN 코드',
     type: String,
-    required: false,
     nullable: true,
   })
-  coverImageUrl?: string;
+  isbn?: string;
+
+  @ApiProperty({
+    description: '조회수',
+    type: Number,
+  })
+  views!: number;
+
+  @ApiProperty({
+    description: '총 문단 수',
+    type: Number,
+  })
+  totalParagraphsCount!: number;
 
   static from(data: BookData): BookDto {
     return {
       id: data.id,
       title: data.title,
       author: data.author,
-      coverImageUrl: data.coverImageUrl ?? undefined,
+      isbn: data.isbn ?? undefined,
+      views: data.views,
+      totalParagraphsCount: data.totalParagraphsCount,
     };
   }
 

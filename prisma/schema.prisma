@@ -38,7 +38,10 @@ model Book {
   createdAt             DateTime                @default(now()) @map("created_at")
   updatedAt             DateTime                @updatedAt @map("updated_at")
   deletedAt             DateTime?               @map("deleted_at")
-  coverImageUrl         String?
+  views                 Int                     @default(0)
+  totalParagraphsCount  Int                     @default(0)
+  isbn                  String?
+
   likedBy               BookLike[]
   savedBy               BookSave[]
   paragraphs            Paragraph[]

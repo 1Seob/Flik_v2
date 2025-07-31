@@ -21,7 +21,9 @@ export class BookRepository {
         id: true,
         title: true,
         author: true,
-        coverImageUrl: true,
+        isbn: true,
+        views: true,
+        totalParagraphsCount: true,
       },
     });
   }
@@ -31,7 +33,7 @@ export class BookRepository {
       data: {
         title: data.title,
         author: data.author,
-        coverImageUrl: data.coverImageUrl,
+        isbn: data.isbn ?? null,
         paragraphs: {
           create: paragraphs.map((paragraph, i) => ({
             content: paragraph,
@@ -43,7 +45,9 @@ export class BookRepository {
         id: true,
         title: true,
         author: true,
-        coverImageUrl: true,
+        isbn: true,
+        views: true,
+        totalParagraphsCount: true,
       },
     });
   }
@@ -75,7 +79,9 @@ export class BookRepository {
         id: true,
         title: true,
         author: true,
-        coverImageUrl: true,
+        isbn: true,
+        views: true,
+        totalParagraphsCount: true,
       },
     });
   }
@@ -109,15 +115,16 @@ export class BookRepository {
       data: {
         title: data.title,
         author: data.author,
-        ...(data.coverImageUrl !== undefined && {
-          coverImageUrl: data.coverImageUrl,
-        }), // undefined이면 기존 값 유지
+        isbn: data.isbn ?? null,
+        totalParagraphsCount: data.totalParagraphsCount,
       },
       select: {
         id: true,
         title: true,
         author: true,
-        coverImageUrl: true,
+        isbn: true,
+        views: true,
+        totalParagraphsCount: true,
       },
     });
   }
@@ -132,7 +139,9 @@ export class BookRepository {
         id: true,
         title: true,
         author: true,
-        coverImageUrl: true,
+        isbn: true,
+        views: true,
+        totalParagraphsCount: true,
       },
     });
   }
