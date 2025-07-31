@@ -18,9 +18,14 @@ export class SaveBookPayload {
 
   @IsOptional()
   @ApiPropertyOptional({
-    description: '책 표지 이미지',
-    type: 'string',
-    format: 'binary',
+    description: '책 ISBN 코드',
+    type: String,
   })
-  coverImage?: string;
+  isbn?: string | null;
+
+  @ApiProperty({
+    description: '총 문단 수',
+    type: Number,
+  })
+  totalParagraphsCount!: number;
 }
