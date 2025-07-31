@@ -9,14 +9,10 @@ import {
   Post,
   ParseIntPipe,
   Query,
-  UseInterceptors,
-  UploadedFile,
   UseGuards,
 } from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
 import { BookService } from './book.service';
 import {
-  ApiConsumes,
   ApiNoContentResponse,
   ApiOkResponse,
   ApiOperation,
@@ -133,29 +129,23 @@ export class BookController {
 
   @Post('save/:fileName')
   @ApiOperation({ summary: 'DB에 책 추가' })
-  @ApiConsumes('multipart/form-data')
   @ApiOkResponse({ type: BookDto })
-  @UseInterceptors(FileInterceptor('coverImage'))
   async saveBook(
     @Param('fileName') fileName: string,
     @Body() payload: SaveBookPayload,
-    @UploadedFile() coverImageFile?: Express.Multer.File,
   ): Promise<BookDto> {
-    return this.bookService.saveBook(fileName, payload, coverImageFile);
+    return this.bookService.saveBook(fileName, payload);
   }
   // 프로젝트 루트 디렉토리에 있는 원문 텍스트 파일의 이름을 fileName으로 받습니다. ex) Frankenstein.txt
 
   @Patch(':bookId')
   @ApiOperation({ summary: '책 정보 수정 (표지 이미지 포함)' })
-  @ApiConsumes('multipart/form-data')
   @ApiOkResponse({ type: BookDto })
-  @UseInterceptors(FileInterceptor('coverImage'))
   async updateBook(
     @Param('bookId', ParseIntPipe) bookId: number,
     @Body() payload: PatchUpdateBookPayload,
-    @UploadedFile() coverImageFile?: Express.Multer.File,
   ): Promise<BookDto> {
-    return this.bookService.patchUpdateBook(bookId, payload, coverImageFile);
+    return this.bookService.patchUpdateBook(bookId, payload);
   }
 
   @Delete(':bookId')
@@ -237,6 +227,14 @@ export class BookController {
     @CurrentUser() user: UserBaseInfo,
   ): Promise<{ lastReadParagraphOrder: number }> {
     return this.bookService.getLastReadParagraph(bookId, user.id);
+  }
+
+  @Get(':bookId/cover')
+  @ApiOperation({ summary: '책 커버 이미지 URL 가져오기' })
+  async getBookCoverImage(
+    @Param('bookId', ParseIntPipe) bookId: number,
+  ): Promise<string | null> {
+    return this.bookService.getBookCoverImage(bookId);
   }
 
   @Patch(':bookId/paragraphs/:order')

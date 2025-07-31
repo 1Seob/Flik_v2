@@ -1,5 +1,6 @@
 export type SaveBookData = {
   title: string;
   author: string;
-  coverImageUrl?: string | null;
+  isbn?: string | null;
+  totalParagraphsCount: number;
 };

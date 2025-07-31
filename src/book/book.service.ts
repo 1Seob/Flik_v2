@@ -16,6 +16,7 @@ import { BookQuery } from './query/book.query';
 import { MetadataListDto } from './dto/metadata.dto';
 import { SupabaseService } from 'src/common/services/supabase.service';
 import { ParagraphListDto } from 'src/paragraph/dto/paragraph.dto';
+import axios from 'axios';
 
 @Injectable()
 export class BookService {
@@ -24,6 +25,10 @@ export class BookService {
     private readonly userRepository: UserRepository,
     private readonly supabaseService: SupabaseService,
   ) {}
+
+  private readonly baseUrl = 'https://www.aladin.co.kr/ttb/api/ItemSearch.aspx';
+  private readonly ttbKey = process.env.ALADIN_TTB_KEY;
+  private readonly apiKey = process.env.GOOGLE_BOOKS_API_KEY;
 
   async getBookById(bookId: number): Promise<BookDto> {
     const book = await this.bookRepository.getBookById(bookId);
@@ -34,11 +39,7 @@ export class BookService {
     return BookDto.from(book);
   }
 
-  async saveBook(
-    fileName: string,
-    payload: SaveBookPayload,
-    coverImageFile?: Express.Multer.File,
-  ): Promise<BookDto> {
+  async saveBook(fileName: string, payload: SaveBookPayload): Promise<BookDto> {
     const isBookExist = await this.bookRepository.getBookByTitleAndAuthor(
       payload.title,
       payload.author,
@@ -47,27 +48,12 @@ export class BookService {
       throw new ConflictException('이미 존재하는 책입니다.');
     }
 
-    let coverImageUrl: string | undefined = undefined;
-
-    if (coverImageFile) {
-      const { data, error } = await this.supabaseService.uploadImage(
-        'book-covers',
-        coverImageFile.originalname,
-        coverImageFile.buffer,
-      );
-      if (error) {
-        throw new BadRequestException('이미지 업로드 실패');
-      }
-      coverImageUrl = data?.path
-        ? this.supabaseService.getPublicUrl('book-covers', data.path)
-        : undefined;
-    }
-
     const paragraphs = parsing(fileName);
     const data: SaveBookData = {
       title: payload.title,
       author: payload.author,
-      coverImageUrl,
+      isbn: payload.isbn ?? null,
+      totalParagraphsCount: paragraphs.length,
     };
 
     const book = await this.bookRepository.saveBook(data, paragraphs);
@@ -116,7 +102,6 @@ export class BookService {
   async patchUpdateBook(
     bookId: number,
     payload: PatchUpdateBookPayload,
-    coverImageFile?: Express.Multer.File, // 표지 이미지 파일
   ): Promise<BookDto> {
     if (payload.title === null) {
       throw new BadRequestException('title은 null이 될 수 없습니다.');
@@ -130,45 +115,11 @@ export class BookService {
       throw new NotFoundException('책을 찾을 수 없습니다.');
     }
 
-    let coverImageUrl = book.coverImageUrl;
-
-    // 파일 업로드 전, coverImageFile이 제대로 전달되는지 확인
-    console.log('📂 파일 업로드 요청 받음:', coverImageFile);
-
-    if (coverImageFile) {
-      // 기존 표지 이미지가 있다면 Supabase에서 삭제
-      if (book.coverImageUrl) {
-        await this.supabaseService.deleteImage(
-          'book-covers',
-          book.coverImageUrl,
-        );
-      }
-
-      // Supabase 업로드 실행 전, 파일 이름과 버퍼 확인
-      console.log('📂 업로드할 파일 이름:', coverImageFile.originalname);
-      console.log('📂 업로드할 파일 크기:', coverImageFile.size);
-
-      // 새 표지 이미지 업로드
-      const { data, error } = await this.supabaseService.uploadImage(
-        'book-covers',
-        coverImageFile.originalname,
-        coverImageFile.buffer,
-      );
-
-      if (error) {
-        console.error('⚠️ Supabase 업로드 실패:', error);
-        throw new BadRequestException('이미지 업로드 실패');
-      }
-
-      coverImageUrl = data?.path
-        ? this.supabaseService.getPublicUrl('book-covers', data.path)
-        : undefined;
-    }
-
     const data: UpdateBookData = {
       title: payload.title,
       author: payload.author,
-      coverImageUrl,
+      isbn: payload.isbn ?? null,
+      totalParagraphsCount: payload.totalParagraphsCount,
     };
 
     const updatedBook = await this.bookRepository.updateBook(bookId, data);
@@ -314,5 +265,83 @@ export class BookService {
 
   async getReadingStreak(userId: number): Promise<number> {
     return this.bookRepository.getReadingStreak(userId);
+  }
+
+  private async checkImageExists(url: string): Promise<boolean> {
+    try {
+      const res = await axios.head(url);
+      return res.status >= 200 && res.status < 400;
+    } catch {
+      return false;
+    }
+  }
+
+  async getBookCoverImage(bookId: number): Promise<string | null> {
+    const book = await this.bookRepository.getBookById(bookId);
+    if (!book) {
+      throw new NotFoundException('책을 찾을 수 없습니다.');
+    }
+    if (!book.isbn) {
+      return null; // ISBN이 없으면 커버 이미지도 없음
+    }
+
+    // Aladin API로 커버 이미지 가져오기
+    const params = new URLSearchParams({
+      ttbkey: this.ttbKey as string,
+      Query: book.isbn,
+      QueryType: 'ISBN',
+      MaxResults: '1',
+      output: 'js',
+      Cover: 'Big',
+    });
+
+    const url = `${this.baseUrl}?${params.toString()}`;
+
+    try {
+      const res = await axios.get(url, { responseType: 'text' });
+      const data = new Function(`return ${res.data}`)();
+      const cover = data?.item?.[0]?.cover ?? null;
+
+      if (cover && (await this.checkImageExists(cover))) {
+        return cover;
+      }
+      return null;
+    } catch (err) {
+      if (err instanceof Error) {
+        console.error(
+          `[Aladin] API 요청 실패 (ISBN=${book.isbn}):`,
+          err.message,
+        );
+      } else {
+        console.error(`[Aladin] API 요청 실패 (ISBN=${book.isbn}):`, err);
+      }
+    }
+
+    // Google Books API로 대체
+    const googleUrl = `https://www.googleapis.com/books/v1/volumes?q=isbn:${book.isbn}&maxResults=1&key=${this.apiKey}`;
+
+    try {
+      const res = await axios.get(googleUrl);
+      const links = res.data?.items?.[0]?.volumeInfo?.imageLinks;
+
+      if (!links) return null;
+
+      // 아무 해상도나 우선 반환
+      for (const key in links) {
+        if (typeof links[key] === 'string') return links[key];
+      }
+
+      return null;
+    } catch (err) {
+      if (err instanceof Error) {
+        console.error(
+          `[GoogleBooks] API 요청 실패 (ISBN=${book.isbn}):`,
+          err.message,
+        );
+      } else {
+        console.error(`[GoogleBooks] API 요청 실패 (ISBN=${book.isbn}):`, err);
+      }
+      return null;
+    }
   }
 }

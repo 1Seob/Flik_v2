@@ -1,5 +1,6 @@
 export type UpdateBookData = {
   title?: string;
   author?: string;
-  coverImageUrl?: string | null;
+  isbn?: string | null;
+  totalParagraphsCount?: number;
 };
