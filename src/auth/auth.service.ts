@@ -14,7 +14,6 @@ import { TokenService } from './token.service';
 import { LoginPayload } from './payload/login.payload';
 import { ChangePasswordPayload } from './payload/change-password.payload';
 import { UserBaseInfo } from './type/user-base-info.type';
-import { SupabaseService } from 'src/common/services/supabase.service';
 import * as nodemailer from 'nodemailer';
 import { SendEmailPayload } from './payload/send-email.payload';
 import { VerificationPayload } from './payload/verification.payload';
@@ -27,7 +26,6 @@ export class AuthService {
     private readonly authRepository: AuthRepository,
     private readonly passwordService: BcryptPasswordService,
     private readonly tokenService: TokenService,
-    private readonly supabaseService: SupabaseService,
   ) {}
 
   private transporter = nodemailer.createTransport({
@@ -107,7 +105,7 @@ export class AuthService {
       throw new ConflictException('이미 사용중인 이메일입니다.');
     }
 
-    if (payload.birthday > new Date()) {
+    if (payload.birthDate > new Date()) {
       throw new ConflictException('생년월일이 유효하지 않습니다.');
     }
 
@@ -130,7 +128,7 @@ export class AuthService {
     const inputData: SignUpData = {
       loginId: payload.username,
       gender: payload.gender,
-      birthday: payload.birthday,
+      birthday: payload.birthDate,
       email: payload.email,
       password: hashedPassword,
       name: payload.nickname,
@@ -231,7 +229,7 @@ export class AuthService {
     await this.transporter.sendMail({
       from: process.env.GMAIL_ID,
       to: emailPayload.email,
-      subject: 'FLIK 회원가입 인증번호',
+      subject: '[FLIK] 회원가입 인증번호',
       text: `인증번호는 ${code}입니다. 5분 이내로 입력해주세요.`,
     });
     await this.authRepository.saveVerificationCode(emailPayload.email, code);
@@ -290,7 +288,7 @@ export class AuthService {
     await this.transporter.sendMail({
       from: process.env.GMAIL_ID,
       to: emailPayload.email,
-      subject: 'FLIK 아이디 찾기',
+      subject: '[FLIK] 아이디 찾기',
       text: `${user.name}님의 ID는 ${user.loginId}입니다.`,
     });
   }
@@ -324,7 +322,7 @@ export class AuthService {
     await this.transporter.sendMail({
       from: process.env.GMAIL_ID,
       to: emailPayload.email,
-      subject: 'FLIK 비밀번호 찾기 인증번호',
+      subject: '[FLIK] 비밀번호 찾기 인증번호',
       text: `인증번호는 ${code}입니다. 5분 이내로 입력해주세요.`,
     });
     await this.authRepository.saveVerificationCode(emailPayload.email, code);
@@ -373,7 +371,7 @@ export class AuthService {
     await this.transporter.sendMail({
       from: process.env.GMAIL_ID,
       to: payload.email,
-      subject: 'FLIK 비밀번호 찾기',
+      subject: '[FLIK] 비밀번호 찾기',
       text: `새로운 비밀번호는 ${newPassword}입니다. 로그인 후 반드시 비밀번호를 변경해주세요.`,
     });
     await this.authRepository.deleteVerification(payload.email);

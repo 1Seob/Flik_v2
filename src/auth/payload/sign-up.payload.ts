@@ -77,7 +77,7 @@ export class SignUpPayload {
     description: '생년월일',
     type: Date,
   })
-  birthday!: Date;
+  birthDate!: Date;
 
   @IsArray()
   @Transform(({ value }) => {

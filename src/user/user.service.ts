@@ -129,8 +129,8 @@ export class UserService {
         );
       }
     }
-    if (payload.birthday) {
-      if (payload.birthday > new Date()) {
+    if (payload.birthDate) {
+      if (payload.birthDate > new Date()) {
         throw new BadRequestException('생년월일이 유효하지 않습니다.');
       }
     }
@@ -145,7 +145,7 @@ export class UserService {
 
     const data: UpdateUserData = {
       loginId: payload.username,
-      birthday: payload.birthday,
+      birthday: payload.birthDate,
       gender: payload.gender,
       email: payload.email,
       name: payload.nickname,

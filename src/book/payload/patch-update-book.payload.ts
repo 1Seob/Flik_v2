@@ -23,9 +23,15 @@ export class PatchUpdateBookPayload {
 
   @IsOptional()
   @ApiPropertyOptional({
-    description: '책 표지 이미지',
-    type: 'string',
-    format: 'binary',
+    description: 'ISBN 코드',
+    type: String,
   })
-  coverImage?: Express.Multer.File;
+  isbn?: string | null;
+
+  @IsOptional()
+  @ApiPropertyOptional({
+    description: '총 문단 수',
+    type: Number,
+  })
+  totalParagraphsCount?: number;
 }

@@ -26,7 +26,7 @@ export class UserDto {
     description: '생년월일',
     type: Date,
   })
-  birthday!: Date;
+  birthDate!: Date;
 
   @ApiProperty({
     description: '프로필 이미지 경로',
@@ -51,7 +51,7 @@ export class UserDto {
       id: data.id,
       username: data.loginId,
       gender: data.gender,
-      birthday: data.birthday,
+      birthDate: data.birthday,
       profileImagePath: data.profileImagePath,
       email: data.email,
       nickname: data.name,
