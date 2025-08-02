@@ -12,12 +12,14 @@ import { UserBaseInfo } from '../auth/type/user-base-info.type';
 import { BookRepository } from 'src/book/book.repository';
 import { UpdateReviewPayload } from './payload/update-review.paylaod';
 import { UpdateReviewData } from './type/update-review-data.type';
+import { BadWordsFilterService } from 'src/auth/bad-words-filter.service';
 
 @Injectable()
 export class ReviewService {
   constructor(
     private readonly reviewRepository: ReviewRepository,
     private readonly bookRepository: BookRepository,
+    private readonly badWordsFilterService: BadWordsFilterService,
   ) {}
 
   async createReview(
@@ -33,14 +35,7 @@ export class ReviewService {
       throw new BadRequestException('리뷰 내용은 500자 이하여야 합니다.');
     }
 
-    const BadWordsFilter = require('badwords-ko');
-    const filter = new BadWordsFilter();
-
-    const BadWordsNext = require('bad-words-next');
-    const en = require('bad-words-next/lib/en');
-    const badwords = new BadWordsNext({ data: en });
-
-    if (filter.isProfane(payload.content) || badwords.check(payload.content)) {
+    if (this.badWordsFilterService.isProfane(payload.content)) {
       throw new ConflictException(
         '리뷰 내용에 부적절한 단어가 포함되어 있습니다.',
       );
@@ -79,14 +74,7 @@ export class ReviewService {
       throw new ConflictException('본인이 작성한 리뷰만 수정할 수 있습니다.');
     }
 
-    const BadWordsFilter = require('badwords-ko');
-    const filter = new BadWordsFilter();
-
-    const BadWordsNext = require('bad-words-next');
-    const en = require('bad-words-next/lib/en');
-    const badwords = new BadWordsNext({ data: en });
-
-    if (filter.isProfane(payload.content) || badwords.check(payload.content)) {
+    if (this.badWordsFilterService.isProfane(payload.content)) {
       throw new ConflictException(
         '리뷰 내용에 부적절한 단어가 포함되어 있습니다.',
       );

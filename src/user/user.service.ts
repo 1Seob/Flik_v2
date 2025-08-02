@@ -12,12 +12,14 @@ import { UpdateUserPayload } from './payload/update-user.payload';
 import { UpdateUserData } from '../auth/type/update-user-data.type';
 import { SupabaseService } from '../common/services/supabase.service';
 import { v4 as uuidv4 } from 'uuid';
+import { BadWordsFilterService } from 'src/auth/bad-words-filter.service';
 
 @Injectable()
 export class UserService {
   constructor(
     private readonly userRepository: UserRepository,
     private readonly supabaseService: SupabaseService,
+    private readonly badWordsFilterService: BadWordsFilterService,
   ) {}
 
   async getUserById(userId: number): Promise<UserDto> {
@@ -44,12 +46,6 @@ export class UserService {
     if (payload.email === null) {
       throw new BadRequestException('이메일은 null이 될 수 없습니다.');
     }
-    const BadWordsFilter = require('badwords-ko');
-    const filter = new BadWordsFilter();
-
-    const BadWordsNext = require('bad-words-next');
-    const en = require('bad-words-next/lib/en');
-    const badwords = new BadWordsNext({ data: en });
 
     if (payload.username) {
       if (isReservedUsername(payload.username)) {
@@ -76,10 +72,7 @@ export class UserService {
       if (isLoginIdExist) {
         throw new ConflictException('이미 사용 중인 로그인 ID입니다.');
       }
-      if (
-        filter.isProfane(payload.username) ||
-        badwords.check(payload.username)
-      ) {
+      if (this.badWordsFilterService.isProfane(payload.username)) {
         throw new ConflictException(
           '로그인 ID에 부적절한 단어가 포함되어 있습니다.',
         );
@@ -107,10 +100,7 @@ export class UserService {
       if (isNameExist) {
         throw new ConflictException('이미 사용 중인 닉네임입니다.');
       }
-      if (
-        filter.isProfane(payload.nickname) ||
-        badwords.check(payload.nickname)
-      ) {
+      if (this.badWordsFilterService.isProfane(payload.nickname)) {
         throw new ConflictException(
           '닉네임에 부적절한 단어가 포함되어 있습니다.',
         );
