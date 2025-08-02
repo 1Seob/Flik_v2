@@ -11,6 +11,7 @@ import { ParagraphModule } from '../paragraph/paragraph.module';
 import { BookReadModule } from '../bookread/bookread.module';
 import { ChallengeModule } from '../challenge/challenge.module';
 import { ReviewModule } from '../review/review.module';
+import { SearchModule } from 'src/search/search.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { ReviewModule } from '../review/review.module';
     BookReadModule,
     ChallengeModule,
     ReviewModule,
+    SearchModule,
   ],
   controllers: [AppController],
   providers: [AppService],
