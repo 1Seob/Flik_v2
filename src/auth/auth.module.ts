@@ -7,6 +7,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { BcryptPasswordService } from './bcrypt-password.service';
 import { TokenService } from './token.service';
+import { BadWordsFilterService } from './bad-words-filter.service';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { TokenService } from './token.service';
     JwtStrategy,
     BcryptPasswordService,
     TokenService,
+    BadWordsFilterService,
   ],
 })
 export class AuthModule {}
