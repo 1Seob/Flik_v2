@@ -10,6 +10,7 @@ import { BookModule } from '../book/book.module';
 import { ParagraphModule } from '../paragraph/paragraph.module';
 import { BookReadModule } from '../bookread/bookread.module';
 import { ChallengeModule } from '../challenge/challenge.module';
+import { ReviewModule } from '../review/review.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { ChallengeModule } from '../challenge/challenge.module';
     CommonModule,
     BookReadModule,
     ChallengeModule,
+    ReviewModule,
   ],
   controllers: [AppController],
   providers: [AppService],
