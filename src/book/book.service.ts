@@ -14,7 +14,6 @@ import { PatchUpdateBookPayload } from './payload/patch-update-book.payload';
 import { UpdateBookData } from './type/update-book-data.type';
 import { BookQuery } from './query/book.query';
 import { MetadataListDto } from './dto/metadata.dto';
-import { SupabaseService } from 'src/common/services/supabase.service';
 import { ParagraphListDto } from 'src/paragraph/dto/paragraph.dto';
 import axios from 'axios';
 
@@ -23,7 +22,6 @@ export class BookService {
   constructor(
     private readonly bookRepository: BookRepository,
     private readonly userRepository: UserRepository,
-    private readonly supabaseService: SupabaseService,
   ) {}
 
   private readonly baseUrl = 'https://www.aladin.co.kr/ttb/api/ItemSearch.aspx';
