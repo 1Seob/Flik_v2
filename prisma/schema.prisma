@@ -27,6 +27,8 @@ model User {
   userBooks             UserBook[]
   userCategories        UserCategory[]
   user_reading_activity user_reading_activity[]
+  review                Review[]
+  reviewLikes           ReviewLike[]
 
   @@map("user")
 }
@@ -47,6 +49,7 @@ model Book {
   paragraphs            Paragraph[]
   readBy                UserBook[]
   user_reading_activity user_reading_activity[]
+  review                Review[]
 
   @@map("book")
 }
@@ -169,6 +172,36 @@ model AuthAttempt {
   attemptedAt  DateTime  @default(now()) @map("attempted_at")
 
   @@map("auth-attempt")
+}
+
+model Review {
+  id           Int       @id @default(autoincrement())
+  userId       Int
+  bookId       Int
+  content      String
+  
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  likedBy      ReviewLike[]
+
+  book         Book      @relation(fields: [bookId], references: [id])
+  user         User      @relation(fields: [userId], references: [id])
+
+  @@map("review")
+}
+
+model ReviewLike {
+  id           Int       @id @default(autoincrement())
+  userId       Int
+  reviewId     Int
+
+  user         User      @relation(fields: [userId], references: [id])
+  review       Review    @relation(fields: [reviewId], references: [id])
+
+  @@unique([userId, reviewId])
+
+  @@map("review-like")
 }
 
 enum Gender {
