@@ -62,7 +62,9 @@ export class UserController {
   @Get(':userId/presigned-upload-url')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: '프로필 사진 : Presigned 업로드 URL 요청' })
+  @ApiOperation({
+    summary: '프로필 사진 : Presigned 업로드 URL 요청 (2시간 유효)',
+  })
   async getPresignedUploadUrl(
     @CurrentUser() user: UserBaseInfo,
   ): Promise<string> {
@@ -72,7 +74,9 @@ export class UserController {
   @Get(':userId/presigned-download-url')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: '프로필 사진 : Presigned 다운로드 URL 요청' })
+  @ApiOperation({
+    summary: '프로필 사진 : Presigned 다운로드 URL 요청 (1시간 유효)',
+  })
   async getPresignedDownloadUrl(
     @CurrentUser() user: UserBaseInfo,
   ): Promise<string> {
