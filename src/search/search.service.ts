@@ -16,6 +16,13 @@ export class SearchService {
     if (this.badWordsFilterService.isProfane(term)) {
       return; // 부적절한 단어는 검색어로 사용하지 않음
     }
+
+    const exists = await redis.exists(this.redisKey);
+    if (!exists) {
+      // 키가 처음 생성된 경우에만 TTL 설정 (1일 = 86400초)
+      await redis.expire(this.redisKey, 86400);
+    }
+
     await redis.zincrby(this.redisKey, 1, term);
   }
 
