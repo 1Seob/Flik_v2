@@ -178,11 +178,23 @@ export class UserService {
     return this.supabaseService.getSignedUploadUrl('profile-images', filePath);
   }
 
+  /*
   async getPresignedDownloadUrl(user: UserBaseInfo): Promise<string> {
     if (!user.profileImagePath) {
       throw new NotFoundException('프로필 이미지가 존재하지 않습니다.');
     }
     return this.supabaseService.getSignedDownloadUrl(
+      'profile-images',
+      user.profileImagePath,
+    );
+  }
+    */
+
+  async getProfileImageUrl(user: UserBaseInfo): Promise<string> {
+    if (!user.profileImagePath) {
+      throw new NotFoundException('프로필 이미지가 존재하지 않습니다.');
+    }
+    return this.supabaseService.getSignedUrl(
       'profile-images',
       user.profileImagePath,
     );
