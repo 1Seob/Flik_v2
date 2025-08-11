@@ -71,16 +71,14 @@ export class UserController {
     return this.userService.getPresignedUploadUrl(user);
   }
 
-  @Get(':userId/presigned-download-url')
+  @Get(':userId/profile-image-url')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({
-    summary: '프로필 사진 : Presigned 다운로드 URL 요청 (1시간 유효)',
+    summary: '프로필 사진 URL 요청 (12시간 유효)',
   })
-  async getPresignedDownloadUrl(
-    @CurrentUser() user: UserBaseInfo,
-  ): Promise<string> {
-    return this.userService.getPresignedDownloadUrl(user);
+  async getProfileImageUrl(@CurrentUser() user: UserBaseInfo): Promise<string> {
+    return this.userService.getProfileImageUrl(user);
   }
 
   @Get()

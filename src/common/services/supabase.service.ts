@@ -16,15 +16,13 @@ export class SupabaseService {
     return this.supabase;
   }
 
+  /*
+
   // ✅ Bucket을 인자로 받도록 수정
   async uploadImage(bucket: string, fileName: string, fileBuffer: Buffer) {
     return await this.supabase.storage
       .from(bucket)
       .upload(fileName, fileBuffer, { upsert: true });
-  }
-
-  async deleteImage(bucket: string, fileName: string) {
-    return await this.supabase.storage.from(bucket).remove([fileName]);
   }
 
   getPublicUrl(bucket: string, path: string): string {
@@ -47,6 +45,12 @@ export class SupabaseService {
       .replace(/\/{2,}/g, '/');
   }
 
+  */
+
+  async deleteImage(bucket: string, fileName: string) {
+    return await this.supabase.storage.from(bucket).remove([fileName]);
+  }
+
   async getSignedUploadUrl(bucket: string, filePath: string): Promise<string> {
     const { data, error } = await this.supabase.storage
       .from(bucket)
@@ -58,13 +62,10 @@ export class SupabaseService {
     return data.signedUrl;
   }
 
-  async getSignedDownloadUrl(
-    bucket: string,
-    filePath: string,
-  ): Promise<string> {
+  async getSignedUrl(bucket: string, filePath: string): Promise<string> {
     const { data, error } = await this.supabase.storage
       .from(bucket)
-      .createSignedUrl(filePath, 60 * 60); // 1 hour expiration
+      .createSignedUrl(filePath, 60 * 60 * 12, { download: false }); // 12 hour expiration
     if (error) {
       throw new Error(`Failed to create signed download URL: ${error.message}`);
     }
@@ -73,6 +74,7 @@ export class SupabaseService {
   }
 }
 
+/*
 export function extractFilePathFromPublicUrl(publicUrl: string): string | null {
   const marker = '/storage/v1/object/public/';
   const index = publicUrl.indexOf(marker);
@@ -86,3 +88,4 @@ export function extractFilePathFromPublicUrl(publicUrl: string): string | null {
 
   return afterMarker.substring(firstSlash + 1); // path/to/file.jpg
 }
+*/
