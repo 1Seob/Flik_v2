@@ -7,6 +7,7 @@ import { MetadataData } from './type/metadata-data.type';
 import { BookQuery } from './query/book.query';
 import { distributeParagraphs } from './parsing';
 import { ParagraphData } from '../paragraph/type/paragraph-type';
+import { redis } from '../search/redis.provider';
 
 @Injectable()
 export class BookRepository {
@@ -361,5 +362,17 @@ export class BookRepository {
     }
 
     return streak;
+  }
+
+  async incrementBookViews(bookId: number, title: string): Promise<void> {
+    await this.prisma.book.update({
+      where: { id: bookId },
+      data: {
+        views: {
+          increment: 1,
+        },
+      },
+    });
+    await redis.zincrby('autocomplete:views', 1, title);
   }
 }

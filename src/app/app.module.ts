@@ -1,4 +1,9 @@
-import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
+import {
+  MiddlewareConsumer,
+  Module,
+  NestModule,
+  OnModuleInit,
+} from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { configModule } from './modules/config.module';
@@ -12,6 +17,7 @@ import { BookReadModule } from '../bookread/bookread.module';
 import { ChallengeModule } from '../challenge/challenge.module';
 import { ReviewModule } from '../review/review.module';
 import { SearchModule } from 'src/search/search.module';
+import { SearchRepository } from 'src/search/search.repository';
 
 @Module({
   imports: [
@@ -29,8 +35,16 @@ import { SearchModule } from 'src/search/search.module';
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule implements NestModule {
+export class AppModule implements NestModule, OnModuleInit {
+  constructor(private readonly searchRepository: SearchRepository) {}
+
   configure(consumer: MiddlewareConsumer) {
     consumer.apply(LoggerMiddleware).forRoutes('*');
+  }
+
+  async onModuleInit() {
+    console.log('데이터베이스에서 책 정보를 Redis로 로딩 중...');
+    await this.searchRepository.loadBooksToRedis();
+    console.log('Redis 로딩 완료!');
   }
 }
