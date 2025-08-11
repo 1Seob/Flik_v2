@@ -77,6 +77,16 @@ export class BookController {
     return this.bookService.getBooks(query);
   }
 
+  @Post(':bookId/views')
+  @ApiOperation({ summary: '책 조회수 증가' })
+  @ApiNoContentResponse()
+  @HttpCode(204)
+  async incrementBookViews(
+    @Param('bookId', ParseIntPipe) bookId: number,
+  ): Promise<void> {
+    await this.bookService.incrementBookViews(bookId);
+  }
+
   /*
   @Get(':bookId/paragraphs')
   @UseGuards(JwtAuthGuard)

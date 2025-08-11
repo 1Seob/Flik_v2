@@ -7,5 +7,6 @@ import { BadWordsFilterService } from 'src/auth/bad-words-filter.service';
 @Module({
   controllers: [SearchController],
   providers: [SearchService, SearchRepository, BadWordsFilterService],
+  exports: [SearchRepository],
 })
 export class SearchModule {}
