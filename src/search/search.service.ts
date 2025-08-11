@@ -1,37 +1,21 @@
 import { Injectable } from '@nestjs/common';
 import { SearchRepository } from './search.repository';
-import { redis } from './redis.provider';
-import { BadWordsFilterService } from 'src/auth/bad-words-filter.service';
 
 @Injectable()
 export class SearchService {
-  constructor(
-    private readonly searchRepository: SearchRepository,
-    private readonly badWordsFilterService: BadWordsFilterService,
-  ) {}
+  constructor(private readonly searchRepository: SearchRepository) {}
 
-  private readonly redisKey = 'popular_keywords';
+  async getAutocompleteSuggestions(
+    query: string,
+  ): Promise<{ lexical: string[]; views: string[] }> {
+    // lexical 목록 5개와 views 목록 5개를 가져옵니다.
+    // 이 과정에서 중복이 발생할 수 있음
+    const { lexical, views } =
+      await this.searchRepository.searchAutocomplete(query);
 
-  async incrementSearchTerm(term: string): Promise<void> {
-    if (this.badWordsFilterService.isProfane(term)) {
-      return; // 부적절한 단어는 검색어로 사용하지 않음
-    }
-
-    const exists = await redis.exists(this.redisKey);
-    if (!exists) {
-      // 키가 처음 생성된 경우에만 TTL 설정 (1일 = 86400초)
-      await redis.expire(this.redisKey, 86400);
-    }
-
-    await redis.zincrby(this.redisKey, 1, term);
-  }
-
-  async getMatchingPopularTerms(query: string, limit = 10): Promise<string[]> {
-    const allTerms = await redis.zrevrange(this.redisKey, 0, -1); // 인기도 내림차순 전체 조회
-
-    // 포함된 검색어만 필터
-    const matched = allTerms.filter((term) => term.includes(query));
-
-    return matched.slice(0, limit);
+    return {
+      lexical: lexical, // 사전식 정렬 목록
+      views: views, // 조회수 순 정렬 목록
+    };
   }
 }
