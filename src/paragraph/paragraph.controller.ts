@@ -25,7 +25,7 @@ import { ApiTags } from '@nestjs/swagger';
 export class ParagraphController {
   constructor(private readonly paragraphService: ParagraphService) {}
 
-  @Get(':id')
+  @Get('v1/:id')
   @ApiOperation({ summary: '문단 조회' })
   @ApiOkResponse({ type: ParagraphDto })
   async getParagraph(
@@ -34,7 +34,7 @@ export class ParagraphController {
     return this.paragraphService.getParagraph(paragraphId);
   }
 
-  @Post(':paragraphId/like')
+  @Post('v1/:paragraphId/like')
   @HttpCode(204)
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
@@ -47,7 +47,7 @@ export class ParagraphController {
     return this.paragraphService.toggleParagraphLike(paragraphId, user);
   }
 
-  @Get(':paragraphId/like/count')
+  @Get('v1/:paragraphId/like/count')
   @ApiOperation({ summary: '문단 좋아요 개수 확인' })
   @ApiOkResponse({ type: Number })
   async getParagraphLikeCount(
@@ -56,7 +56,7 @@ export class ParagraphController {
     return this.paragraphService.getParagraphLikeCount(paragraphId);
   }
 
-  @Get('likes/:userId')
+  @Get('v1/likes/:userId')
   @ApiOperation({ summary: '유저가 좋아요한 문단 ID 리스트 반환' })
   @ApiOkResponse({ type: [Number] })
   async getLikedParagraphs(
