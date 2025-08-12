@@ -35,7 +35,7 @@ import { VerificationPayload } from './payload/verification.payload';
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
-  @Post('sign-up')
+  @Post('v1/sign-up')
   @ApiOperation({ summary: '회원가입' })
   @ApiCreatedResponse({ type: TokenDto })
   async signUp(
@@ -56,7 +56,7 @@ export class AuthController {
     return TokenDto.from(tokens.accessToken);
   }
 
-  @Post('login')
+  @Post('v1/login')
   @HttpCode(200)
   @ApiOperation({ summary: '로그인' })
   @ApiOkResponse({ type: TokenDto })
@@ -78,7 +78,7 @@ export class AuthController {
     return TokenDto.from(tokens.accessToken);
   }
 
-  @Post('refresh')
+  @Post('v1/refresh')
   @HttpCode(200)
   @ApiOperation({ summary: '토큰 갱신' })
   @ApiOkResponse({ type: TokenDto })
@@ -100,7 +100,7 @@ export class AuthController {
     return TokenDto.from(tokens.accessToken);
   }
 
-  @Put('password')
+  @Put('v1/password')
   @HttpCode(204)
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
@@ -113,7 +113,7 @@ export class AuthController {
     return this.authService.changePassword(payload, user);
   }
 
-  @Post('send-verification-email')
+  @Post('v1/send-verification-email')
   @HttpCode(204)
   @ApiNoContentResponse()
   @ApiOperation({ summary: '회원가입 : 인증번호 이메일 전송' })
@@ -121,7 +121,7 @@ export class AuthController {
     return this.authService.sendVerificationEmail(email);
   }
 
-  @Post('verify-email')
+  @Post('v1/verify-email')
   @HttpCode(204)
   @ApiNoContentResponse()
   @ApiOperation({ summary: '회원가입 : 인증번호 검증' })
@@ -129,7 +129,7 @@ export class AuthController {
     return this.authService.verifyEmail(payload);
   }
 
-  @Post('find-id')
+  @Post('v1/find-id')
   @HttpCode(204)
   @ApiNoContentResponse()
   @ApiOperation({ summary: '아이디 찾기 : 이메일 전송' })
@@ -137,7 +137,7 @@ export class AuthController {
     return this.authService.findId(payload);
   }
 
-  @Post('find-password/:username')
+  @Post('v1/find-password/:username')
   @HttpCode(204)
   @ApiNoContentResponse()
   @ApiOperation({ summary: '비밀번호 찾기 : 인증번호 이메일 전송' })
@@ -150,7 +150,7 @@ export class AuthController {
     return this.authService.sendFindPasswordEmail(username, payload);
   }
 
-  @Post('verify-password')
+  @Post('v1/verify-password')
   @HttpCode(204)
   @ApiNoContentResponse()
   @ApiOperation({ summary: '비밀번호 찾기 : 인증번호 검증' })

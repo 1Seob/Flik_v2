@@ -31,7 +31,7 @@ import { UpdateReviewPayload } from './payload/update-review.paylaod';
 export class ReviewController {
   constructor(private readonly reviewService: ReviewService) {}
 
-  @Post()
+  @Post('v1')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: '리뷰 생성' })
@@ -43,7 +43,7 @@ export class ReviewController {
     return this.reviewService.createReview(payload, user);
   }
 
-  @Get(':bookId')
+  @Get('v1/:bookId')
   @ApiOperation({ summary: '책의 리뷰들 조회' })
   @ApiOkResponse({ type: ReviewListDto })
   async getReviewsByBookId(
@@ -52,7 +52,7 @@ export class ReviewController {
     return this.reviewService.getReviewsByBookId(bookId);
   }
 
-  @Put(':id')
+  @Put('v1/:id')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: '리뷰 수정' })
@@ -64,7 +64,7 @@ export class ReviewController {
     return this.reviewService.updateReview(id, payload, user);
   }
 
-  @Post(':reviewId/like')
+  @Post('v1/:reviewId/like')
   @HttpCode(204)
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
@@ -77,7 +77,7 @@ export class ReviewController {
     return this.reviewService.toggleReviewLike(reviewId, user);
   }
 
-  @Delete(':id')
+  @Delete('v1/:id')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: '리뷰 삭제' })

@@ -146,12 +146,8 @@ export class UserService {
     return UserDto.from(updatedUser);
   }
 
-  async deleteUser(userId: number, user: UserBaseInfo): Promise<void> {
-    if (userId !== user.id) {
-      throw new ForbiddenException('타인의 계정은 삭제할 수 없습니다.');
-    }
-
-    return this.userRepository.deleteUser(userId);
+  async deleteUser(user: UserBaseInfo): Promise<void> {
+    return this.userRepository.deleteUser(user.id);
   }
   /*
   async getAllUsersWithBooks(): Promise<
