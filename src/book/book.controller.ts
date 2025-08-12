@@ -36,7 +36,7 @@ import { ParagraphListDto } from 'src/paragraph/dto/paragraph.dto';
 export class BookController {
   constructor(private readonly bookService: BookService) {}
 
-  @Get('metadata')
+  @Get('v1/metadata')
   @ApiOperation({ summary: '책 메타데이터 가져오기' })
   @ApiQuery({
     name: 'offset',
@@ -52,7 +52,7 @@ export class BookController {
     return this.bookService.getBooksMetadata(offset, limit);
   }
 
-  @Get('streak')
+  @Get('v1/streak')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: '유저의 연속 독서 일수 반환' })
@@ -61,7 +61,7 @@ export class BookController {
     return this.bookService.getReadingStreak(user.id);
   }
 
-  @Get(':bookId')
+  @Get('v1/:bookId')
   @ApiOperation({ summary: '책 정보 가져오기' })
   @ApiOkResponse({ type: BookDto })
   async getBookById(
@@ -70,14 +70,14 @@ export class BookController {
     return this.bookService.getBookById(bookId);
   }
 
-  @Get()
+  @Get('v1/search')
   @ApiOperation({ summary: '책 제목과 작가로 책 검색 (둘 중 하나로도 가능)' })
   @ApiOkResponse({ type: BookListDto })
   async getBooks(@Query() query: BookQuery): Promise<BookListDto> {
     return this.bookService.getBooks(query);
   }
 
-  @Post(':bookId/views')
+  @Post('v1/:bookId/views')
   @ApiOperation({ summary: '책 조회수 증가' })
   @ApiNoContentResponse()
   @HttpCode(204)
@@ -105,7 +105,7 @@ export class BookController {
   }
   */
 
-  @Get(':bookId/paragraphs/download')
+  @Get('v1/:bookId/paragraphs/download')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOkResponse({ type: ParagraphListDto })
@@ -117,7 +117,7 @@ export class BookController {
     return this.bookService.getBookParagraphs(bookId, user.id);
   }
 
-  @Get(':bookId/paragraphs/count')
+  @Get('v1/:bookId/paragraphs/count')
   @ApiOperation({ summary: '책 전체 문단 수 반환' })
   @ApiOkResponse({ type: Number })
   async getParagraphCountByBookId(
@@ -137,7 +137,7 @@ export class BookController {
   }
   */
 
-  @Post('save/:fileName')
+  @Post('v1/save/:fileName')
   @ApiOperation({ summary: 'DB에 책 추가' })
   @ApiOkResponse({ type: BookDto })
   async saveBook(
@@ -148,7 +148,7 @@ export class BookController {
   }
   // 프로젝트 루트 디렉토리에 있는 원문 텍스트 파일의 이름을 fileName으로 받습니다. ex) Frankenstein.txt
 
-  @Patch(':bookId')
+  @Patch('v1/:bookId')
   @ApiOperation({ summary: '책 정보 수정 (표지 이미지 포함)' })
   @ApiOkResponse({ type: BookDto })
   async updateBook(
@@ -158,7 +158,7 @@ export class BookController {
     return this.bookService.patchUpdateBook(bookId, payload);
   }
 
-  @Delete(':bookId')
+  @Delete('v1/:bookId')
   @HttpCode(204)
   @ApiOperation({ summary: 'DB에서 책 삭제' })
   @ApiNoContentResponse()
@@ -192,7 +192,7 @@ export class BookController {
   }
 
   */
-  @Post(':bookId/save')
+  @Post('v1/:bookId/save')
   @HttpCode(204)
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
@@ -205,7 +205,7 @@ export class BookController {
     return this.bookService.saveBookToUser(bookId, user.id);
   }
 
-  @Delete(':bookId/save')
+  @Delete('v1/:bookId/save')
   @HttpCode(204)
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
@@ -218,7 +218,7 @@ export class BookController {
     return this.bookService.unsaveBookFromUser(bookId, user.id);
   }
 
-  @Get('saved/:userId')
+  @Get('v1/saved/:userId')
   @ApiOperation({ summary: '유저가 보관한 책 ID 리스트 반환하기' })
   @ApiOkResponse({ type: [Number] })
   async getSavedBookIdsByUser(
@@ -227,7 +227,7 @@ export class BookController {
     return this.bookService.getSavedBookIdsByUser(userId);
   }
 
-  @Get(':bookId/continue')
+  @Get('v1/:bookId/continue')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: '마지막 읽은 문단 순서 조회' })
@@ -239,7 +239,7 @@ export class BookController {
     return this.bookService.getLastReadParagraph(bookId, user.id);
   }
 
-  @Get(':bookId/cover')
+  @Get('v1/:bookId/cover')
   @ApiOperation({ summary: '책 커버 이미지 URL 가져오기' })
   async getBookCoverImage(
     @Param('bookId', ParseIntPipe) bookId: number,
@@ -247,7 +247,7 @@ export class BookController {
     return this.bookService.getBookCoverImage(bookId);
   }
 
-  @Patch(':bookId/paragraphs/:order')
+  @Patch('v1/:bookId/paragraphs/:order')
   @HttpCode(204)
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
@@ -261,7 +261,7 @@ export class BookController {
     return this.bookService.updateLastReadParagraph(bookId, user.id, order);
   }
 
-  @Get(':bookId/chapters/:day')
+  @Get('v1/:bookId/chapters/:day')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({

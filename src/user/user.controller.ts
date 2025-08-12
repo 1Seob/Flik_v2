@@ -27,14 +27,14 @@ import { ApiTags } from '@nestjs/swagger';
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
-  @Get(':userId')
+  @Get('v1/:userId')
   @ApiOperation({ summary: '유저 정보 가져오기' })
   @ApiOkResponse({ type: UserDto })
   async getUserById(@Param('userId') userId: number): Promise<UserDto> {
     return this.userService.getUserById(userId);
   }
 
-  @Patch(':userId')
+  @Patch('v1')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: '유저 정보 수정' })
@@ -46,20 +46,17 @@ export class UserController {
     return this.userService.updateUser(payload, user);
   }
 
-  @Delete(':userId')
+  @Delete('v1')
   @HttpCode(204)
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: '유저 탈퇴' })
   @ApiNoContentResponse()
-  async deleteUser(
-    @Param('userId') userId: number,
-    @CurrentUser() user: UserBaseInfo,
-  ): Promise<void> {
-    return this.userService.deleteUser(userId, user);
+  async deleteUser(@CurrentUser() user: UserBaseInfo): Promise<void> {
+    return this.userService.deleteUser(user);
   }
 
-  @Get(':userId/presigned-upload-url')
+  @Get('v1/presigned-upload-url')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({
@@ -71,7 +68,7 @@ export class UserController {
     return this.userService.getPresignedUploadUrl(user);
   }
 
-  @Get(':userId/profile-image-url')
+  @Get('v1/profile-image-url')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({
@@ -81,7 +78,7 @@ export class UserController {
     return this.userService.getProfileImageUrl(user);
   }
 
-  @Get()
+  @Get('v1')
   @ApiOperation({
     summary:
       '모든 사용자별 사용자 ID, 문단 좋아요한 책 목록, 읽은 책 목록 반환',
