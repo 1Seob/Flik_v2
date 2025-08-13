@@ -8,18 +8,22 @@ datasource db {
 }
 
 model User {
+  id                    Int                     @id @default(autoincrement())
+
+  provider              AuthProvider
+  providerId            String
+  @@unique([provider, providerId]) 
+
   name                  String                  @unique
-  email                 String                  @unique
-  password              String
+  birthday              DateTime?
+  gender                Gender?
+  profileImagePath      String?                 @map("profile_image_path")
+
   createdAt             DateTime                @default(now()) @map("created_at")
   updatedAt             DateTime                @updatedAt @map("updated_at")
-  id                    Int                     @id @default(autoincrement())
   deletedAt             DateTime?               @map("deleted_at")
+
   refreshToken          String?                 @map("refresh_token")
-  birthday              DateTime
-  gender                Gender
-  loginId               String                  @unique @map("login_id")
-  profileImagePath      String?                 @map("profile_image_path")
 
   bookLikes             BookLike[]
   bookSaves             BookSave[]
@@ -154,26 +158,6 @@ model user_reading_activity {
   @@map("user-reading-activity")
 }
 
-model AuthCode {
-  id           Int       @id @default(autoincrement())
-  email        String    @unique
-  code         String
-  createdAt    DateTime  @default(now()) @map("created_at")
-  expiredAt    DateTime  @map("expired_at")
-  tryCount     Int       @default(0) @map("try_count")
-
-  @@map("auth-code")
-}
-
-model AuthAttempt {
-  id           Int       @id @default(autoincrement())
-  email        String    @unique
-  actionType   ActionType
-  attemptedAt  DateTime  @default(now()) @map("attempted_at")
-
-  @@map("auth-attempt")
-}
-
 model Review {
   id           Int       @id @default(autoincrement())
   userId       Int
@@ -204,6 +188,17 @@ model ReviewLike {
   @@map("review-like")
 }
 
+model ProviderConfig {
+  provider   AuthProvider @id
+  prefix     String
+  counter    Int          @default(0)
+
+  createdAt  DateTime     @default(now()) @map("created_at")
+  updatedAt  DateTime     @updatedAt      @map("updated_at")
+
+  @@map("provider_config")
+}
+
 enum Gender {
   MALE   @map("MALE")
   FEMALE @map("FEMALE")
@@ -215,7 +210,9 @@ enum ChallengeType {
   MONTHLY
 }
 
-enum ActionType {
-  FIND_ID         @map("FIND_ID")
-  RESET_PASSWORD  @map("RESET_PASSWORD")
+enum AuthProvider {
+  GOOGLE  @map("GOOGLE")
+  KAKAO   @map("KAKAO")
+  NAVER   @map("NAVER")
+  APPLE   @map("APPLE")
 }

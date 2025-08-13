@@ -1,11 +1,11 @@
-import { Gender } from '@prisma/client';
+import { Gender, AuthProvider } from '@prisma/client';
 
 export type UserData = {
   id: number;
-  loginId: string;
-  gender: Gender;
-  birthday: Date;
+  provider: AuthProvider;
+  providerId: string;
+  gender?: Gender | null;
+  birthday?: Date | null;
   profileImagePath?: string | null;
-  email: string;
   name: string;
 };
