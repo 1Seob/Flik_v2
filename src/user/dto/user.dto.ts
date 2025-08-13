@@ -1,7 +1,11 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { UserData } from '../type/user-data.type';
-import { Gender as PrismaGender } from '@prisma/client';
-import { GenderEnum } from '../../auth/payload/sign-up.payload';
+import { Gender as PrismaGender, AuthProvider } from '@prisma/client';
+
+export enum GenderEnum {
+  MALE = 'MALE',
+  FEMALE = 'FEMALE',
+}
 
 export class UserDto {
   @ApiProperty({
@@ -11,34 +15,34 @@ export class UserDto {
   id!: number;
 
   @ApiProperty({
-    description: '로그인 ID',
+    description: '소셜 로그인 제공자',
+    enum: AuthProvider,
+  })
+  provider!: AuthProvider;
+
+  @ApiProperty({
+    description: '소셜 로그인 ID',
     type: String,
   })
-  username!: string;
+  providerId!: string;
 
   @ApiProperty({
     description: '성별',
     enum: GenderEnum,
   })
-  gender!: PrismaGender;
+  gender?: PrismaGender | null;
 
   @ApiProperty({
     description: '생년월일',
     type: Date,
   })
-  birthDate!: Date;
+  birthDate?: Date | null;
 
   @ApiProperty({
     description: '프로필 이미지 경로',
     type: String,
   })
   profileImagePath?: string | null;
-
-  @ApiProperty({
-    description: '이메일',
-    type: String,
-  })
-  email!: string;
 
   @ApiProperty({
     description: '이름',
@@ -49,11 +53,11 @@ export class UserDto {
   static from(data: UserData): UserDto {
     return {
       id: data.id,
-      username: data.loginId,
+      provider: data.provider,
+      providerId: data.providerId,
       gender: data.gender,
       birthDate: data.birthday,
       profileImagePath: data.profileImagePath,
-      email: data.email,
       nickname: data.name,
     };
   }
