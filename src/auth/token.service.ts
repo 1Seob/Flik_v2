@@ -3,7 +3,6 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { TokenPayload, TokenSchema } from './type/token-schema.type';
 import { Tokens } from './type/tokens.type';
-import { AuthRepository } from './auth.repository';
 
 @Injectable()
 export class TokenService {

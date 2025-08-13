@@ -8,6 +8,7 @@ import { ConfigService } from '@nestjs/config';
 import { BcryptPasswordService } from './bcrypt-password.service';
 import { TokenService } from './token.service';
 import { BadWordsFilterService } from './bad-words-filter.service';
+import { GoogleStrategy } from './guard/google.strategy';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { BadWordsFilterService } from './bad-words-filter.service';
     BcryptPasswordService,
     TokenService,
     BadWordsFilterService,
+    GoogleStrategy,
   ],
 })
 export class AuthModule {}
