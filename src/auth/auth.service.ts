@@ -1,13 +1,10 @@
-import {
-  Injectable,
-  NotFoundException,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { AuthRepository } from './auth.repository';
 import { Tokens } from './type/tokens.type';
 import { TokenService } from './token.service';
-import { UserBaseInfo } from './type/user-base-info.type';
-import { AuthProvider, User } from '@prisma/client';
+import { User } from '@prisma/client';
+import { generateNickname } from './generate-nickname';
+import { LoginPayload } from './payload/login.payload';
 
 @Injectable()
 export class AuthService {
@@ -16,53 +13,40 @@ export class AuthService {
     private readonly tokenService: TokenService,
   ) {}
 
-  async generateTokens(userId: number): Promise<Tokens> {
-    const tokens = this.tokenService.generateTokens({ userId });
+  async login(payload: LoginPayload): Promise<Tokens> {
+    return this.generateTokens(payload.userId);
+  }
 
-    await this.authRepository.updateUser(userId, {
-      refreshToken: tokens.refreshToken,
-    });
+  private async generateTokens(userId: number): Promise<Tokens> {
+    const tokens = this.tokenService.generateTokens({ userId });
 
     return tokens;
   }
 
-  async refresh(refreshToken: string): Promise<Tokens> {
-    const data = this.tokenService.verifyRefreshToken(refreshToken);
+  /*
+  //추후 Supabase 연동 시 사용
 
-    const user = await this.authRepository.getUserById(data.userId);
-    if (!user) {
-      throw new NotFoundException('존재하지 않는 사용자입니다.');
+  async generateUniqueNickname(): Promise<string> {
+    for (let i = 0; i < 5; i++) {
+      // 최대 5회 재시도
+      const nickname = generateNickname();
+      const exists = await this.authRepository.isNicknameExists(nickname);
+
+      if (!exists) return nickname;
     }
-
-    if (user.refreshToken !== refreshToken) {
-      throw new UnauthorizedException('유효하지 않은 토큰입니다.');
-    }
-
-    return this.generateTokens(user.id);
+    throw new Error('닉네임 생성 실패 (중복)');
   }
 
-  async getUserByRefreshToken(refreshToken: string): Promise<UserBaseInfo> {
-    const data = this.tokenService.verifyRefreshToken(refreshToken);
-    if (!data) throw new UnauthorizedException('유효하지 않은 토큰입니다.');
-
-    const user = await this.authRepository.getUserById(data.userId);
-    if (!user) throw new NotFoundException('존재하지 않는 사용자입니다.');
-
-    return user;
-  }
-
-  async signInWithProvider(
-    provider: AuthProvider,
-    providerId: string,
-  ): Promise<User> {
-    // 1) 이미 있으면 바로 반환
-    const existing = await this.authRepository.getUserByProvider(
-      provider,
-      providerId,
-    );
+  async signIn(supabaseUserId: string): Promise<User> {
+    const existing =
+      await this.authRepository.getUserBySupabaseId(supabaseUserId);
     if (existing) return existing;
 
-    // 2) 없으면 새로 생성
-    return this.authRepository.createUserWithProvider(provider, providerId);
+    const nickname = await this.generateUniqueNickname();
+    return this.authRepository.createUserWithSupabaseId(
+      supabaseUserId,
+      nickname,
+    );
   }
+    */
 }
