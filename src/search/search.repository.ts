@@ -1,6 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../common/services/prisma.service';
 import { redis } from './redis.provider';
+import { BookData } from 'src/book/type/book-data.type';
+import { BookSearchQuery } from './query/book-search-query';
 
 @Injectable()
 export class SearchRepository {
@@ -52,5 +54,16 @@ export class SearchRepository {
       lexical: filteredLexical,
       views: filteredViews,
     };
+  }
+
+  async getBooks(query: BookSearchQuery): Promise<BookData[]> {
+    return this.prisma.book.findMany({
+      where: {
+        OR: [
+          { title: { contains: query.query, mode: 'insensitive' } },
+          { author: { contains: query.query, mode: 'insensitive' } },
+        ],
+      },
+    });
   }
 }

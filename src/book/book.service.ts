@@ -124,11 +124,6 @@ export class BookService {
     return BookDto.from(updatedBook);
   }
 
-  async getBooks(query: BookQuery): Promise<BookListDto> {
-    const books = await this.bookRepository.getBooks(query);
-    return BookListDto.from(books);
-  }
-
   /*
   async toggleBookLike(bookId: number, user: UserBaseInfo): Promise<void> {
     const book = await this.bookRepository.getBookById(bookId);

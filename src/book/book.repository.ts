@@ -129,24 +129,6 @@ export class BookRepository {
       },
     });
   }
-
-  async getBooks(query: BookQuery): Promise<BookData[]> {
-    return this.prisma.book.findMany({
-      where: {
-        ...(query.title && { title: query.title }),
-        ...(query.author && { author: query.author }),
-      },
-      select: {
-        id: true,
-        title: true,
-        author: true,
-        isbn: true,
-        views: true,
-        totalParagraphsCount: true,
-      },
-    });
-  }
-
   /*
   async toggleBookLike(bookId: number, userId: number): Promise<void> {
     const like = await this.prisma.bookLike.findUnique({
