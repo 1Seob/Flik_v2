@@ -1,7 +1,9 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, Post, Get, Query } from '@nestjs/common';
 import { SearchService } from './search.service';
 import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { SearchPayload } from './payload/search-payload';
+import { BookListDto } from 'src/book/dto/book.dto';
+import { BookSearchQuery } from './query/book-search-query';
 
 @Controller('search')
 @ApiTags('Search API')
@@ -19,5 +21,12 @@ export class SearchController {
     const suggestions =
       await this.searchService.getAutocompleteSuggestions(query);
     return suggestions;
+  }
+
+  @Get('v1/search')
+  @ApiOperation({ summary: '책 검색' })
+  @ApiOkResponse({ type: BookListDto })
+  async getBooks(@Query() query: BookSearchQuery): Promise<BookListDto> {
+    return this.searchService.getBooks(query);
   }
 }

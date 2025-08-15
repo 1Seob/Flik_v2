@@ -70,13 +70,6 @@ export class BookController {
     return this.bookService.getBookById(bookId);
   }
 
-  @Get('v1/search')
-  @ApiOperation({ summary: '책 제목과 작가로 책 검색 (둘 중 하나로도 가능)' })
-  @ApiOkResponse({ type: BookListDto })
-  async getBooks(@Query() query: BookQuery): Promise<BookListDto> {
-    return this.bookService.getBooks(query);
-  }
-
   @Post('v1/:bookId/views')
   @ApiOperation({ summary: '책 조회수 증가' })
   @ApiNoContentResponse()
