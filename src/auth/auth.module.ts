@@ -4,14 +4,14 @@ import { AuthService } from './auth.service';
 import { AuthRepository } from './auth.repository';
 import { JwtStrategy } from './guard/jwt.strategy';
 import { JwtModule } from '@nestjs/jwt';
-import { ConfigService } from '@nestjs/config';
-import { BcryptPasswordService } from './bcrypt-password.service';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TokenService } from './token.service';
-import { BadWordsFilterService } from './bad-words-filter.service';
-import { GoogleStrategy } from './guard/google.strategy';
+import { PassportModule } from '@nestjs/passport';
 
 @Module({
   imports: [
+    PassportModule.register({ defaultStrategy: 'jwt' }),
+    ConfigModule,
     JwtModule.registerAsync({
       inject: [ConfigService],
       useFactory: async (configService: ConfigService) => ({
@@ -23,14 +23,7 @@ import { GoogleStrategy } from './guard/google.strategy';
     }),
   ],
   controllers: [AuthController],
-  providers: [
-    AuthService,
-    AuthRepository,
-    JwtStrategy,
-    BcryptPasswordService,
-    TokenService,
-    BadWordsFilterService,
-    GoogleStrategy,
-  ],
+  providers: [AuthService, AuthRepository, JwtStrategy, TokenService],
+  exports: [PassportModule],
 })
 export class AuthModule {}

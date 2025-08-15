@@ -9,10 +9,7 @@ datasource db {
 
 model User {
   id                    Int                     @id @default(autoincrement())
-
-  provider              AuthProvider
-  providerId            String
-  @@unique([provider, providerId]) 
+  supabaseId            String                  @unique @map("supabase_id")
 
   name                  String                  @unique
   birthday              DateTime?
@@ -23,13 +20,10 @@ model User {
   updatedAt             DateTime                @updatedAt @map("updated_at")
   deletedAt             DateTime?               @map("deleted_at")
 
-  refreshToken          String?                 @map("refresh_token")
-
   bookLikes             BookLike[]
   bookSaves             BookSave[]
   paragraphLikes        ParagraphLike[]
   userBooks             UserBook[]
-  userCategories        UserCategory[]
   user_reading_activity user_reading_activity[]
   review                Review[]
   reviewLikes           ReviewLike[]
@@ -70,14 +64,6 @@ model Paragraph {
   @@map("paragraph")
 }
 
-model Category {
-  id        Int            @id @default(autoincrement())
-  name      String         @unique
-  favoredBy UserCategory[]
-
-  @@map("category")
-}
-
 model ParagraphLike {
   id          Int       @id @default(autoincrement())
   userId      Int
@@ -116,17 +102,6 @@ model UserBook {
 
   @@unique([userId, bookId], name: "userId_bookId")
   @@map("user-book")
-}
-
-model UserCategory {
-  id         Int      @id @default(autoincrement())
-  userId     Int
-  categoryId Int
-  category   Category @relation(fields: [categoryId], references: [id])
-  user       User     @relation(fields: [userId], references: [id])
-
-  @@unique([userId, categoryId])
-  @@map("user-category")
 }
 
 model BookSave {
@@ -188,17 +163,6 @@ model ReviewLike {
   @@map("review-like")
 }
 
-model ProviderConfig {
-  provider   AuthProvider @id
-  prefix     String
-  counter    Int          @default(0)
-
-  createdAt  DateTime     @default(now()) @map("created_at")
-  updatedAt  DateTime     @updatedAt      @map("updated_at")
-
-  @@map("provider_config")
-}
-
 enum Gender {
   MALE   @map("MALE")
   FEMALE @map("FEMALE")
@@ -208,11 +172,4 @@ enum ChallengeType {
   NONE
   WEEKLY
   MONTHLY
-}
-
-enum AuthProvider {
-  GOOGLE  @map("GOOGLE")
-  KAKAO   @map("KAKAO")
-  NAVER   @map("NAVER")
-  APPLE   @map("APPLE")
 }

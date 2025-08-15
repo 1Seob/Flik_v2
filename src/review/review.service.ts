@@ -12,7 +12,7 @@ import { UserBaseInfo } from '../auth/type/user-base-info.type';
 import { BookRepository } from 'src/book/book.repository';
 import { UpdateReviewPayload } from './payload/update-review.paylaod';
 import { UpdateReviewData } from './type/update-review-data.type';
-import { BadWordsFilterService } from 'src/auth/bad-words-filter.service';
+import { BadWordsFilterService } from 'src/user/bad-words-filter.service';
 
 @Injectable()
 export class ReviewService {

@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { UserData } from '../type/user-data.type';
-import { Gender as PrismaGender, AuthProvider } from '@prisma/client';
+import { Gender as PrismaGender } from '@prisma/client';
 
 export enum GenderEnum {
   MALE = 'MALE',
@@ -15,16 +15,10 @@ export class UserDto {
   id!: number;
 
   @ApiProperty({
-    description: '소셜 로그인 제공자',
-    enum: AuthProvider,
-  })
-  provider!: AuthProvider;
-
-  @ApiProperty({
-    description: '소셜 로그인 ID',
+    description: '유저의 Supabase ID',
     type: String,
   })
-  providerId!: string;
+  supabaseId!: string;
 
   @ApiProperty({
     description: '성별',
@@ -53,8 +47,7 @@ export class UserDto {
   static from(data: UserData): UserDto {
     return {
       id: data.id,
-      provider: data.provider,
-      providerId: data.providerId,
+      supabaseId: data.supabaseId,
       gender: data.gender,
       birthDate: data.birthday,
       profileImagePath: data.profileImagePath,

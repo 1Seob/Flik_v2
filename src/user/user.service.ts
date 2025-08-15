@@ -11,7 +11,7 @@ import { UpdateUserPayload } from './payload/update-user.payload';
 import { UpdateUserData } from './type/update-user-data.type';
 import { SupabaseService } from '../common/services/supabase.service';
 import { v4 as uuidv4 } from 'uuid';
-import { BadWordsFilterService } from 'src/auth/bad-words-filter.service';
+import { BadWordsFilterService } from 'src/user/bad-words-filter.service';
 
 @Injectable()
 export class UserService {
