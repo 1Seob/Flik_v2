@@ -8,6 +8,7 @@ import {
   Patch,
   UseGuards,
   ParseIntPipe,
+  Post,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import {
@@ -22,6 +23,7 @@ import { UpdateUserPayload } from './payload/update-user.payload';
 import { CurrentUser } from '../auth/decorator/user.decorator';
 import { UserBaseInfo } from '../auth/type/user-base-info.type';
 import { ApiTags } from '@nestjs/swagger';
+import { FilePathPayload } from './payload/filepath.payload';
 
 @Controller('users')
 @ApiTags('User API')
@@ -40,8 +42,21 @@ export class UserController {
   })
   async getPresignedUploadUrl(
     @CurrentUser() user: UserBaseInfo,
-  ): Promise<string> {
+  ): Promise<{ url: string; filePath: string }> {
     return this.userService.getPresignedUploadUrl(user);
+  }
+
+  @Post('v1/profile-image/commit')
+  @ApiNoContentResponse()
+  @HttpCode(204)
+  @ApiOperation({ summary: '프로필 사진 업로드 완료 커밋' })
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  async commitProfileImage(
+    @CurrentUser() user: UserBaseInfo,
+    @Body() payload: FilePathPayload,
+  ): Promise<void> {
+    return this.userService.commitProfileImage(user.id, payload.filePath);
   }
 
   @Get('v1/profile-image-url')
