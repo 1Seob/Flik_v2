@@ -95,16 +95,34 @@ export class UserService {
     return this.userRepository.getAllUsersWithParagraphLikes();
   }
 
-  async getPresignedUploadUrl(user: UserBaseInfo): Promise<string> {
-    if (user.profileImagePath) {
-      await this.supabaseService.deleteImage(
-        'profile-images',
-        user.profileImagePath,
-      );
-    }
+  async getPresignedUploadUrl(
+    user: UserBaseInfo,
+  ): Promise<{ url: string; filePath: string }> {
     const filePath = `profile-images/${user.id}/${uuidv4()}/profile-image.png`;
-    await this.userRepository.updateProfileImagePath(user.id, filePath);
-    return this.supabaseService.getSignedUploadUrl('profile-images', filePath);
+    const url = await this.supabaseService.getSignedUploadUrl(
+      'profile-images',
+      filePath,
+    );
+    return { url, filePath };
+  }
+
+  async commitProfileImage(userId: number, filePath: string): Promise<void> {
+    const user = await this.userRepository.getUserById(userId);
+    if (!user) {
+      throw new NotFoundException('사용자를 찾을 수 없습니다.');
+    }
+
+    // 기존 이미지 삭제 (실패해도 경고만)
+    if (user.profileImagePath) {
+      this.supabaseService
+        .deleteImage('profile-images', user.profileImagePath)
+        .catch((err) =>
+          console.warn(`Failed to delete old profile image: ${err.message}`),
+        );
+    }
+
+    // 새 경로 반영
+    await this.userRepository.updateProfileImagePath(userId, filePath);
   }
 
   async getProfileImageUrl(user: UserBaseInfo): Promise<string> {
