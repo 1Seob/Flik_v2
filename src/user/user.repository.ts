@@ -7,7 +7,7 @@ import { UpdateUserData } from './type/update-user-data.type';
 export class UserRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async getUserById(userId: number): Promise<User | null> {
+  async getUserById(userId: string): Promise<User | null> {
     return this.prisma.user.findFirst({
       where: {
         id: userId,
@@ -16,7 +16,7 @@ export class UserRepository {
     });
   }
 
-  async updateUser(userId: number, data: UpdateUserData): Promise<User> {
+  async updateUser(userId: string, data: UpdateUserData): Promise<User> {
     return this.prisma.user.update({
       where: {
         id: userId,
@@ -29,7 +29,7 @@ export class UserRepository {
     });
   }
 
-  async deleteUser(userId: number): Promise<void> {
+  async deleteUser(userId: string): Promise<void> {
     await this.prisma.user.update({
       where: {
         id: userId,
@@ -38,41 +38,6 @@ export class UserRepository {
         deletedAt: new Date(),
       },
     });
-  }
-
-  async getAllUsersWithParagraphLikes(): Promise<
-    { id: number; likedBookIds: number[]; readBookIds: number[] }[]
-  > {
-    const users = await this.prisma.user.findMany({
-      where: {
-        deletedAt: null,
-      },
-      select: {
-        id: true,
-        paragraphLikes: {
-          select: {
-            paragraph: {
-              select: {
-                bookId: true,
-              },
-            },
-          },
-        },
-        userBooks: {
-          select: {
-            bookId: true,
-          },
-        },
-      },
-    });
-
-    return users.map((user) => ({
-      id: user.id,
-      likedBookIds: [
-        ...new Set(user.paragraphLikes.map((like) => like.paragraph.bookId)),
-      ],
-      readBookIds: user.userBooks.map((read) => read.bookId),
-    }));
   }
 
   async isNameExist(name: string): Promise<boolean> {
@@ -86,7 +51,7 @@ export class UserRepository {
   }
 
   async updateProfileImagePath(
-    userId: number,
+    userId: string,
     profileImagePath: string | null,
   ): Promise<void> {
     await this.prisma.user.update({

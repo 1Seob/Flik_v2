@@ -21,7 +21,7 @@ export class UserService {
     private readonly badWordsFilterService: BadWordsFilterService,
   ) {}
 
-  async getUserById(userId: number): Promise<UserDto> {
+  async getUserById(userId: string): Promise<UserDto> {
     const user = await this.userRepository.getUserById(userId);
 
     if (!user) {
@@ -89,12 +89,6 @@ export class UserService {
     return this.userRepository.deleteUser(user.id);
   }
 
-  async getAllUsersWithParagraphLikes(): Promise<
-    { id: number; likedBookIds: number[]; readBookIds: number[] }[]
-  > {
-    return this.userRepository.getAllUsersWithParagraphLikes();
-  }
-
   async getPresignedUploadUrl(
     user: UserBaseInfo,
   ): Promise<{ url: string; filePath: string }> {
@@ -106,7 +100,7 @@ export class UserService {
     return { url, filePath };
   }
 
-  async commitProfileImage(userId: number, filePath: string): Promise<void> {
+  async commitProfileImage(userId: string, filePath: string): Promise<void> {
     const user = await this.userRepository.getUserById(userId);
     if (!user) {
       throw new NotFoundException('사용자를 찾을 수 없습니다.');

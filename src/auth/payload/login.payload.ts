@@ -1,11 +1,11 @@
-import { IsInt } from 'class-validator';
+import { IsString } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class LoginPayload {
-  @IsInt()
+  @IsString()
   @ApiProperty({
     description: '유저 ID',
-    type: Number,
+    type: String,
   })
-  userId!: number;
+  userId!: string;
 }

@@ -100,7 +100,7 @@ export class ReviewRepository {
     };
   }
 
-  async toggleReviewLike(reviewId: number, userId: number): Promise<void> {
+  async toggleReviewLike(reviewId: number, userId: string): Promise<void> {
     const like = await this.prisma.reviewLike.findUnique({
       where: {
         userId_reviewId: {

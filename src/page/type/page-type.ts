@@ -1,6 +1,6 @@
-export type ParagraphData = {
+export type PageData = {
   id: number;
   content: string;
-  order: number;
+  number: number;
   bookId: number;
 };

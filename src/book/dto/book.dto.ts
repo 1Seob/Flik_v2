@@ -34,10 +34,10 @@ export class BookDto {
   views!: number;
 
   @ApiProperty({
-    description: '총 문단 수',
+    description: '총 페이지 수',
     type: Number,
   })
-  totalParagraphsCount!: number;
+  totalPagesCount!: number;
 
   static from(data: BookData): BookDto {
     return {
@@ -46,7 +46,7 @@ export class BookDto {
       author: data.author,
       isbn: data.isbn ?? undefined,
       views: data.views,
-      totalParagraphsCount: data.totalParagraphsCount,
+      totalPagesCount: data.totalPagesCount,
     };
   }
 

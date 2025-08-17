@@ -10,15 +10,9 @@ export enum GenderEnum {
 export class UserDto {
   @ApiProperty({
     description: '유저 ID',
-    type: Number,
-  })
-  id!: number;
-
-  @ApiProperty({
-    description: '유저의 Supabase ID',
     type: String,
   })
-  supabaseId!: string;
+  id!: string;
 
   @ApiProperty({
     description: '성별',
@@ -47,7 +41,6 @@ export class UserDto {
   static from(data: UserData): UserDto {
     return {
       id: data.id,
-      supabaseId: data.supabaseId,
       gender: data.gender,
       birthDate: data.birthday,
       profileImagePath: data.profileImagePath,
