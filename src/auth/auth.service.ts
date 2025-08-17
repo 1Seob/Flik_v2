@@ -17,7 +17,7 @@ export class AuthService {
     return this.generateTokens(payload.userId);
   }
 
-  private async generateTokens(userId: number): Promise<Tokens> {
+  private async generateTokens(userId: string): Promise<Tokens> {
     const tokens = this.tokenService.generateTokens({ userId });
 
     return tokens;

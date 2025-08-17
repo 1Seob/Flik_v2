@@ -1,8 +1,7 @@
 import { Gender } from '@prisma/client';
 
 export type UserBaseInfo = {
-  id: number;
-  supabaseId: string;
+  id: string;
   name: string;
   gender?: Gender | null;
   birthday?: Date | null;

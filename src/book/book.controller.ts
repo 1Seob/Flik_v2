@@ -23,13 +23,11 @@ import {
 import { BookDto } from './dto/book.dto';
 import { SaveBookPayload } from './payload/save-book.payload';
 import { PatchUpdateBookPayload } from './payload/patch-update-book.payload';
-import { BookListDto } from './dto/book.dto';
-import { BookQuery } from './query/book.query';
 import { MetadataListDto } from './dto/metadata.dto';
 import { JwtAuthGuard } from '../auth/guard/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorator/user.decorator';
 import { UserBaseInfo } from '../auth/type/user-base-info.type';
-import { ParagraphListDto } from 'src/paragraph/dto/paragraph.dto';
+import { PageListDto } from 'src/page/dto/page.dto';
 
 @Controller('books')
 @ApiTags('Book API')
@@ -50,15 +48,6 @@ export class BookController {
     @Query('limit', ParseIntPipe) limit: number,
   ): Promise<MetadataListDto> {
     return this.bookService.getBooksMetadata(offset, limit);
-  }
-
-  @Get('v1/streak')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: '유저의 연속 독서 일수 반환' })
-  @ApiOkResponse({ schema: { example: 3 } })
-  async getReadingStreak(@CurrentUser() user: UserBaseInfo): Promise<number> {
-    return this.bookService.getReadingStreak(user.id);
   }
 
   @Get('v1/:bookId')
@@ -101,12 +90,12 @@ export class BookController {
   @Get('v1/:bookId/paragraphs/download')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOkResponse({ type: ParagraphListDto })
+  @ApiOkResponse({ type: PageListDto })
   @ApiOperation({ summary: '책 원문 다운로드' })
   async getBookParagraphs(
     @Param('bookId', ParseIntPipe) bookId: number,
     @CurrentUser() user: UserBaseInfo,
-  ): Promise<ParagraphListDto> {
+  ): Promise<PageListDto> {
     return this.bookService.getBookParagraphs(bookId, user.id);
   }
 
@@ -211,6 +200,7 @@ export class BookController {
     return this.bookService.unsaveBookFromUser(bookId, user.id);
   }
 
+  /*
   @Get('v1/saved/:userId')
   @ApiOperation({ summary: '유저가 보관한 책 ID 리스트 반환하기' })
   @ApiOkResponse({ type: [Number] })
@@ -219,18 +209,7 @@ export class BookController {
   ): Promise<number[]> {
     return this.bookService.getSavedBookIdsByUser(userId);
   }
-
-  @Get('v1/:bookId/continue')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: '마지막 읽은 문단 순서 조회' })
-  @ApiOkResponse({ schema: { example: { lastReadParagraphOrder: 12 } } })
-  async getLastReadParagraph(
-    @Param('bookId', ParseIntPipe) bookId: number,
-    @CurrentUser() user: UserBaseInfo,
-  ): Promise<{ lastReadParagraphOrder: number }> {
-    return this.bookService.getLastReadParagraph(bookId, user.id);
-  }
+    */
 
   @Get('v1/:bookId/cover')
   @ApiOperation({ summary: '책 커버 이미지 URL 가져오기' })
@@ -238,34 +217,5 @@ export class BookController {
     @Param('bookId', ParseIntPipe) bookId: number,
   ): Promise<string | null> {
     return this.bookService.getBookCoverImage(bookId);
-  }
-
-  @Patch('v1/:bookId/paragraphs/:order')
-  @HttpCode(204)
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: '마지막 읽은 문단 순서 업데이트' })
-  @ApiOkResponse({ description: '업데이트 성공' })
-  async updateLastReadParagraph(
-    @Param('bookId', ParseIntPipe) bookId: number,
-    @Param('order', ParseIntPipe) order: number,
-    @CurrentUser() user: UserBaseInfo,
-  ): Promise<void> {
-    return this.bookService.updateLastReadParagraph(bookId, user.id, order);
-  }
-
-  @Get('v1/:bookId/chapters/:day')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  @ApiOperation({
-    summary: '지정한 날짜에 해당하는 문단 리스트 조회 (챕터 이동)',
-  })
-  @ApiOkResponse({ type: [String] })
-  async getParagraphsForDay(
-    @Param('bookId', ParseIntPipe) bookId: number,
-    @Param('day', ParseIntPipe) day: number,
-    @CurrentUser() user: UserBaseInfo,
-  ): Promise<string[]> {
-    return this.bookService.getParagraphsForDay(bookId, user.id, day);
   }
 }

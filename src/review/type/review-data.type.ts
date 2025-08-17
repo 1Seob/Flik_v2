@@ -1,6 +1,6 @@
 export type ReviewData = {
   id: number;
-  userId: number;
+  userId: string;
   bookId: number;
   content: string;
   likeCount: number;

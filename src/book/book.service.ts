@@ -6,16 +6,15 @@ import {
 } from '@nestjs/common';
 import { BookRepository } from './book.repository';
 import { UserRepository } from 'src/user/user.repository';
-import { BookDto, BookListDto } from './dto/book.dto';
+import { BookDto } from './dto/book.dto';
 import { SaveBookPayload } from './payload/save-book.payload';
 import { SaveBookData } from './type/save-book-data.type';
 import { parsing, distributeParagraphs } from './parsing';
 import { PatchUpdateBookPayload } from './payload/patch-update-book.payload';
 import { UpdateBookData } from './type/update-book-data.type';
-import { BookQuery } from './query/book.query';
 import { MetadataListDto } from './dto/metadata.dto';
-import { ParagraphListDto } from 'src/paragraph/dto/paragraph.dto';
 import axios from 'axios';
+import { PageListDto } from 'src/page/dto/page.dto';
 
 @Injectable()
 export class BookService {
@@ -51,7 +50,7 @@ export class BookService {
       title: payload.title,
       author: payload.author,
       isbn: payload.isbn ?? null,
-      totalParagraphsCount: paragraphs.length,
+      totalPagesCount: paragraphs.length,
     };
 
     const book = await this.bookRepository.saveBook(data, paragraphs);
@@ -87,14 +86,14 @@ export class BookService {
 
   async getBookParagraphs(
     bookId: number,
-    userId: number,
-  ): Promise<ParagraphListDto> {
+    userId: string,
+  ): Promise<PageListDto> {
     const book = await this.bookRepository.getBookById(bookId);
     if (!book) {
       throw new NotFoundException('책을 찾을 수 없습니다.');
     }
-    const paragraphs = await this.bookRepository.getBookParagraphs(bookId);
-    return ParagraphListDto.from(paragraphs);
+    const pages = await this.bookRepository.getBookPages(bookId);
+    return PageListDto.from(pages);
   }
 
   async patchUpdateBook(
@@ -117,7 +116,7 @@ export class BookService {
       title: payload.title,
       author: payload.author,
       isbn: payload.isbn ?? null,
-      totalParagraphsCount: payload.totalParagraphsCount,
+      totalPagesCount: payload.totalPagesCount,
     };
 
     const updatedBook = await this.bookRepository.updateBook(bookId, data);
@@ -159,7 +158,7 @@ export class BookService {
       throw new NotFoundException('책을 찾을 수 없습니다.');
     }
 
-    const count = await this.bookRepository.getParagraphCountByBookId(bookId);
+    const count = await this.bookRepository.getPageCountByBookId(bookId);
     return count;
   }
 
@@ -180,7 +179,7 @@ export class BookService {
   }
   */
 
-  async saveBookToUser(bookId: number, userId: number): Promise<void> {
+  async saveBookToUser(bookId: number, userId: string): Promise<void> {
     const book = await this.bookRepository.getBookById(bookId);
     if (!book) {
       throw new NotFoundException('책을 찾을 수 없습니다.');
@@ -189,7 +188,7 @@ export class BookService {
     await this.bookRepository.saveBookToUser(userId, bookId);
   }
 
-  async unsaveBookFromUser(bookId: number, userId: number): Promise<void> {
+  async unsaveBookFromUser(bookId: number, userId: string): Promise<void> {
     const book = await this.bookRepository.getBookById(bookId);
     if (!book) {
       throw new NotFoundException('책을 찾을 수 없습니다.');
@@ -202,62 +201,13 @@ export class BookService {
     await this.bookRepository.unsaveBookFromUser(userId, bookId);
   }
 
-  async getSavedBookIdsByUser(userId: number): Promise<number[]> {
+  async getSavedBookIdsByUser(userId: string): Promise<number[]> {
     const user = await this.userRepository.getUserById(userId);
     if (!user) {
       throw new NotFoundException('사용자를 찾을 수 없습니다.');
     }
 
     return this.bookRepository.getSavedBookIdsByUser(userId);
-  }
-
-  async getLastReadParagraph(
-    bookId: number,
-    userId: number,
-  ): Promise<{ lastReadParagraphOrder: number }> {
-    const userBook = await this.bookRepository.getUserBook(userId, bookId);
-    if (!userBook) throw new NotFoundException('읽은 기록이 없습니다.');
-    return { lastReadParagraphOrder: userBook.lastReadParagraphOrder ?? 0 };
-  }
-
-  async updateLastReadParagraph(
-    bookId: number,
-    userId: number,
-    order: number,
-  ): Promise<void> {
-    const exists = await this.bookRepository.getUserBook(userId, bookId);
-    if (!exists) {
-      console.log('📖 유저의 책 기록이 존재하지 않습니다. 새로 생성합니다.');
-      await this.bookRepository.createUserBook(userId, bookId, order);
-    } else {
-      console.log(
-        '📖 유저의 책 기록이 이미 존재합니다. 업데이트를 진행합니다.',
-      );
-      await this.bookRepository.updateLastReadParagraph(bookId, userId, order);
-    }
-  }
-
-  async getParagraphsForDay(
-    bookId: number,
-    userId: number,
-    day: number,
-  ): Promise<string[]> {
-    const paragraphs = await this.bookRepository.getParagraphsByBookId(bookId);
-    if (paragraphs.length === 0) {
-      throw new NotFoundException('책의 문단을 찾을 수 없습니다.');
-    }
-
-    const indices = distributeParagraphs([...Array(paragraphs.length).keys()]);
-    const dayIndex = day - 1;
-    if (dayIndex < 0 || dayIndex >= indices.length) {
-      throw new BadRequestException('유효하지 않은 날짜입니다. (1~30)');
-    }
-
-    return indices[dayIndex].map((i) => paragraphs[i].content);
-  }
-
-  async getReadingStreak(userId: number): Promise<number> {
-    return this.bookRepository.getReadingStreak(userId);
   }
 
   private async checkImageExists(url: string): Promise<boolean> {

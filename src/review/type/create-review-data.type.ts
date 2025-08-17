@@ -1,5 +1,5 @@
 export type CreateReviewData = {
-  userId: number;
+  userId: string;
   bookId: number;
   content: string;
 };

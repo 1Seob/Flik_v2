@@ -12,23 +12,19 @@ import { CommonModule } from '../common/common.module';
 import { UserModule } from '../user/user.module';
 import { AuthModule } from '../auth/auth.module';
 import { BookModule } from '../book/book.module';
-import { ParagraphModule } from '../paragraph/paragraph.module';
-import { BookReadModule } from '../bookread/bookread.module';
-import { ChallengeModule } from '../challenge/challenge.module';
 import { ReviewModule } from '../review/review.module';
 import { SearchModule } from 'src/search/search.module';
 import { SearchRepository } from 'src/search/search.repository';
+import { PageModule } from 'src/page/page.module';
 
 @Module({
   imports: [
     AuthModule,
     UserModule,
     BookModule,
-    ParagraphModule,
+    PageModule,
     configModule,
     CommonModule,
-    BookReadModule,
-    ChallengeModule,
     ReviewModule,
     SearchModule,
   ],

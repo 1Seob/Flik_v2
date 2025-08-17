@@ -8,8 +8,7 @@ datasource db {
 }
 
 model User {
-  id                    Int                     @id @default(autoincrement())
-  supabaseId            String                  @unique @map("supabase_id")
+  id                    String                  @id @default(uuid())
 
   name                  String                  @unique
   birthday              DateTime?
@@ -22,62 +21,43 @@ model User {
 
   bookLikes             BookLike[]
   bookSaves             BookSave[]
-  paragraphLikes        ParagraphLike[]
-  userBooks             UserBook[]
-  user_reading_activity user_reading_activity[]
   review                Review[]
   reviewLikes           ReviewLike[]
+  readingLog            ReadingLog[]
+  challengesOwned       Challenge[]    @relation("ChallengeOwner")
+  joins                 Participant[]
+  notifications         Notification[]
 
   @@map("user")
 }
 
 model Book {
   id                    Int                     @id @default(autoincrement())
+
   title                 String
   author                String
+
   createdAt             DateTime                @default(now()) @map("created_at")
   updatedAt             DateTime                @updatedAt @map("updated_at")
   deletedAt             DateTime?               @map("deleted_at")
+
   views                 Int                     @default(0)
-  totalParagraphsCount  Int                     @default(0)
+  totalPagesCount       Int                     @default(0)
   isbn                  String?
 
   likedBy               BookLike[]
   savedBy               BookSave[]
-  paragraphs            Paragraph[]
-  readBy                UserBook[]
-  user_reading_activity user_reading_activity[]
   review                Review[]
+  pages                 Page[]
+  logs                  ReadingLog[]
+  challenges            Challenge[]
 
   @@map("book")
 }
 
-model Paragraph {
-  id                    Int                     @id @default(autoincrement())
-  content               String
-  order                 Int
-  bookId                Int
-  book                  Book                    @relation(fields: [bookId], references: [id])
-  likes                 ParagraphLike[]
-  user_reading_activity user_reading_activity[]
-
-  @@map("paragraph")
-}
-
-model ParagraphLike {
-  id          Int       @id @default(autoincrement())
-  userId      Int
-  paragraphId Int
-  paragraph   Paragraph @relation(fields: [paragraphId], references: [id])
-  user        User      @relation(fields: [userId], references: [id])
-
-  @@unique([userId, paragraphId])
-  @@map("paragraph-like")
-}
-
 model BookLike {
   id     Int  @id @default(autoincrement())
-  userId Int
+  userId String
   bookId Int
   book   Book @relation(fields: [bookId], references: [id])
   user   User @relation(fields: [userId], references: [id])
@@ -86,27 +66,9 @@ model BookLike {
   @@map("book-like")
 }
 
-model UserBook {
-  id     Int  @id @default(autoincrement())
-  userId Int
-  bookId Int
-  lastReadParagraphOrder Int     @default(0)
-  updatedAt             DateTime? @default(now()) @updatedAt @map("updated_at")
-
-  challengeType            ChallengeType? @default(NONE)
-  challengeStartDate       DateTime?
-
-  book   Book @relation(fields: [bookId], references: [id])
-  user   User @relation(fields: [userId], references: [id])
-  
-
-  @@unique([userId, bookId], name: "userId_bookId")
-  @@map("user-book")
-}
-
 model BookSave {
   id     Int  @id @default(autoincrement())
-  userId Int
+  userId String
   bookId Int
   book   Book @relation(fields: [bookId], references: [id])
   user   User @relation(fields: [userId], references: [id])
@@ -115,27 +77,9 @@ model BookSave {
   @@map("book-save")
 }
 
-model user_reading_activity {
-  id           Int       @id @default(autoincrement())
-  user_id      Int
-  book_id      Int
-  paragraph_id Int
-  order        Int
-  started_at   DateTime  @default(now())
-  ended_at     DateTime  @default(now())
-  completed_at DateTime? 
-  lastReadParagraphOrder Int     @default(0) @map("last_read_paragraph_order")
-
-  book         Book      @relation(fields: [book_id], references: [id])
-  paragraph    Paragraph @relation(fields: [paragraph_id], references: [id])
-  user         User      @relation(fields: [user_id], references: [id])
-
-  @@map("user-reading-activity")
-}
-
 model Review {
   id           Int       @id @default(autoincrement())
-  userId       Int
+  userId       String
   bookId       Int
   content      String
   
@@ -152,7 +96,7 @@ model Review {
 
 model ReviewLike {
   id           Int       @id @default(autoincrement())
-  userId       Int
+  userId       String
   reviewId     Int
 
   user         User      @relation(fields: [userId], references: [id])
@@ -163,13 +107,151 @@ model ReviewLike {
   @@map("review-like")
 }
 
+model Page {
+  id                    Int                     @id @default(autoincrement())
+  content               String
+  number                Int
+  bookId                Int
+
+  book                  Book                    @relation(fields: [bookId], references: [id])
+
+  readingLog            ReadingLog[]
+
+  @@map("page")
+}
+
+model ReadingLog {
+  id              Int           @id @default(autoincrement())
+
+  userId          String        @map("user_id")
+  bookId          Int           @map("book_id")
+  pageId          Int           @map("page_id")
+
+  pageNumber      Int           @map("page_number")
+
+  participantId Int?          @map("participant_id")             
+
+  startedAt       DateTime?     @default(now())    @map("started_at")
+  endedAt         DateTime?                        @map("ended_at")
+  durationSec     Int?                             @map("duration_sec")
+
+  user      User       @relation(fields: [userId], references: [id])
+  book      Book       @relation(fields: [bookId], references: [id])
+  page      Page       @relation(fields: [pageId], references: [id])
+  join      Participant? @relation(fields: [participantId], references: [id])
+
+  @@index([userId, startedAt])
+  @@index([userId, endedAt])
+  @@index([userId, bookId, startedAt])
+
+  // 페이지 단위 조회
+  @@index([bookId, pageId, startedAt])
+
+  // 챌린지 전용 조회(랭킹/진척)
+  @@index([participantId, startedAt])
+
+  @@map("reading-log")
+}
+
+model Challenge {
+  id            Int                @id @default(autoincrement())
+  name          String                                 @map("name")              
+  ownerUserId   String                                 @map("owner_user_id")
+  imagePath     String?                                @map("image_path")
+  bookId        Int                                    @map("book_id")
+  capacity      Int
+     
+  visibility    ChallengeVisibility  @map("visibility") 
+
+  startAt       DateTime                               @map("start_at")
+  endAt         DateTime                               @map("end_at")
+
+  completedAt   DateTime?                               @map("completed_at")
+  createdAt     DateTime             @default(now())    @map("created_at")
+  status        ChallengeStatus     
+
+  book   Book @relation(fields: [bookId], references: [id])
+  owner  User @relation("ChallengeOwner", fields: [ownerUserId], references: [id])
+  joins  Participant[]
+
+  @@index([visibility, status, startAt])
+  @@index([bookId])
+  @@index([ownerUserId])
+  @@map("challenge")
+}
+
+model Participant {
+  id              Int       @id @default(autoincrement())
+  challengeId     Int       @map("challenge_id")
+  userId          String    @map("user_id")
+
+  joinedAt        DateTime  @default(now()) @map("joined_at")
+
+  leftAt          DateTime? @map("left_at")             
+  status          ParticipantStatus  @map("status") 
+
+  challenge  Challenge    @relation(fields: [challengeId], references: [id])
+  user       User         @relation(fields: [userId], references: [id])
+
+  logs       ReadingLog[]
+
+
+  @@unique([challengeId, userId])        // 중복 참가 방지
+  @@index([userId])
+  
+  @@map("participant")
+}
+
+model Notification {
+  id           Int                  @id @default(autoincrement())
+  userId       String               @map("user_id")
+  targetType   NotificationTarget   @map("target_type")
+  targetId     Int                  @map("target_id")       
+
+  enabled      Boolean              @default(true)  @map("enabled")
+  muted        Boolean              @default(false) @map("muted")
+
+  minuteOfDay  Int?                 @map("minute_of_day")    // 0..1439 (현지 기준)
+
+  lastNotifiedAt DateTime?          @map("last_notified_at")
+
+  createdAt      DateTime           @default(now()) @map("created_at")
+  updatedAt      DateTime           @updatedAt      @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([userId, targetType, targetId])
+
+  @@index([enabled])
+  @@index([userId, targetType, targetId])
+
+  @@map("notification")
+}
+
+// ── enums ───────────────────────────────────────────────
+
 enum Gender {
   MALE   @map("MALE")
   FEMALE @map("FEMALE")
 }
 
-enum ChallengeType {
-  NONE
-  WEEKLY
-  MONTHLY
+enum ChallengeVisibility {
+  PUBLIC
+  PRIVATE
+}
+
+enum ChallengeStatus {
+  PREPARING
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum ParticipantStatus {
+  JOINED     // 정상 참여 중
+  LEFT       // 자의/강제 이탈
+}
+
+enum NotificationTarget {
+  CHALLENGE
 }

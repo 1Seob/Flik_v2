@@ -4,5 +4,5 @@ export type BookData = {
   author: string;
   isbn?: string | null;
   views: number;
-  totalParagraphsCount: number;
+  totalPagesCount: number;
 };
