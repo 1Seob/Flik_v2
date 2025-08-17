@@ -6,7 +6,7 @@ import { User } from '@prisma/client';
 export class AuthRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async getUserById(id: number): Promise<User | null> {
+  async getUserById(id: string): Promise<User | null> {
     return this.prisma.user.findFirst({
       where: { id },
     });

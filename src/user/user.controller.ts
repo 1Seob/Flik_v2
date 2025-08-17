@@ -73,21 +73,6 @@ export class UserController {
     return this.userService.getProfileImageUrl(user);
   }
 
-  @Get('v1')
-  @ApiOperation({
-    summary:
-      '모든 사용자별 사용자 ID, 문단 좋아요한 책 목록, 읽은 책 목록 반환',
-  })
-  @ApiOkResponse({
-    description: '모든 사용자 정보 반환',
-    type: [Object],
-  })
-  async getAllUsersWithParagraphLikes(): Promise<
-    { id: number; likedBookIds: number[]; readBookIds: number[] }[]
-  > {
-    return this.userService.getAllUsersWithParagraphLikes();
-  }
-
   @Patch('v1')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
@@ -111,11 +96,9 @@ export class UserController {
   }
 
   @Get('v1/:userId')
-  @ApiOperation({ summary: '유저 정보 가져오기' })
+  @ApiOperation({ summary: '유저 정보 조회' })
   @ApiOkResponse({ type: UserDto })
-  async getUserById(
-    @Param('userId', ParseIntPipe) userId: number,
-  ): Promise<UserDto> {
+  async getUserById(@Param('userId') userId: string): Promise<UserDto> {
     return this.userService.getUserById(userId);
   }
 }

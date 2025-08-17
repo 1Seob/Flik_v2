@@ -10,9 +10,9 @@ export class ReviewDto {
 
   @ApiProperty({
     description: '사용자 ID',
-    type: Number,
+    type: String,
   })
-  userId!: number;
+  userId!: string;
 
   @ApiProperty({
     description: '책 ID',

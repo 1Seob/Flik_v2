@@ -30,8 +30,8 @@ export class PatchUpdateBookPayload {
 
   @IsOptional()
   @ApiPropertyOptional({
-    description: '총 문단 수',
+    description: '총 페이지 수',
     type: Number,
   })
-  totalParagraphsCount?: number;
+  totalPagesCount?: number;
 }

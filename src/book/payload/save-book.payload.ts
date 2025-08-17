@@ -27,5 +27,5 @@ export class SaveBookPayload {
     description: '총 문단 수',
     type: Number,
   })
-  totalParagraphsCount!: number;
+  totalPagesCount!: number;
 }

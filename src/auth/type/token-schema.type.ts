@@ -1,5 +1,5 @@
 export type TokenSchema = {
-  userId: number;
+  userId: string;
 };
 
 export type TokenPayload = TokenSchema & {
