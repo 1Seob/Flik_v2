@@ -1,6 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app/app.module';
-import { ValidationPipe } from '@nestjs/common';
+import { ValidationPipe, VersioningType } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { HttpExceptionFilter } from './common/filter/exception.filter';
 import * as cookieParser from 'cookie-parser';
@@ -22,6 +22,10 @@ async function bootstrap() {
   app.useGlobalFilters(new HttpExceptionFilter());
   app.enableCors();
   app.use(cookieParser());
+
+  app.enableVersioning({
+    type: VersioningType.URI, // 기본값
+  });
 
   const config = new DocumentBuilder()
     .setTitle('Flik Server')

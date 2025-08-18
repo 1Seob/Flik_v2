@@ -8,8 +8,8 @@ import {
   Patch,
   Post,
   ParseIntPipe,
-  Query,
   UseGuards,
+  Version,
 } from '@nestjs/common';
 import { BookService } from './book.service';
 import {
@@ -18,22 +18,31 @@ import {
   ApiOperation,
   ApiTags,
   ApiBearerAuth,
-  ApiQuery,
 } from '@nestjs/swagger';
 import { BookDto } from './dto/book.dto';
 import { SaveBookPayload } from './payload/save-book.payload';
 import { PatchUpdateBookPayload } from './payload/patch-update-book.payload';
-import { MetadataListDto } from './dto/metadata.dto';
 import { JwtAuthGuard } from '../auth/guard/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorator/user.decorator';
 import { UserBaseInfo } from '../auth/type/user-base-info.type';
 import { PageListDto } from 'src/page/dto/page.dto';
+import { UpdatePagesPayload } from './payload/update-pages-payload';
 
 @Controller('books')
 @ApiTags('Book API')
 export class BookController {
   constructor(private readonly bookService: BookService) {}
 
+  @Post()
+  @Version('1')
+  @ApiOperation({ summary: '책 페이지 업데이트' })
+  @ApiNoContentResponse()
+  @HttpCode(204)
+  async updateBookPages(@Body() payload: UpdatePagesPayload): Promise<void> {
+    return this.bookService.updateBookPages(payload.bookId, payload.fileName);
+  }
+
+  /*
   @Get('v1/metadata')
   @ApiOperation({ summary: '책 메타데이터 가져오기' })
   @ApiQuery({
@@ -49,8 +58,10 @@ export class BookController {
   ): Promise<MetadataListDto> {
     return this.bookService.getBooksMetadata(offset, limit);
   }
+    */
 
-  @Get('v1/:bookId')
+  @Get(':bookId')
+  @Version('1')
   @ApiOperation({ summary: '책 정보 가져오기' })
   @ApiOkResponse({ type: BookDto })
   async getBookById(
@@ -59,7 +70,8 @@ export class BookController {
     return this.bookService.getBookById(bookId);
   }
 
-  @Post('v1/:bookId/views')
+  @Post(':bookId/views')
+  @Version('1')
   @ApiOperation({ summary: '책 조회수 증가' })
   @ApiNoContentResponse()
   @HttpCode(204)
@@ -87,25 +99,24 @@ export class BookController {
   }
   */
 
-  @Get('v1/:bookId/paragraphs/download')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
+  @Get(':bookId/pages/download')
+  @Version('1')
   @ApiOkResponse({ type: PageListDto })
   @ApiOperation({ summary: '책 원문 다운로드' })
-  async getBookParagraphs(
+  async getBookPages(
     @Param('bookId', ParseIntPipe) bookId: number,
-    @CurrentUser() user: UserBaseInfo,
   ): Promise<PageListDto> {
-    return this.bookService.getBookParagraphs(bookId, user.id);
+    return this.bookService.getBookPages(bookId);
   }
 
-  @Get('v1/:bookId/paragraphs/count')
-  @ApiOperation({ summary: '책 전체 문단 수 반환' })
+  @Get(':bookId/pages/count')
+  @Version('1')
+  @ApiOperation({ summary: '책 전체 페이지 수 반환' })
   @ApiOkResponse({ type: Number })
-  async getParagraphCountByBookId(
+  async getPageCountByBookId(
     @Param('bookId', ParseIntPipe) bookId: number,
   ): Promise<number> {
-    return this.bookService.getParagraphCountByBookId(bookId);
+    return this.bookService.getPageCountByBookId(bookId);
   }
 
   /*
@@ -119,7 +130,8 @@ export class BookController {
   }
   */
 
-  @Post('v1/save/:fileName')
+  @Post('save/:fileName')
+  @Version('1')
   @ApiOperation({ summary: 'DB에 책 추가' })
   @ApiOkResponse({ type: BookDto })
   async saveBook(
@@ -130,8 +142,9 @@ export class BookController {
   }
   // 프로젝트 루트 디렉토리에 있는 원문 텍스트 파일의 이름을 fileName으로 받습니다. ex) Frankenstein.txt
 
-  @Patch('v1/:bookId')
-  @ApiOperation({ summary: '책 정보 수정 (표지 이미지 포함)' })
+  @Patch(':bookId')
+  @Version('1')
+  @ApiOperation({ summary: '책 정보 수정' })
   @ApiOkResponse({ type: BookDto })
   async updateBook(
     @Param('bookId', ParseIntPipe) bookId: number,
@@ -140,7 +153,8 @@ export class BookController {
     return this.bookService.patchUpdateBook(bookId, payload);
   }
 
-  @Delete('v1/:bookId')
+  @Delete(':bookId')
+  @Version('1')
   @HttpCode(204)
   @ApiOperation({ summary: 'DB에서 책 삭제' })
   @ApiNoContentResponse()
@@ -174,7 +188,8 @@ export class BookController {
   }
 
   */
-  @Post('v1/:bookId/save')
+  @Post(':bookId/save')
+  @Version('1')
   @HttpCode(204)
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
@@ -187,7 +202,8 @@ export class BookController {
     return this.bookService.saveBookToUser(bookId, user.id);
   }
 
-  @Delete('v1/:bookId/save')
+  @Delete(':bookId/save')
+  @Version('1')
   @HttpCode(204)
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
@@ -211,7 +227,8 @@ export class BookController {
   }
     */
 
-  @Get('v1/:bookId/cover')
+  @Get(':bookId/cover')
+  @Version('1')
   @ApiOperation({ summary: '책 커버 이미지 URL 가져오기' })
   async getBookCoverImage(
     @Param('bookId', ParseIntPipe) bookId: number,
