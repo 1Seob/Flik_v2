@@ -7,7 +7,7 @@ import {
   Param,
   Patch,
   UseGuards,
-  ParseIntPipe,
+  Version,
   Post,
 } from '@nestjs/common';
 import { UserService } from './user.service';
@@ -30,7 +30,8 @@ import { FilePathPayload } from './payload/filepath.payload';
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
-  @Get('v1/presigned-upload-url')
+  @Get('presigned-upload-url')
+  @Version('1')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOkResponse({
@@ -46,7 +47,8 @@ export class UserController {
     return this.userService.getPresignedUploadUrl(user);
   }
 
-  @Post('v1/profile-image/commit')
+  @Post('profile-image/commit')
+  @Version('1')
   @ApiNoContentResponse()
   @HttpCode(204)
   @ApiOperation({ summary: '프로필 사진 업로드 완료 커밋' })
@@ -59,7 +61,8 @@ export class UserController {
     return this.userService.commitProfileImage(user.id, payload.filePath);
   }
 
-  @Get('v1/profile-image-url')
+  @Get('profile-image-url')
+  @Version('1')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOkResponse({
@@ -73,7 +76,8 @@ export class UserController {
     return this.userService.getProfileImageUrl(user);
   }
 
-  @Patch('v1')
+  @Patch()
+  @Version('1')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: '유저 정보 수정' })
@@ -85,7 +89,8 @@ export class UserController {
     return this.userService.updateUser(payload, user);
   }
 
-  @Delete('v1')
+  @Delete()
+  @Version('1')
   @HttpCode(204)
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
@@ -95,7 +100,8 @@ export class UserController {
     return this.userService.deleteUser(user);
   }
 
-  @Get('v1/:userId')
+  @Get(':userId')
+  @Version('1')
   @ApiOperation({ summary: '유저 정보 조회' })
   @ApiOkResponse({ type: UserDto })
   async getUserById(@Param('userId') userId: string): Promise<UserDto> {

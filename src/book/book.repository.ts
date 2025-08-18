@@ -4,7 +4,6 @@ import { BookData } from './type/book-data.type';
 import { SaveBookData } from './type/save-book-data.type';
 import { UpdateBookData } from './type/update-book-data.type';
 import { MetadataData } from './type/metadata-data.type';
-import { distributeParagraphs } from './parsing';
 import { redis } from '../search/redis.provider';
 import { PageData } from 'src/page/type/page-type';
 
@@ -192,12 +191,6 @@ export class BookRepository {
     }));
   }
 
-  async getPageCountByBookId(bookId: number): Promise<number> {
-    return this.prisma.page.count({
-      where: { bookId },
-    });
-  }
-
   async saveBookToUser(userId: string, bookId: number): Promise<void> {
     await this.prisma.bookSave.create({
       data: {
@@ -232,15 +225,6 @@ export class BookRepository {
     return savedBook !== null;
   }
 
-  async getPagesByDay(bookId: number, day: number): Promise<string[]> {
-    const all = await this.getPagesByBookId(bookId);
-    const distributed = distributeParagraphs(
-      Array.from({ length: all.length }, (_, i) => i),
-    );
-    const chapter = distributed[day - 1] || [];
-    return chapter.map((i) => all[i].content);
-  }
-
   async incrementBookViews(bookId: number, title: string): Promise<void> {
     await this.prisma.book.update({
       where: { id: bookId },
@@ -251,5 +235,26 @@ export class BookRepository {
       },
     });
     await redis.zincrby('autocomplete:views', 1, title);
+  }
+
+  async updateBookPages(bookId: number, pages: string[]): Promise<void> {
+    await this.prisma.$transaction([
+      this.prisma.page.deleteMany({
+        where: { bookId },
+      }),
+      this.prisma.page.createMany({
+        data: pages.map((content, index) => ({
+          content,
+          number: index + 1,
+          bookId,
+        })),
+      }),
+      this.prisma.book.update({
+        where: { id: bookId },
+        data: {
+          totalPagesCount: pages.length,
+        },
+      }),
+    ]);
   }
 }
