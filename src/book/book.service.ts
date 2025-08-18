@@ -9,7 +9,7 @@ import { UserRepository } from 'src/user/user.repository';
 import { BookDto } from './dto/book.dto';
 import { SaveBookPayload } from './payload/save-book.payload';
 import { SaveBookData } from './type/save-book-data.type';
-import { parsing, distributeParagraphs } from './parsing';
+import { parsePagesFromJson } from './parsing';
 import { PatchUpdateBookPayload } from './payload/patch-update-book.payload';
 import { UpdateBookData } from './type/update-book-data.type';
 import { MetadataListDto } from './dto/metadata.dto';
@@ -45,7 +45,7 @@ export class BookService {
       throw new ConflictException('이미 존재하는 책입니다.');
     }
 
-    const paragraphs = parsing(fileName);
+    const paragraphs = parsePagesFromJson(fileName);
     const data: SaveBookData = {
       title: payload.title,
       author: payload.author,
@@ -84,10 +84,7 @@ export class BookService {
   }
   */
 
-  async getBookParagraphs(
-    bookId: number,
-    userId: string,
-  ): Promise<PageListDto> {
+  async getBookPages(bookId: number): Promise<PageListDto> {
     const book = await this.bookRepository.getBookById(bookId);
     if (!book) {
       throw new NotFoundException('책을 찾을 수 없습니다.');
@@ -152,14 +149,13 @@ export class BookService {
     return MetadataListDto.from(books);
   }
 
-  async getParagraphCountByBookId(bookId: number): Promise<number> {
+  async getPageCountByBookId(bookId: number): Promise<number> {
     const book = await this.bookRepository.getBookById(bookId);
     if (!book) {
       throw new NotFoundException('책을 찾을 수 없습니다.');
     }
 
-    const count = await this.bookRepository.getPageCountByBookId(bookId);
-    return count;
+    return book.totalPagesCount;
   }
 
   /*
@@ -294,5 +290,15 @@ export class BookService {
       throw new NotFoundException('책을 찾을 수 없습니다.');
     }
     await this.bookRepository.incrementBookViews(bookId, book.title);
+  }
+
+  async updateBookPages(bookId: number, fileName: string): Promise<void> {
+    const book = await this.bookRepository.getBookById(bookId);
+    if (!book) {
+      throw new NotFoundException('책을 찾을 수 없습니다.');
+    }
+
+    const pages = parsePagesFromJson(fileName);
+    await this.bookRepository.updateBookPages(bookId, pages);
   }
 }

@@ -9,6 +9,7 @@ import {
   Post,
   Put,
   UseGuards,
+  Version,
 } from '@nestjs/common';
 import { ReviewService } from './review.service';
 import {
@@ -31,7 +32,8 @@ import { UpdateReviewPayload } from './payload/update-review.paylaod';
 export class ReviewController {
   constructor(private readonly reviewService: ReviewService) {}
 
-  @Post('v1')
+  @Post()
+  @Version('1')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: '리뷰 생성' })
@@ -43,7 +45,8 @@ export class ReviewController {
     return this.reviewService.createReview(payload, user);
   }
 
-  @Get('v1/:bookId')
+  @Get(':bookId')
+  @Version('1')
   @ApiOperation({ summary: '책의 리뷰들 조회' })
   @ApiOkResponse({ type: ReviewListDto })
   async getReviewsByBookId(
@@ -52,7 +55,8 @@ export class ReviewController {
     return this.reviewService.getReviewsByBookId(bookId);
   }
 
-  @Put('v1/:id')
+  @Put(':id')
+  @Version('1')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: '리뷰 수정' })
@@ -64,7 +68,8 @@ export class ReviewController {
     return this.reviewService.updateReview(id, payload, user);
   }
 
-  @Post('v1/:reviewId/like')
+  @Post(':reviewId/like')
+  @Version('1')
   @HttpCode(204)
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
@@ -77,7 +82,8 @@ export class ReviewController {
     return this.reviewService.toggleReviewLike(reviewId, user);
   }
 
-  @Delete('v1/:id')
+  @Delete(':id')
+  @Version('1')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: '리뷰 삭제' })

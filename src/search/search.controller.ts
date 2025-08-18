@@ -1,4 +1,4 @@
-import { Body, Controller, Post, Get, Query } from '@nestjs/common';
+import { Body, Controller, Post, Get, Query, Version } from '@nestjs/common';
 import { SearchService } from './search.service';
 import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { SearchPayload } from './payload/search-payload';
@@ -10,7 +10,8 @@ import { BookSearchQuery } from './query/book-search-query';
 export class SearchController {
   constructor(private readonly searchService: SearchService) {}
 
-  @Post('v1/autocomplete')
+  @Post('autocomplete')
+  @Version('1')
   @ApiOperation({ summary: '자동완성 검색어 조회' })
   @ApiOkResponse({ type: [String] })
   async getAutocomplete(@Body() searchPayload: SearchPayload) {
@@ -23,7 +24,8 @@ export class SearchController {
     return suggestions;
   }
 
-  @Get('v1/search')
+  @Get('search')
+  @Version('1')
   @ApiOperation({ summary: '책 검색' })
   @ApiOkResponse({ type: BookListDto })
   async getBooks(@Query() query: BookSearchQuery): Promise<BookListDto> {
