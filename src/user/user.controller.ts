@@ -100,11 +100,11 @@ export class UserController {
     return this.userService.deleteUser(user);
   }
 
-  @Get(':userId')
+  @Get(':id')
   @Version('1')
   @ApiOperation({ summary: '유저 정보 조회' })
   @ApiOkResponse({ type: UserDto })
-  async getUserById(@Param('userId') userId: string): Promise<UserDto> {
-    return this.userService.getUserById(userId);
+  async getUserById(@Param('id') id: string): Promise<UserDto> {
+    return this.userService.getUserById(id);
   }
 }

@@ -45,14 +45,14 @@ export class ReviewController {
     return this.reviewService.createReview(payload, user);
   }
 
-  @Get(':bookId')
+  @Get(':id')
   @Version('1')
   @ApiOperation({ summary: '책의 리뷰들 조회' })
   @ApiOkResponse({ type: ReviewListDto })
   async getReviewsByBookId(
-    @Param('bookId', ParseIntPipe) bookId: number,
+    @Param('id', ParseIntPipe) id: number,
   ): Promise<ReviewListDto> {
-    return this.reviewService.getReviewsByBookId(bookId);
+    return this.reviewService.getReviewsByBookId(id);
   }
 
   @Put(':id')
@@ -68,7 +68,7 @@ export class ReviewController {
     return this.reviewService.updateReview(id, payload, user);
   }
 
-  @Post(':reviewId/like')
+  @Post(':id/like')
   @Version('1')
   @HttpCode(204)
   @UseGuards(JwtAuthGuard)
@@ -76,10 +76,10 @@ export class ReviewController {
   @ApiOperation({ summary: '리뷰에 좋아요 누르기 (다시 누르면 취소)' })
   @ApiNoContentResponse()
   async toggleReviewLike(
-    @Param('reviewId', ParseIntPipe) reviewId: number,
+    @Param('id', ParseIntPipe) id: number,
     @CurrentUser() user: UserBaseInfo,
   ): Promise<void> {
-    return this.reviewService.toggleReviewLike(reviewId, user);
+    return this.reviewService.toggleReviewLike(id, user);
   }
 
   @Delete(':id')
@@ -87,6 +87,7 @@ export class ReviewController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: '리뷰 삭제' })
+  @ApiNoContentResponse()
   @HttpCode(204)
   async deleteReview(
     @Param('id', ParseIntPipe) id: number,
