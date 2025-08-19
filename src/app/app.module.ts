@@ -16,6 +16,7 @@ import { ReviewModule } from '../review/review.module';
 import { SearchModule } from 'src/search/search.module';
 import { SearchRepository } from 'src/search/search.repository';
 import { PageModule } from 'src/page/page.module';
+import { ReadModule } from 'src/read/read.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { PageModule } from 'src/page/page.module';
     PageModule,
     configModule,
     CommonModule,
+    ReadModule,
     ReviewModule,
     SearchModule,
   ],

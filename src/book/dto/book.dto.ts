@@ -25,7 +25,7 @@ export class BookDto {
     type: String,
     nullable: true,
   })
-  isbn?: string;
+  isbn!: string | null;
 
   @ApiProperty({
     description: '조회수',
@@ -44,7 +44,7 @@ export class BookDto {
       id: data.id,
       title: data.title,
       author: data.author,
-      isbn: data.isbn ?? undefined,
+      isbn: data.isbn,
       views: data.views,
       totalPagesCount: data.totalPagesCount,
     };

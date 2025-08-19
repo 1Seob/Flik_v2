@@ -10,6 +10,7 @@ import {
   ParseIntPipe,
   UseGuards,
   Version,
+  Query,
 } from '@nestjs/common';
 import { BookService } from './book.service';
 import {
@@ -19,7 +20,7 @@ import {
   ApiTags,
   ApiBearerAuth,
 } from '@nestjs/swagger';
-import { BookDto } from './dto/book.dto';
+import { BookDto, BookListDto } from './dto/book.dto';
 import { SaveBookPayload } from './payload/save-book.payload';
 import { PatchUpdateBookPayload } from './payload/patch-update-book.payload';
 import { JwtAuthGuard } from '../auth/guard/jwt-auth.guard';
@@ -27,11 +28,17 @@ import { CurrentUser } from '../auth/decorator/user.decorator';
 import { UserBaseInfo } from '../auth/type/user-base-info.type';
 import { PageListDto } from 'src/page/dto/page.dto';
 import { UpdatePagesPayload } from './payload/update-pages-payload';
+import { SearchPayload } from 'src/search/payload/search-payload';
+import { SearchService } from 'src/search/search.service';
+import { BookSearchQuery } from 'src/search/query/book-search-query';
 
 @Controller('books')
 @ApiTags('Book API')
 export class BookController {
-  constructor(private readonly bookService: BookService) {}
+  constructor(
+    private readonly bookService: BookService,
+    private readonly searchService: SearchService,
+  ) {}
 
   @Post()
   @Version('1')
@@ -40,6 +47,28 @@ export class BookController {
   @HttpCode(204)
   async updateBookPages(@Body() payload: UpdatePagesPayload): Promise<void> {
     return this.bookService.updateBookPages(payload.bookId, payload.fileName);
+  }
+
+  @Post('autocomplete')
+  @Version('1')
+  @ApiOperation({ summary: '자동완성 검색어 조회' })
+  @ApiOkResponse({ type: [String] })
+  async getAutocomplete(@Body() searchPayload: SearchPayload) {
+    const { query } = searchPayload;
+    if (!query) {
+      return { lexical: [], views: [] };
+    }
+    const suggestions =
+      await this.searchService.getAutocompleteSuggestions(query);
+    return suggestions;
+  }
+
+  @Get('search')
+  @Version('1')
+  @ApiOperation({ summary: '책 검색' })
+  @ApiOkResponse({ type: BookListDto })
+  async getBooks(@Query() query: BookSearchQuery): Promise<BookListDto> {
+    return this.searchService.getBooks(query);
   }
 
   /*
@@ -60,25 +89,23 @@ export class BookController {
   }
     */
 
-  @Get(':bookId')
+  @Get(':id')
   @Version('1')
   @ApiOperation({ summary: '책 정보 가져오기' })
   @ApiOkResponse({ type: BookDto })
-  async getBookById(
-    @Param('bookId', ParseIntPipe) bookId: number,
-  ): Promise<BookDto> {
-    return this.bookService.getBookById(bookId);
+  async getBookById(@Param('id', ParseIntPipe) id: number): Promise<BookDto> {
+    return this.bookService.getBookById(id);
   }
 
-  @Post(':bookId/views')
+  @Post(':id/views')
   @Version('1')
   @ApiOperation({ summary: '책 조회수 증가' })
   @ApiNoContentResponse()
   @HttpCode(204)
   async incrementBookViews(
-    @Param('bookId', ParseIntPipe) bookId: number,
+    @Param('id', ParseIntPipe) id: number,
   ): Promise<void> {
-    await this.bookService.incrementBookViews(bookId);
+    await this.bookService.incrementBookViews(id);
   }
 
   /*
@@ -99,24 +126,24 @@ export class BookController {
   }
   */
 
-  @Get(':bookId/pages/download')
+  @Get(':id/pages/download')
   @Version('1')
   @ApiOkResponse({ type: PageListDto })
   @ApiOperation({ summary: '책 원문 다운로드' })
   async getBookPages(
-    @Param('bookId', ParseIntPipe) bookId: number,
+    @Param('id', ParseIntPipe) id: number,
   ): Promise<PageListDto> {
-    return this.bookService.getBookPages(bookId);
+    return this.bookService.getBookPages(id);
   }
 
-  @Get(':bookId/pages/count')
+  @Get(':id/pages/count')
   @Version('1')
   @ApiOperation({ summary: '책 전체 페이지 수 반환' })
   @ApiOkResponse({ type: Number })
   async getPageCountByBookId(
-    @Param('bookId', ParseIntPipe) bookId: number,
+    @Param('id', ParseIntPipe) id: number,
   ): Promise<number> {
-    return this.bookService.getPageCountByBookId(bookId);
+    return this.bookService.getPageCountByBookId(id);
   }
 
   /*
@@ -142,26 +169,24 @@ export class BookController {
   }
   // 프로젝트 루트 디렉토리에 있는 원문 텍스트 파일의 이름을 fileName으로 받습니다. ex) Frankenstein.txt
 
-  @Patch(':bookId')
+  @Patch(':id')
   @Version('1')
   @ApiOperation({ summary: '책 정보 수정' })
   @ApiOkResponse({ type: BookDto })
   async updateBook(
-    @Param('bookId', ParseIntPipe) bookId: number,
+    @Param('id', ParseIntPipe) id: number,
     @Body() payload: PatchUpdateBookPayload,
   ): Promise<BookDto> {
-    return this.bookService.patchUpdateBook(bookId, payload);
+    return this.bookService.patchUpdateBook(id, payload);
   }
 
-  @Delete(':bookId')
+  @Delete(':id')
   @Version('1')
   @HttpCode(204)
   @ApiOperation({ summary: 'DB에서 책 삭제' })
   @ApiNoContentResponse()
-  async deleteBook(
-    @Param('bookId', ParseIntPipe) bookId: number,
-  ): Promise<void> {
-    return this.bookService.deleteBook(bookId);
+  async deleteBook(@Param('id', ParseIntPipe) id: number): Promise<void> {
+    return this.bookService.deleteBook(id);
   }
 
   /*
@@ -188,7 +213,7 @@ export class BookController {
   }
 
   */
-  @Post(':bookId/save')
+  @Post(':id/save')
   @Version('1')
   @HttpCode(204)
   @UseGuards(JwtAuthGuard)
@@ -196,13 +221,13 @@ export class BookController {
   @ApiOperation({ summary: '책 보관하기' })
   @ApiNoContentResponse()
   async saveBookToUser(
-    @Param('bookId', ParseIntPipe) bookId: number,
+    @Param('id', ParseIntPipe) id: number,
     @CurrentUser() user: UserBaseInfo,
   ): Promise<void> {
-    return this.bookService.saveBookToUser(bookId, user.id);
+    return this.bookService.saveBookToUser(id, user.id);
   }
 
-  @Delete(':bookId/save')
+  @Delete(':id/save')
   @Version('1')
   @HttpCode(204)
   @UseGuards(JwtAuthGuard)
@@ -210,10 +235,10 @@ export class BookController {
   @ApiOperation({ summary: '책 보관 해제하기' })
   @ApiNoContentResponse()
   async unsaveBookFromUser(
-    @Param('bookId', ParseIntPipe) bookId: number,
+    @Param('id', ParseIntPipe) id: number,
     @CurrentUser() user: UserBaseInfo,
   ): Promise<void> {
-    return this.bookService.unsaveBookFromUser(bookId, user.id);
+    return this.bookService.unsaveBookFromUser(id, user.id);
   }
 
   /*
@@ -227,12 +252,12 @@ export class BookController {
   }
     */
 
-  @Get(':bookId/cover')
+  @Get(':id/cover')
   @Version('1')
   @ApiOperation({ summary: '책 커버 이미지 URL 가져오기' })
   async getBookCoverImage(
-    @Param('bookId', ParseIntPipe) bookId: number,
+    @Param('id', ParseIntPipe) id: number,
   ): Promise<string | null> {
-    return this.bookService.getBookCoverImage(bookId);
+    return this.bookService.getBookCoverImage(id);
   }
 }
