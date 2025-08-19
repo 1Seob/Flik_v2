@@ -17,20 +17,23 @@ export class UserDto {
   @ApiProperty({
     description: '성별',
     enum: GenderEnum,
+    nullable: true,
   })
-  gender?: PrismaGender | null;
+  gender!: PrismaGender | null;
 
   @ApiProperty({
     description: '생년월일',
     type: Date,
+    nullable: true,
   })
-  birthDate?: Date | null;
+  birthDate!: Date | null;
 
   @ApiProperty({
     description: '프로필 이미지 경로',
     type: String,
+    nullable: true,
   })
-  profileImagePath?: string | null;
+  profileImagePath!: string | null;
 
   @ApiProperty({
     description: '이름',
