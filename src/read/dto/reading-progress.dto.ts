@@ -10,6 +10,11 @@ export class ReadingProgressDto {
   book!: BookDto;
 
   @ApiProperty({
+    description: '최대 페이지',
+  })
+  maxPageRead!: number;
+
+  @ApiProperty({
     description: '달성률',
     type: Number,
   })
@@ -24,6 +29,7 @@ export class ReadingProgressDto {
   static from(data: ReadingProgressData): ReadingProgressDto {
     return {
       book: data.book,
+      maxPageRead: data.maxPageRead,
       progress: data.progress,
       challengeParticipation: data.challengeParticipation,
     };

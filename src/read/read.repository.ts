@@ -5,10 +5,36 @@ import { UserBaseInfo } from 'src/auth/type/user-base-info.type';
 import { CreateReadingEndLogPayload } from './payload/create-reading-end-log.payload';
 import { ReadingLogData } from './type/reading-log-data.type';
 import { BookData } from 'src/book/type/book-data.type';
+import { PageData } from 'src/page/type/page-type';
+import { ChallengeData } from 'src/challenge/type/challenge-data.type';
 
 @Injectable()
 export class ReadRepository {
   constructor(private readonly prisma: PrismaService) {}
+
+  async getBookById(bookId: number): Promise<BookData | null> {
+    return this.prisma.book.findUnique({
+      where: {
+        id: bookId,
+      },
+      select: {
+        id: true,
+        title: true,
+        author: true,
+        isbn: true,
+        views: true,
+        totalPagesCount: true,
+      },
+    });
+  }
+
+  async getPageById(pageId: number): Promise<PageData | null> {
+    return this.prisma.page.findUnique({
+      where: {
+        id: pageId,
+      },
+    });
+  }
 
   async createReadingStartLog(
     payload: CreateReadingStartLogPayload,
@@ -36,7 +62,7 @@ export class ReadRepository {
         ...(payload.participantId !== undefined &&
         payload.participantId !== null
           ? {
-              participant: {
+              join: {
                 connect: {
                   id: payload.participantId,
                 },
@@ -74,7 +100,7 @@ export class ReadRepository {
         ...(payload.participantId !== undefined &&
         payload.participantId !== null
           ? {
-              participant: {
+              join: {
                 connect: {
                   id: payload.participantId,
                 },
@@ -153,5 +179,43 @@ export class ReadRepository {
         book: true,
       },
     });
+  }
+
+  async getChallengeByParticipantId(
+    participantId: number,
+  ): Promise<ChallengeData | null> {
+    const join = await this.prisma.challengeJoin.findUnique({
+      where: { id: participantId },
+      include: {
+        challenge: true,
+      },
+    });
+
+    if (!join) return null;
+
+    return {
+      id: join.challenge.id,
+      name: join.challenge.name,
+      hostId: join.challenge.hostId,
+      bookId: join.challenge.bookId,
+      visibility: join.challenge.visibility,
+      startTime: join.challenge.startTime,
+      endTime: join.challenge.endTime,
+      completedAt: join.challenge.completedAt,
+      cancelledAt: join.challenge.cancelledAt,
+    };
+  }
+
+  async isUserParticipating(
+    challengeId: number,
+    userId: string,
+  ): Promise<boolean> {
+    const participation = await this.prisma.challengeJoin.findFirst({
+      where: {
+        challengeId,
+        userId,
+      },
+    });
+    return participation !== null;
   }
 }

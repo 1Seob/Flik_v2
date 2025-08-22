@@ -4,6 +4,7 @@ import { CreateChallengeData } from './type/create-challenge-data.type';
 import { ChallengeData } from './type/challenge-data.type';
 import { ParticipantStatus } from '@prisma/client';
 import { BookData } from 'src/book/type/book-data.type';
+import { ParticipantData } from './type/participant-data.type';
 
 @Injectable()
 export class ChallengeRepository {
@@ -84,6 +85,60 @@ export class ChallengeRepository {
       },
       data: {
         cancelledAt: new Date(),
+      },
+    });
+  }
+
+  async getParticipantsByChallengeId(
+    challengeId: number,
+  ): Promise<ParticipantData[]> {
+    const joins = await this.prisma.challengeJoin.findMany({
+      where: { challengeId },
+      include: {
+        user: {
+          select: {
+            name: true,
+            lastLoginAt: true,
+          },
+        },
+        logs: {
+          select: {
+            pageNumber: true,
+          },
+        },
+      },
+    });
+
+    return joins.map((join) => ({
+      id: join.id,
+      name: join.user.name,
+      maxPageRead:
+        join.logs.length > 0
+          ? Math.max(...join.logs.map((l) => l.pageNumber))
+          : 0,
+      lastLoginAt: join.user.lastLoginAt,
+    }));
+  }
+
+  async isUserParticipating(
+    challengeId: number,
+    userId: string,
+  ): Promise<boolean> {
+    const participation = await this.prisma.challengeJoin.findFirst({
+      where: {
+        challengeId,
+        userId,
+      },
+    });
+    return participation !== null;
+  }
+
+  async joinChallenge(challengeId: number, userId: string): Promise<void> {
+    await this.prisma.challengeJoin.create({
+      data: {
+        challengeId,
+        userId,
+        status: ParticipantStatus.JOINED,
       },
     });
   }
