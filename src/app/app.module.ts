@@ -17,6 +17,7 @@ import { SearchModule } from 'src/search/search.module';
 import { SearchRepository } from 'src/search/search.repository';
 import { PageModule } from 'src/page/page.module';
 import { ReadModule } from 'src/read/read.module';
+import { ChallengeModule } from 'src/challenge/challenge.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { ReadModule } from 'src/read/read.module';
     configModule,
     CommonModule,
     ReadModule,
+    ChallengeModule,
     ReviewModule,
     SearchModule,
   ],

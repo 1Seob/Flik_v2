@@ -54,15 +54,19 @@ export class UserService {
           '닉네임에 부적절한 단어가 포함되어 있습니다.',
         );
       }
-      if (isReservedUsername(payload.nickname)) {
+      if (this.badWordsFilterService.isReservedUsername(payload.nickname)) {
         throw new BadRequestException('사용할 수 없는 닉네임입니다.');
       }
-      if (hasConsecutiveSpecialChars(payload.nickname)) {
+      if (
+        this.badWordsFilterService.hasConsecutiveSpecialChars(payload.nickname)
+      ) {
         throw new BadRequestException(
           '닉네임에 연속된 특수문자는 사용할 수 없습니다.',
         );
       }
-      if (startsOrEndsWithSpecialChar(payload.nickname)) {
+      if (
+        this.badWordsFilterService.startsOrEndsWithSpecialChar(payload.nickname)
+      ) {
         throw new BadRequestException(
           '닉네임은 특수문자로 시작하거나 끝날 수 없습니다.',
         );
@@ -128,18 +132,4 @@ export class UserService {
       user.profileImagePath,
     );
   }
-}
-
-const RESERVED_USERNAMES = ['admin', 'root', 'support', 'manager', 'system'];
-
-function isReservedUsername(username: string): boolean {
-  return RESERVED_USERNAMES.includes(username.toLowerCase());
-}
-
-function hasConsecutiveSpecialChars(username: string): boolean {
-  return /[._]{2,}/.test(username); // 연속된 마침표 또는 밑줄
-}
-
-function startsOrEndsWithSpecialChar(username: string): boolean {
-  return /^[._]|[._]$/.test(username); // 시작 또는 끝이 특수문자
 }
