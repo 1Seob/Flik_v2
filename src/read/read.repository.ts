@@ -113,7 +113,7 @@ export class ReadRepository {
     });
   }
 
-  async getLogsWithBookByDate(
+  async getNormalLogsWithBookByDate(
     startDate: Date,
     endDate: Date,
     user: UserBaseInfo,
@@ -121,6 +121,29 @@ export class ReadRepository {
     return this.prisma.readingLog.findMany({
       where: {
         userId: user.id,
+        participantId: null,
+        OR: [
+          { startedAt: { gte: startDate, lte: endDate } },
+          { endedAt: { gte: startDate, lte: endDate } },
+        ],
+      },
+      include: {
+        book: true,
+      },
+    });
+  }
+
+  async getChallengeLogsWithBookByDate(
+    startDate: Date,
+    endDate: Date,
+    user: UserBaseInfo,
+  ): Promise<(ReadingLogData & { book: BookData })[]> {
+    return this.prisma.readingLog.findMany({
+      where: {
+        userId: user.id,
+        participantId: {
+          not: null,
+        },
         OR: [
           { startedAt: { gte: startDate, lte: endDate } },
           { endedAt: { gte: startDate, lte: endDate } },

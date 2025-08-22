@@ -14,6 +14,7 @@ import { ReadingProgressListDto } from './dto/reading-progress.dto';
 import { endOfDay, startOfDay } from 'date-fns';
 import { BookData } from 'src/book/type/book-data.type';
 import { ReadingProgressData } from './type/reading-progress-data.type';
+import { ReadingLogData } from './type/reading-log-data.type';
 
 @Injectable()
 export class ReadService {
@@ -73,12 +74,31 @@ export class ReadService {
     const kstEnd = endOfDay(
       new Date(dateQuery.year, dateQuery.month - 1, dateQuery.day),
     );
-    const logsWithBook = await this.readRepository.getLogsWithBookByDate(
-      kstStart,
-      kstEnd,
-      user,
+    const [normalLogs, challengeLogs] = await Promise.all([
+      this.readRepository.getNormalLogsWithBookByDate(kstStart, kstEnd, user),
+      this.readRepository.getChallengeLogsWithBookByDate(
+        kstStart,
+        kstEnd,
+        user,
+      ),
+    ]);
+
+    const normalProgress = this.processLogsToProgressData(normalLogs, false);
+    const challengeProgress = this.processLogsToProgressData(
+      challengeLogs,
+      true,
     );
 
+    return ReadingProgressListDto.from([
+      ...normalProgress,
+      ...challengeProgress,
+    ]);
+  }
+
+  private processLogsToProgressData(
+    logsWithBook: (ReadingLogData & { book: BookData })[],
+    isChallenge: boolean,
+  ): ReadingProgressData[] {
     // 책 ID를 키로 사용하여 최대 페이지 번호와 책 정보를 저장할 Map
     const progressMap = new Map<number, { book: BookData; maxPage: number }>();
 
@@ -108,10 +128,9 @@ export class ReadService {
       readingProgressList.push({
         book: book,
         progress: Math.min(progress, 100), // 100%를 넘지 않도록 처리
-        challengeParticipation: false, // 요구사항에 따라 false로 고정
+        challengeParticipation: isChallenge, // 요구사항에 따라 false로 고정
       });
     }
-
-    return ReadingProgressListDto.from(readingProgressList);
+    return readingProgressList;
   }
 }
