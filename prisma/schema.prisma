@@ -131,7 +131,7 @@ model ReadingLog {
 
   participantId Int?          @map("participant_id")             
 
-  startedAt       DateTime?     @default(now())    @map("started_at")
+  startedAt       DateTime?                        @map("started_at")
   endedAt         DateTime?                        @map("ended_at")
   durationSec     Int?                             @map("duration_sec")
 

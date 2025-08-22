@@ -15,6 +15,7 @@ import { UpdateBookData } from './type/update-book-data.type';
 import { MetadataListDto } from './dto/metadata.dto';
 import axios from 'axios';
 import { PageListDto } from 'src/page/dto/page.dto';
+import { BookData } from './type/book-data.type';
 
 @Injectable()
 export class BookService {
@@ -90,7 +91,7 @@ export class BookService {
       throw new NotFoundException('책을 찾을 수 없습니다.');
     }
     const pages = await this.bookRepository.getBookPages(bookId);
-    return PageListDto.from(pages);
+    return PageListDto.from(BookDto.from(book), book.totalPagesCount, pages);
   }
 
   async patchUpdateBook(

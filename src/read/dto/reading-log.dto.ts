@@ -66,7 +66,7 @@ export class ReadingLogDto {
       userId: data.userId,
       bookId: data.bookId,
       pageId: data.pageId,
-      pageNumber: data.pageNum,
+      pageNumber: data.pageNumber,
       participantId: data.participantId,
       startedAt: data.startedAt,
       endedAt: data.endedAt,
