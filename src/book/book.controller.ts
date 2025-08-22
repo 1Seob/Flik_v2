@@ -28,7 +28,6 @@ import { CurrentUser } from '../auth/decorator/user.decorator';
 import { UserBaseInfo } from '../auth/type/user-base-info.type';
 import { PageListDto } from 'src/page/dto/page.dto';
 import { UpdatePagesPayload } from './payload/update-pages-payload';
-import { SearchPayload } from 'src/search/payload/search-payload';
 import { SearchService } from 'src/search/search.service';
 import { BookSearchQuery } from 'src/search/query/book-search-query';
 
@@ -49,18 +48,12 @@ export class BookController {
     return this.bookService.updateBookPages(payload.bookId, payload.fileName);
   }
 
-  @Post('autocomplete')
+  @Get('autocomplete')
   @Version('1')
   @ApiOperation({ summary: '자동완성 검색어 조회' })
   @ApiOkResponse({ type: [String] })
-  async getAutocomplete(@Body() searchPayload: SearchPayload) {
-    const { query } = searchPayload;
-    if (!query) {
-      return { lexical: [], views: [] };
-    }
-    const suggestions =
-      await this.searchService.getAutocompleteSuggestions(query);
-    return suggestions;
+  async getAutocomplete(@Query() query: BookSearchQuery) {
+    return this.searchService.getAutocompleteSuggestions(query.query);
   }
 
   @Get('search')
@@ -91,7 +84,7 @@ export class BookController {
 
   @Get(':id')
   @Version('1')
-  @ApiOperation({ summary: '책 정보 가져오기' })
+  @ApiOperation({ summary: '책 조회' })
   @ApiOkResponse({ type: BookDto })
   async getBookById(@Param('id', ParseIntPipe) id: number): Promise<BookDto> {
     return this.bookService.getBookById(id);
@@ -105,7 +98,7 @@ export class BookController {
   async incrementBookViews(
     @Param('id', ParseIntPipe) id: number,
   ): Promise<void> {
-    await this.bookService.incrementBookViews(id);
+    return this.bookService.incrementBookViews(id);
   }
 
   /*
