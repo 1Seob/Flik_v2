@@ -11,6 +11,7 @@ import { ChallengeDto } from './dto/challenge.dto';
 import { CreateChallengePayload } from './payload/create-challenge.payload';
 import { UserBaseInfo } from 'src/auth/type/user-base-info.type';
 import { CreateChallengeData } from './type/create-challenge-data.type';
+import { ParticipantListDto } from './dto/participant.dto';
 
 @Injectable()
 export class ChallengeService {
@@ -80,5 +81,34 @@ export class ChallengeService {
       throw new ForbiddenException('챌린지 주최자만 삭제할 수 있습니다.');
     }
     await this.challengeRepository.deleteChallenge(id);
+  }
+
+  async getChallengeParticipants(id: number): Promise<ParticipantListDto> {
+    const challenge = await this.challengeRepository.getChallengeById(id);
+    if (!challenge) {
+      throw new NotFoundException('챌린지를 찾을 수 없습니다.');
+    }
+    const participants =
+      await this.challengeRepository.getParticipantsByChallengeId(id);
+    return ParticipantListDto.from(participants);
+  }
+
+  async joinChallenge(id: number, user: UserBaseInfo): Promise<void> {
+    const challenge = await this.challengeRepository.getChallengeById(id);
+    if (!challenge) {
+      throw new NotFoundException('챌린지를 찾을 수 없습니다.');
+    }
+
+    if (challenge.startTime < new Date()) {
+      throw new BadRequestException('챌린지가 이미 시작되었습니다.');
+    }
+
+    const isUserParticipating =
+      await this.challengeRepository.isUserParticipating(id, user.id);
+    if (isUserParticipating) {
+      throw new ConflictException('이미 참가한 챌린지입니다.');
+    }
+
+    await this.challengeRepository.joinChallenge(id, user.id);
   }
 }
