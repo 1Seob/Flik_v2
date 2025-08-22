@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { BookRepository } from './book.repository';
 import { UserRepository } from 'src/user/user.repository';
-import { BookDto } from './dto/book.dto';
+import { BookDto, BookListDto } from './dto/book.dto';
 import { SaveBookPayload } from './payload/save-book.payload';
 import { SaveBookData } from './type/save-book-data.type';
 import { parsePagesFromJson } from './parsing';
@@ -15,7 +15,6 @@ import { UpdateBookData } from './type/update-book-data.type';
 import { MetadataListDto } from './dto/metadata.dto';
 import axios from 'axios';
 import { PageListDto } from 'src/page/dto/page.dto';
-import { BookData } from './type/book-data.type';
 
 @Injectable()
 export class BookService {
@@ -176,13 +175,14 @@ export class BookService {
   }
   */
 
-  async saveBookToUser(bookId: number, userId: string): Promise<void> {
+  async saveBookToUser(bookId: number, userId: string): Promise<BookDto> {
     const book = await this.bookRepository.getBookById(bookId);
     if (!book) {
       throw new NotFoundException('책을 찾을 수 없습니다.');
     }
 
     await this.bookRepository.saveBookToUser(userId, bookId);
+    return BookDto.from(book);
   }
 
   async unsaveBookFromUser(bookId: number, userId: string): Promise<void> {
@@ -198,13 +198,9 @@ export class BookService {
     await this.bookRepository.unsaveBookFromUser(userId, bookId);
   }
 
-  async getSavedBookIdsByUser(userId: string): Promise<number[]> {
-    const user = await this.userRepository.getUserById(userId);
-    if (!user) {
-      throw new NotFoundException('사용자를 찾을 수 없습니다.');
-    }
-
-    return this.bookRepository.getSavedBookIdsByUser(userId);
+  async getSavedBooksByUser(userId: string): Promise<BookListDto> {
+    const savedBooks = await this.bookRepository.getSavedBooksByUser(userId);
+    return BookListDto.from(savedBooks);
   }
 
   private async checkImageExists(url: string): Promise<boolean> {

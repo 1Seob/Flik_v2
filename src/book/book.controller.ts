@@ -56,6 +56,18 @@ export class BookController {
     return this.searchService.getAutocompleteSuggestions(query.query);
   }
 
+  @Get('save')
+  @Version('1')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: '유저가 북마크한 책 반환' })
+  @ApiOkResponse({ type: BookListDto })
+  async getSavedBooksByUser(
+    @CurrentUser() user: UserBaseInfo,
+  ): Promise<BookListDto> {
+    return this.bookService.getSavedBooksByUser(user.id);
+  }
+
   @Get('search')
   @Version('1')
   @ApiOperation({ summary: '책 검색' })
@@ -208,15 +220,14 @@ export class BookController {
   */
   @Post(':id/save')
   @Version('1')
-  @HttpCode(204)
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: '책 보관하기' })
-  @ApiNoContentResponse()
+  @ApiOperation({ summary: '책 북마크' })
+  @ApiOkResponse({ type: BookDto })
   async saveBookToUser(
     @Param('id', ParseIntPipe) id: number,
     @CurrentUser() user: UserBaseInfo,
-  ): Promise<void> {
+  ): Promise<BookDto> {
     return this.bookService.saveBookToUser(id, user.id);
   }
 
@@ -225,7 +236,7 @@ export class BookController {
   @HttpCode(204)
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: '책 보관 해제하기' })
+  @ApiOperation({ summary: '책 북마크 해제' })
   @ApiNoContentResponse()
   async unsaveBookFromUser(
     @Param('id', ParseIntPipe) id: number,
@@ -233,17 +244,6 @@ export class BookController {
   ): Promise<void> {
     return this.bookService.unsaveBookFromUser(id, user.id);
   }
-
-  /*
-  @Get('v1/saved/:userId')
-  @ApiOperation({ summary: '유저가 보관한 책 ID 리스트 반환하기' })
-  @ApiOkResponse({ type: [Number] })
-  async getSavedBookIdsByUser(
-    @Param('userId', ParseIntPipe) userId: number,
-  ): Promise<number[]> {
-    return this.bookService.getSavedBookIdsByUser(userId);
-  }
-    */
 
   @Get(':id/cover')
   @Version('1')
