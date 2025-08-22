@@ -3,7 +3,7 @@ export type ReadingLogData = {
   userId: string;
   bookId: number;
   pageId: number;
-  pageNum: number;
+  pageNumber: number;
   participantId: number | null;
   startedAt: Date | null;
   endedAt: Date | null;
