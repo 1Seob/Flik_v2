@@ -5,7 +5,6 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { BookRepository } from './book.repository';
-import { UserRepository } from 'src/user/user.repository';
 import { BookDto, BookListDto } from './dto/book.dto';
 import { SaveBookPayload } from './payload/save-book.payload';
 import { SaveBookData } from './type/save-book-data.type';
@@ -18,10 +17,7 @@ import { PageListDto } from 'src/page/dto/page.dto';
 
 @Injectable()
 export class BookService {
-  constructor(
-    private readonly bookRepository: BookRepository,
-    private readonly userRepository: UserRepository,
-  ) {}
+  constructor(private readonly bookRepository: BookRepository) {}
 
   private readonly baseUrl = 'https://www.aladin.co.kr/ttb/api/ItemSearch.aspx';
   private readonly ttbKey = process.env.ALADIN_TTB_KEY;

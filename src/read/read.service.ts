@@ -1,6 +1,5 @@
 import {
   BadRequestException,
-  ConflictException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -24,7 +23,42 @@ export class ReadService {
     payload: CreateReadingStartLogPayload,
     user: UserBaseInfo,
   ): Promise<ReadingLogDto> {
-    //챌린지 구현하면서 예외처리 추가 예정
+    const book = await this.readRepository.getBookById(payload.bookId);
+    if (!book) {
+      throw new NotFoundException('책을 찾을 수 없습니다.');
+    }
+    const page = await this.readRepository.getPageById(payload.pageId);
+    if (!page) {
+      throw new NotFoundException('페이지를 찾을 수 없습니다.');
+    }
+
+    if (payload.bookId !== page.bookId) {
+      throw new BadRequestException('책 ID가 일치하지 않습니다.');
+    }
+    if (payload.pageNumber !== page.number) {
+      throw new BadRequestException('페이지 번호가 일치하지 않습니다.');
+    }
+
+    if (payload.participantId) {
+      const challenge = await this.readRepository.getChallengeByParticipantId(
+        payload.participantId,
+      );
+      if (!challenge) {
+        throw new NotFoundException('챌린지를 찾을 수 없습니다.');
+      }
+      if (challenge.bookId !== book.id) {
+        throw new BadRequestException('챌린지와 책이 일치하지 않습니다.');
+      }
+      const isUserParticipating = await this.readRepository.isUserParticipating(
+        challenge.id,
+        user.id,
+      );
+      if (!isUserParticipating) {
+        throw new BadRequestException(
+          '사용자가 챌린지에 참여하고 있지 않습니다.',
+        );
+      }
+    }
 
     const data = await this.readRepository.createReadingStartLog(payload, user);
     return ReadingLogDto.from(data);
@@ -34,7 +68,42 @@ export class ReadService {
     payload: CreateReadingEndLogPayload,
     user: UserBaseInfo,
   ): Promise<ReadingLogDto> {
-    //챌린지 구현하면서 예외처리 추가 예정
+    const book = await this.readRepository.getBookById(payload.bookId);
+    if (!book) {
+      throw new NotFoundException('책을 찾을 수 없습니다.');
+    }
+    const page = await this.readRepository.getPageById(payload.pageId);
+    if (!page) {
+      throw new NotFoundException('페이지를 찾을 수 없습니다.');
+    }
+
+    if (payload.bookId !== book.id) {
+      throw new BadRequestException('책 ID가 일치하지 않습니다.');
+    }
+    if (payload.pageNumber !== page.number) {
+      throw new BadRequestException('페이지 번호가 일치하지 않습니다.');
+    }
+
+    if (payload.participantId) {
+      const challenge = await this.readRepository.getChallengeByParticipantId(
+        payload.participantId,
+      );
+      if (!challenge) {
+        throw new NotFoundException('챌린지를 찾을 수 없습니다.');
+      }
+      if (challenge.bookId !== book.id) {
+        throw new BadRequestException('챌린지와 책이 일치하지 않습니다.');
+      }
+      const isUserParticipating = await this.readRepository.isUserParticipating(
+        challenge.id,
+        user.id,
+      );
+      if (!isUserParticipating) {
+        throw new BadRequestException(
+          '사용자가 챌린지에 참여하고 있지 않습니다.',
+        );
+      }
+    }
 
     const data = await this.readRepository.createReadingEndLog(payload, user);
     return ReadingLogDto.from(data);
@@ -127,6 +196,7 @@ export class ReadService {
 
       readingProgressList.push({
         book: book,
+        maxPageRead: maxPage,
         progress: Math.min(progress, 100), // 100%를 넘지 않도록 처리
         challengeParticipation: isChallenge, // 요구사항에 따라 false로 고정
       });
