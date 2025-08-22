@@ -208,12 +208,23 @@ export class BookRepository {
     });
   }
 
-  async getSavedBookIdsByUser(userId: string): Promise<number[]> {
+  async getSavedBooksByUser(userId: string): Promise<BookData[]> {
     const savedBooks = await this.prisma.bookSave.findMany({
       where: { userId },
-      select: { bookId: true },
+      select: {
+        book: {
+          select: {
+            id: true,
+            title: true,
+            author: true,
+            isbn: true,
+            views: true,
+            totalPagesCount: true,
+          },
+        },
+      },
     });
-    return savedBooks.map((savedBook) => savedBook.bookId);
+    return savedBooks.map((item) => item.book);
   }
 
   async isBookSavedByUser(userId: string, bookId: number): Promise<boolean> {
