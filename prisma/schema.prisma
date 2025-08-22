@@ -19,13 +19,15 @@ model User {
   updatedAt             DateTime                @updatedAt @map("updated_at")
   deletedAt             DateTime?               @map("deleted_at")
 
+  lastLoginAt           DateTime?               @map("last_login_at")
+
   bookLikes             BookLike[]
   bookSaves             BookSave[]
   review                Review[]
   reviewLikes           ReviewLike[]
   readingLog            ReadingLog[]
-  challengesOwned       Challenge[]    @relation("ChallengeOwner")
-  joins                 Participant[]
+  challenge             Challenge[]  
+  challengeJoin         ChallengeJoin[]
   notifications         Notification[]
 
   @@map("user")
@@ -129,7 +131,7 @@ model ReadingLog {
 
   pageNumber      Int           @map("page_number")
 
-  participantId Int?          @map("participant_id")             
+  participantId   Int?          @map("participant_id")             
 
   startedAt       DateTime?                        @map("started_at")
   endedAt         DateTime?                        @map("ended_at")
@@ -138,7 +140,7 @@ model ReadingLog {
   user      User       @relation(fields: [userId], references: [id])
   book      Book       @relation(fields: [bookId], references: [id])
   page      Page       @relation(fields: [pageId], references: [id])
-  join      Participant? @relation(fields: [participantId], references: [id])
+  join      ChallengeJoin? @relation(fields: [participantId], references: [id])
 
   @@index([userId, startedAt])
   @@index([userId, endedAt])
@@ -156,31 +158,30 @@ model ReadingLog {
 model Challenge {
   id            Int                @id @default(autoincrement())
   name          String                                 @map("name")              
-  ownerUserId   String                                 @map("owner_user_id")
-  imagePath     String?                                @map("image_path")
+  hostId        String                                 @map("host_id")
   bookId        Int                                    @map("book_id")
-  capacity      Int
      
-  visibility    ChallengeVisibility  @map("visibility") 
+  visibility    ChallengeVisibility                    @map("visibility") 
 
-  startAt       DateTime                               @map("start_at")
-  endAt         DateTime                               @map("end_at")
+  startTime     DateTime                               @map("start_at")
+  endTime       DateTime                               @map("end_at")
 
-  completedAt   DateTime?                               @map("completed_at")
-  createdAt     DateTime             @default(now())    @map("created_at")
-  status        ChallengeStatus     
+  completedAt   DateTime?                              @map("completed_at")
+  cancelledAt   DateTime?                              @map("cancelled_at")
+
+  createdAt     DateTime             @default(now())   @map("created_at")  
 
   book   Book @relation(fields: [bookId], references: [id])
-  owner  User @relation("ChallengeOwner", fields: [ownerUserId], references: [id])
-  joins  Participant[]
+  host   User @relation(fields: [hostId], references: [id])
+  challengeJoin  ChallengeJoin[]
 
-  @@index([visibility, status, startAt])
+  @@index([visibility, startTime])
   @@index([bookId])
-  @@index([ownerUserId])
+  @@index([hostId])
   @@map("challenge")
 }
 
-model Participant {
+model ChallengeJoin {
   id              Int       @id @default(autoincrement())
   challengeId     Int       @map("challenge_id")
   userId          String    @map("user_id")
@@ -199,7 +200,7 @@ model Participant {
   @@unique([challengeId, userId])        // 중복 참가 방지
   @@index([userId])
   
-  @@map("participant")
+  @@map("challenge_join")
 }
 
 model Notification {
@@ -238,13 +239,6 @@ enum Gender {
 enum ChallengeVisibility {
   PUBLIC
   PRIVATE
-}
-
-enum ChallengeStatus {
-  PREPARING
-  ACTIVE
-  COMPLETED
-  CANCELLED
 }
 
 enum ParticipantStatus {
