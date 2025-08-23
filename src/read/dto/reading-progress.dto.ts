@@ -28,7 +28,7 @@ export class ReadingProgressDto {
 
   static from(data: ReadingProgressData): ReadingProgressDto {
     return {
-      book: data.book,
+      book: BookDto.from(data.book),
       maxPageRead: data.maxPageRead,
       progress: data.progress,
       challengeParticipation: data.challengeParticipation,
