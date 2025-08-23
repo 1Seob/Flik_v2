@@ -11,7 +11,6 @@ import { SaveBookData } from './type/save-book-data.type';
 import { parsePagesFromJson } from './parsing';
 import { PatchUpdateBookPayload } from './payload/patch-update-book.payload';
 import { UpdateBookData } from './type/update-book-data.type';
-import { MetadataListDto } from './dto/metadata.dto';
 import axios from 'axios';
 import { PageListDto } from 'src/page/dto/page.dto';
 
@@ -21,7 +20,6 @@ export class BookService {
 
   private readonly baseUrl = 'https://www.aladin.co.kr/ttb/api/ItemSearch.aspx';
   private readonly ttbKey = process.env.ALADIN_TTB_KEY;
-  private readonly apiKey = process.env.GOOGLE_BOOKS_API_KEY;
 
   async getBookById(bookId: number): Promise<BookDto> {
     const book = await this.bookRepository.getBookById(bookId);
@@ -62,24 +60,6 @@ export class BookService {
     await this.bookRepository.deleteBook(bookId);
   }
 
-  /*
-  async getBookParagraphs(bookId: number, userId: number): Promise<string[][]> {
-    const paragraphs = await this.bookRepository.getParagraphsByBookId(bookId);
-    if (paragraphs.length === 0) {
-      throw new NotFoundException('책의 문단을 찾을 수 없습니다.');
-    }
-
-    await this.bookRepository.createUserBookIfNotExists(userId, bookId);
-    const contents = paragraphs.map((p) => p.content);
-    const indices = contents.map((_, i) => i);
-    const distributed = distributeParagraphs(indices);
-
-    return distributed.map((dayIndices) =>
-      dayIndices.map((index) => contents[index]),
-    );
-  }
-  */
-
   async getBookPages(bookId: number): Promise<PageListDto> {
     const book = await this.bookRepository.getBookById(bookId);
     if (!book) {
@@ -115,61 +95,6 @@ export class BookService {
     const updatedBook = await this.bookRepository.updateBook(bookId, data);
     return BookDto.from(updatedBook);
   }
-
-  /*
-  async toggleBookLike(bookId: number, user: UserBaseInfo): Promise<void> {
-    const book = await this.bookRepository.getBookById(bookId);
-    if (!book) {
-      throw new NotFoundException('책을 찾을 수 없습니다.');
-    }
-
-    await this.bookRepository.toggleBookLike(bookId, user.id);
-  }
-
-  async getLikedBookIdsByUser(userId: number): Promise<number[]> {
-    const user = await this.userRepository.getUserById(userId);
-    if (!user) {
-      throw new NotFoundException('사용자를 찾을 수 없습니다.');
-    }
-
-    return this.bookRepository.getLikedBookIdsByUser(userId);
-  }
-
-  */
-
-  async getBooksMetadata(
-    offset: number,
-    limit: number,
-  ): Promise<MetadataListDto> {
-    const books = await this.bookRepository.getBooksMetadata(offset, limit);
-    return MetadataListDto.from(books);
-  }
-
-  async getPageCountByBookId(bookId: number): Promise<number> {
-    const book = await this.bookRepository.getBookById(bookId);
-    if (!book) {
-      throw new NotFoundException('책을 찾을 수 없습니다.');
-    }
-
-    return book.totalPagesCount;
-  }
-
-  /*
-  async getParagraphsPerDay(bookId: number): Promise<number> {
-    const book = await this.bookRepository.getBookById(bookId);
-    if (!book) {
-      throw new NotFoundException('책을 찾을 수 없습니다.');
-    }
-
-    const count = await this.bookRepository.getParagraphCountByBookId(bookId);
-    const indices = Array.from({ length: count }, (_, i) => i);
-    const distributed = distributeParagraphs(indices);
-    const perDayCounts = distributed.map((day) => day.length);
-
-    // 가장 많이 할당된 날의 문단 수
-    return Math.max(...perDayCounts);
-  }
-  */
 
   async saveBookToUser(bookId: number, userId: string): Promise<BookDto> {
     const book = await this.bookRepository.getBookById(bookId);
@@ -248,33 +173,7 @@ export class BookService {
         console.error(`[Aladin] API 요청 실패 (ISBN=${book.isbn}):`, err);
       }
     }
-
-    // Google Books API로 대체
-    const googleUrl = `https://www.googleapis.com/books/v1/volumes?q=isbn:${book.isbn}&maxResults=1&key=${this.apiKey}`;
-
-    try {
-      const res = await axios.get(googleUrl);
-      const links = res.data?.items?.[0]?.volumeInfo?.imageLinks;
-
-      if (!links) return null;
-
-      // 아무 해상도나 우선 반환
-      for (const key in links) {
-        if (typeof links[key] === 'string') return links[key];
-      }
-
-      return null;
-    } catch (err) {
-      if (err instanceof Error) {
-        console.error(
-          `[GoogleBooks] API 요청 실패 (ISBN=${book.isbn}):`,
-          err.message,
-        );
-      } else {
-        console.error(`[GoogleBooks] API 요청 실패 (ISBN=${book.isbn}):`, err);
-      }
-      return null;
-    }
+    return null;
   }
 
   async incrementBookViews(bookId: number): Promise<void> {
