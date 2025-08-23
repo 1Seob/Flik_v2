@@ -52,7 +52,7 @@ export class PageListDto {
     description: '페이지 총 개수',
     type: Number,
   })
-  totalPagesCount!: number;
+  totalPages!: number;
 
   @ApiProperty({
     description: '페이지 목록',
@@ -67,7 +67,7 @@ export class PageListDto {
   ): PageListDto {
     return {
       book,
-      totalPagesCount,
+      totalPages: totalPagesCount,
       pages: PageDto.fromArray(pages),
     };
   }

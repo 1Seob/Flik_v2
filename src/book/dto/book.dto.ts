@@ -37,7 +37,7 @@ export class BookDto {
     description: '총 페이지 수',
     type: Number,
   })
-  totalPagesCount!: number;
+  totalPages!: number;
 
   static from(data: BookData): BookDto {
     return {
@@ -46,7 +46,7 @@ export class BookDto {
       author: data.author,
       isbn: data.isbn,
       views: data.views,
-      totalPagesCount: data.totalPagesCount,
+      totalPages: data.totalPagesCount,
     };
   }
 

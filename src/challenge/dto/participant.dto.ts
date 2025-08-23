@@ -10,7 +10,7 @@ export class ParticipantDto {
   @ApiProperty({
     description: '참여자 이름',
   })
-  name!: string;
+  nickname!: string;
 
   @ApiProperty({
     description: '최대 페이지',
@@ -25,7 +25,7 @@ export class ParticipantDto {
   static from(data: ParticipantData): ParticipantDto {
     return {
       id: data.id,
-      name: data.name,
+      nickname: data.name,
       maxPageRead: data.maxPageRead,
       lastLoginAt: data.lastLoginAt,
     };

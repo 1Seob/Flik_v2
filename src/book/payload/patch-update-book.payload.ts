@@ -33,5 +33,5 @@ export class PatchUpdateBookPayload {
     description: '총 페이지 수',
     type: Number,
   })
-  totalPagesCount?: number;
+  totalPages?: number;
 }

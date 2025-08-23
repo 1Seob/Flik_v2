@@ -10,10 +10,18 @@ import { CreateReadingEndLogPayload } from './payload/create-reading-end-log.pay
 import { ReadingLogDto, ReadingLogListDto } from './dto/reading-log.dto';
 import { DateQuery } from './query/date.query';
 import { ReadingProgressListDto } from './dto/reading-progress.dto';
-import { endOfDay, startOfDay } from 'date-fns';
+import {
+  endOfDay,
+  endOfMonth,
+  formatISO,
+  isWithinInterval,
+  startOfDay,
+  startOfMonth,
+} from 'date-fns';
 import { BookData } from 'src/book/type/book-data.type';
 import { ReadingProgressData } from './type/reading-progress-data.type';
 import { ReadingLogData } from './type/reading-log-data.type';
+import { CalendarQuery } from './query/calendar.query';
 
 @Injectable()
 export class ReadService {
@@ -162,6 +170,41 @@ export class ReadService {
       ...normalProgress,
       ...challengeProgress,
     ]);
+  }
+
+  async getReadingCalendar(
+    calendarQuery: CalendarQuery,
+    user: UserBaseInfo,
+  ): Promise<string[]> {
+    // 1. 해당 월의 시작일과 종료일 계산
+    const monthStart = startOfMonth(
+      new Date(calendarQuery.year, calendarQuery.month - 1),
+    );
+    const monthEnd = endOfMonth(monthStart);
+
+    // 2. 해당 월의 로그 중 날짜 필드만 조회
+    const logs = await this.readRepository.getMonthlyReadingLogs(
+      monthStart,
+      monthEnd,
+      user,
+    );
+    const readingDaysSet = new Set<string>();
+    const monthInterval = { start: monthStart, end: monthEnd };
+
+    for (const log of logs) {
+      if (log.startedAt && isWithinInterval(log.startedAt, monthInterval)) {
+        // "YYYY-MM-DD" 형식으로 변환하여 Set에 추가
+        readingDaysSet.add(
+          formatISO(log.startedAt, { representation: 'date' }),
+        );
+      }
+      if (log.endedAt && isWithinInterval(log.endedAt, monthInterval)) {
+        readingDaysSet.add(formatISO(log.endedAt, { representation: 'date' }));
+      }
+    }
+
+    // 4. Set을 배열로 변환하고 정렬하여 반환
+    return Array.from(readingDaysSet).sort();
   }
 
   private processLogsToProgressData(
