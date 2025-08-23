@@ -109,7 +109,7 @@ export class BookService {
       title: payload.title,
       author: payload.author,
       isbn: payload.isbn ?? null,
-      totalPagesCount: payload.totalPagesCount,
+      totalPagesCount: payload.totalPages,
     };
 
     const updatedBook = await this.bookRepository.updateBook(bookId, data);

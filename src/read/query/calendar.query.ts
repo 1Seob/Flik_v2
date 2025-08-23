@@ -1,0 +1,21 @@
+import { ApiProperty } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
+import { IsInt } from 'class-validator';
+
+export class CalendarQuery {
+  @IsInt()
+  @Type(() => Number)
+  @ApiProperty({
+    description: '연도',
+    type: Number,
+  })
+  year!: number;
+
+  @IsInt()
+  @Type(() => Number)
+  @ApiProperty({
+    description: '월',
+    type: Number,
+  })
+  month!: number;
+}

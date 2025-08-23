@@ -27,11 +27,25 @@ import { CreateReadingEndLogPayload } from './payload/create-reading-end-log.pay
 import { ReadingLogDto, ReadingLogListDto } from './dto/reading-log.dto';
 import { DateQuery } from './query/date.query';
 import { ReadingProgressListDto } from './dto/reading-progress.dto';
+import { CalendarQuery } from './query/calendar.query';
 
 @Controller('read')
 @ApiTags('Read API')
 export class ReadController {
   constructor(private readonly readService: ReadService) {}
+
+  @Get('calendar')
+  @Version('1')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '유저의 독서 캘린더 조회' })
+  @ApiOkResponse({ type: [String] })
+  async getReadingCalendar(
+    @Query() calendarQuery: CalendarQuery,
+    @CurrentUser() user: UserBaseInfo,
+  ): Promise<string[]> {
+    return this.readService.getReadingCalendar(calendarQuery, user);
+  }
 
   @Get('date')
   @Version('1')

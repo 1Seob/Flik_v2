@@ -218,4 +218,24 @@ export class ReadRepository {
     });
     return participation !== null;
   }
+
+  async getMonthlyReadingLogs(
+    monthStart: Date,
+    monthEnd: Date,
+    user: UserBaseInfo,
+  ) {
+    return this.prisma.readingLog.findMany({
+      where: {
+        userId: user.id,
+        OR: [
+          { startedAt: { gte: monthStart, lte: monthEnd } },
+          { endedAt: { gte: monthStart, lte: monthEnd } },
+        ],
+      },
+      select: {
+        startedAt: true,
+        endedAt: true,
+      },
+    });
+  }
 }
