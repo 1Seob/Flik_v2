@@ -76,24 +76,6 @@ export class BookController {
     return this.searchService.getBooks(query);
   }
 
-  /*
-  @Get('v1/metadata')
-  @ApiOperation({ summary: '책 메타데이터 가져오기' })
-  @ApiQuery({
-    name: 'offset',
-    type: Number,
-    description: '가져올 시작 위치입니다 (0부터 시작)',
-  })
-  @ApiQuery({ name: 'limit', type: Number, description: '가져올 개수입니다' })
-  @ApiOkResponse({ type: MetadataListDto })
-  async getBooksMetadata(
-    @Query('offset', ParseIntPipe) offset: number,
-    @Query('limit', ParseIntPipe) limit: number,
-  ): Promise<MetadataListDto> {
-    return this.bookService.getBooksMetadata(offset, limit);
-  }
-    */
-
   @Get(':id')
   @Version('1')
   @ApiOperation({ summary: '책 조회' })
@@ -113,24 +95,6 @@ export class BookController {
     return this.bookService.incrementBookViews(id);
   }
 
-  /*
-  @Get(':bookId/paragraphs')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: '책 문단을 30일 분량으로 가져오기' })
-  @ApiOkResponse({
-    type: String,
-    isArray: true,
-    description: '30일 분량으로 나눠진 문단 리스트 배열',
-  })
-  async getBookParagraphs(
-    @Param('bookId', ParseIntPipe) bookId: number,
-    @CurrentUser() user: UserBaseInfo,
-  ): Promise<string[][]> {
-    return this.bookService.getBookParagraphs(bookId, user.id);
-  }
-  */
-
   @Get(':id/pages/download')
   @Version('1')
   @ApiOkResponse({ type: PageListDto })
@@ -140,27 +104,6 @@ export class BookController {
   ): Promise<PageListDto> {
     return this.bookService.getBookPages(id);
   }
-
-  @Get(':id/pages/count')
-  @Version('1')
-  @ApiOperation({ summary: '책 전체 페이지 수 반환' })
-  @ApiOkResponse({ type: Number })
-  async getPageCountByBookId(
-    @Param('id', ParseIntPipe) id: number,
-  ): Promise<number> {
-    return this.bookService.getPageCountByBookId(id);
-  }
-
-  /*
-  @Get(':bookId/paragraphs/per-day')
-  @ApiOperation({ summary: '책 1일 읽어야 할 문단 수 반환 (30일 기준)' })
-  @ApiOkResponse({ type: Number })
-  async getParagraphsPerDay(
-    @Param('bookId', ParseIntPipe) bookId: number,
-  ): Promise<number> {
-    return this.bookService.getParagraphsPerDay(bookId);
-  }
-  */
 
   @Post('save/:fileName')
   @Version('1')
@@ -194,30 +137,6 @@ export class BookController {
     return this.bookService.deleteBook(id);
   }
 
-  /*
-  @Post(':bookId/like')
-  @HttpCode(204)
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: '책에 좋아요 누르기 (다시 누르면 취소)' })
-  @ApiNoContentResponse()
-  async toggleBookLike(
-    @Param('bookId', ParseIntPipe) bookId: number,
-    @CurrentUser() user: UserBaseInfo,
-  ): Promise<void> {
-    return this.bookService.toggleBookLike(bookId, user);
-  }
-
-  @Get('likes/:userId')
-  @ApiOperation({ summary: '유저가 좋아요한 책 ID 리스트 반환' })
-  @ApiOkResponse({ type: [Number] })
-  async getLikedBooks(
-    @Param('userId', ParseIntPipe) userId: number,
-  ): Promise<number[]> {
-    return this.bookService.getLikedBookIdsByUser(userId);
-  }
-
-  */
   @Post(':id/save')
   @Version('1')
   @UseGuards(JwtAuthGuard)

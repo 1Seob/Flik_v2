@@ -11,7 +11,11 @@ export class SearchRepository {
   // Redis에 책 제목과 작가명을 초기 로딩하는 메서드
   // 이 메서드는 애플리케이션 시작 시 한 번 호출되어야 함
   async loadBooksToRedis(): Promise<void> {
-    const books = await this.prisma.book.findMany();
+    const books = await this.prisma.book.findMany({
+      where: {
+        deletedAt: null,
+      },
+    });
 
     const lexicalSearchKey = 'autocomplete:lexical';
     const viewsSearchKey = 'autocomplete:views';
@@ -59,6 +63,7 @@ export class SearchRepository {
   async getBooks(query: BookSearchQuery): Promise<BookData[]> {
     return this.prisma.book.findMany({
       where: {
+        deletedAt: null,
         OR: [
           { title: { contains: query.query, mode: 'insensitive' } },
           { author: { contains: query.query, mode: 'insensitive' } },

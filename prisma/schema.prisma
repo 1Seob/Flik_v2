@@ -21,7 +21,6 @@ model User {
 
   lastLoginAt           DateTime                @default(now()) @map("last_login_at")
 
-  bookLikes             BookLike[]
   bookSaves             BookSave[]
   review                Review[]
   reviewLikes           ReviewLike[]
@@ -47,7 +46,6 @@ model Book {
   totalPagesCount       Int                     @default(0)
   isbn                  String?
 
-  likedBy               BookLike[]
   savedBy               BookSave[]
   review                Review[]
   pages                 Page[]
@@ -55,17 +53,6 @@ model Book {
   challenges            Challenge[]
 
   @@map("book")
-}
-
-model BookLike {
-  id     Int  @id @default(autoincrement())
-  userId String
-  bookId Int
-  book   Book @relation(fields: [bookId], references: [id])
-  user   User @relation(fields: [userId], references: [id])
-
-  @@unique([userId, bookId])
-  @@map("book-like")
 }
 
 model BookSave {

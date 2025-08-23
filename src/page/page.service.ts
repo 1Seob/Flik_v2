@@ -13,6 +13,11 @@ export class PageService {
       throw new NotFoundException('페이지를 찾을 수 없습니다.');
     }
 
+    const book = await this.pageRepository.getBookById(page.bookId);
+    if (!book) {
+      throw new NotFoundException('책을 찾을 수 없습니다.');
+    }
+
     return PageDto.from(page);
   }
 }

@@ -3,7 +3,6 @@ import { Injectable } from '@nestjs/common';
 import { BookData } from './type/book-data.type';
 import { SaveBookData } from './type/save-book-data.type';
 import { UpdateBookData } from './type/update-book-data.type';
-import { MetadataData } from './type/metadata-data.type';
 import { redis } from '../search/redis.provider';
 import { PageData } from 'src/page/type/page-type';
 
@@ -15,6 +14,7 @@ export class BookRepository {
     return this.prisma.book.findUnique({
       where: {
         id: bookId,
+        deletedAt: null,
       },
       select: {
         id: true,
@@ -52,17 +52,10 @@ export class BookRepository {
   }
 
   async deleteBook(bookId: number): Promise<void> {
-    await this.prisma.$transaction([
-      this.prisma.bookLike.deleteMany({
-        where: { bookId },
-      }),
-      this.prisma.page.deleteMany({
-        where: { bookId },
-      }),
-      this.prisma.book.delete({
-        where: { id: bookId },
-      }),
-    ]);
+    await this.prisma.book.update({
+      where: { id: bookId },
+      data: { deletedAt: new Date() },
+    });
   }
 
   async getBookByTitleAndAuthor(
@@ -73,6 +66,7 @@ export class BookRepository {
       where: {
         title,
         author,
+        deletedAt: null,
       },
       select: {
         id: true,
@@ -126,69 +120,6 @@ export class BookRepository {
         totalPagesCount: true,
       },
     });
-  }
-  /*
-  async toggleBookLike(bookId: number, userId: number): Promise<void> {
-    const like = await this.prisma.bookLike.findUnique({
-      where: {
-        userId_bookId: {
-          userId,
-          bookId,
-        },
-      },
-    });
-
-    if (like) {
-      await this.prisma.bookLike.delete({
-        where: {
-          userId_bookId: {
-            userId,
-            bookId,
-          },
-        },
-      });
-    } else {
-      await this.prisma.bookLike.create({
-        data: {
-          bookId,
-          userId,
-        },
-      });
-    }
-  }
-
-  async getLikedBookIdsByUser(userId: number): Promise<number[]> {
-    const likes = await this.prisma.bookLike.findMany({
-      where: { userId },
-      select: { bookId: true },
-    });
-    return likes.map((like) => like.bookId);
-  }
-
-  */
-
-  async getBooksMetadata(
-    offset: number,
-    limit: number,
-  ): Promise<MetadataData[]> {
-    const books = await this.prisma.book.findMany({
-      skip: offset,
-      take: limit,
-      select: {
-        id: true,
-        title: true,
-        pages: {
-          select: {
-            content: true,
-          },
-        },
-      },
-    });
-    return books.map((book) => ({
-      id: book.id,
-      title: book.title,
-      content: book.pages.map((page) => page.content).join('\n'),
-    }));
   }
 
   async saveBookToUser(userId: string, bookId: number): Promise<void> {

@@ -16,6 +16,7 @@ export class ReadRepository {
     return this.prisma.book.findUnique({
       where: {
         id: bookId,
+        deletedAt: null,
       },
       select: {
         id: true,
