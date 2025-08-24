@@ -13,6 +13,7 @@ import { PatchUpdateBookPayload } from './payload/patch-update-book.payload';
 import { UpdateBookData } from './type/update-book-data.type';
 import axios from 'axios';
 import { PageListDto } from 'src/page/dto/page.dto';
+import { redis } from 'src/search/redis.provider';
 
 @Injectable()
 export class BookService {
@@ -20,6 +21,8 @@ export class BookService {
 
   private readonly baseUrl = 'https://www.aladin.co.kr/ttb/api/ItemSearch.aspx';
   private readonly ttbKey = process.env.ALADIN_TTB_KEY;
+  private readonly NONE_SENTINEL = '__none__'; // 존재하지 않음을 표시하는 센티넬 값 (부정 캐시)
+  private readonly NEGATIVE_TTL_SEC = 60 * 60 * 24 * 7; // 부정 캐시 TTL (없음이 확인된 케이스는 7일 캐시)
 
   async getBookById(bookId: number): Promise<BookDto> {
     const book = await this.bookRepository.getBookById(bookId);
@@ -134,15 +137,29 @@ export class BookService {
   }
 
   async getBookCoverImage(bookId: number): Promise<string | null> {
-    const book = await this.bookRepository.getBookById(bookId);
-    if (!book) {
-      throw new NotFoundException('책을 찾을 수 없습니다.');
-    }
-    if (!book.isbn) {
-      return null; // ISBN이 없으면 커버 이미지도 없음
+    const cacheKey = `book:cover:${bookId}`;
+
+    // 1) 캐시 조회
+    const cached = await redis.get(cacheKey);
+    if (cached !== null) {
+      return cached === this.NONE_SENTINEL ? null : cached;
     }
 
-    // Aladin API로 커버 이미지 가져오기
+    // 2) DB 조회
+    const book = await this.bookRepository.getBookById(bookId);
+    if (!book) throw new NotFoundException('책을 찾을 수 없습니다.');
+    if (!book.isbn) {
+      // ISBN이 없으면 커버도 없음 → 부정 캐시
+      await redis.set(
+        cacheKey,
+        this.NONE_SENTINEL,
+        'EX',
+        this.NEGATIVE_TTL_SEC,
+      );
+      return null;
+    }
+
+    // 3) Aladin API 호출
     const params = new URLSearchParams({
       ttbkey: this.ttbKey as string,
       Query: book.isbn,
@@ -151,17 +168,27 @@ export class BookService {
       output: 'js',
       Cover: 'Big',
     });
-
     const url = `${this.baseUrl}?${params.toString()}`;
 
     try {
       const res = await axios.get(url, { responseType: 'text' });
+      // Aladin JS 포맷 응답 파싱
       const data = new Function(`return ${res.data}`)();
       const cover = data?.item?.[0]?.cover ?? null;
 
       if (cover && (await this.checkImageExists(cover))) {
+        // 4) 성공 시: 영구 저장
+        await redis.set(cacheKey, cover);
         return cover;
       }
+
+      // 커버가 없으면 부정 캐시
+      await redis.set(
+        cacheKey,
+        this.NONE_SENTINEL,
+        'EX',
+        this.NEGATIVE_TTL_SEC,
+      );
       return null;
     } catch (err) {
       if (err instanceof Error) {
@@ -172,8 +199,8 @@ export class BookService {
       } else {
         console.error(`[Aladin] API 요청 실패 (ISBN=${book.isbn}):`, err);
       }
+      return null;
     }
-    return null;
   }
 
   async incrementBookViews(bookId: number): Promise<void> {
