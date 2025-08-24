@@ -143,4 +143,87 @@ export class ChallengeRepository {
       },
     });
   }
+
+  async getCurrentParticipatingCount(userId: string): Promise<number> {
+    return this.prisma.challenge.count({
+      where: {
+        // 1. ChallengeJoin 관계를 통해 참여자 정보를 필터링
+        challengeJoin: {
+          some: {
+            userId,
+            status: ParticipantStatus.JOINED,
+            leftAt: null,
+          },
+        },
+        //2. 챌린지가 종료되지 않았고, 취소/완료되지 않았어야 함
+        cancelledAt: null,
+        completedAt: null,
+        endTime: {
+          gt: new Date(),
+        },
+      },
+    });
+  }
+
+  async leaveChallenge(challengeId: number, userId: string): Promise<void> {
+    await this.prisma.challengeJoin.delete({
+      where: {
+        challengeId_userId: {
+          challengeId,
+          userId,
+        },
+      },
+    });
+  }
+
+  async updateChallengeJoinStatus(
+    challengeId: number,
+    userId: string,
+  ): Promise<void> {
+    await this.prisma.challengeJoin.update({
+      where: {
+        challengeId_userId: {
+          challengeId,
+          userId,
+        },
+      },
+      data: {
+        status: ParticipantStatus.LEFT,
+        leftAt: new Date(),
+      },
+    });
+  }
+
+  async getUserActiveChallenges(userId: string): Promise<ChallengeData[]> {
+    return this.prisma.challenge.findMany({
+      where: {
+        // 1. ChallengeJoin 관계를 통해 참여자 정보를 필터링
+        challengeJoin: {
+          some: {
+            userId,
+            status: ParticipantStatus.JOINED,
+            leftAt: null,
+          },
+        },
+        //2. 챌린지가 종료되지 않았고, 취소/완료되지 않았어야 함
+        cancelledAt: null,
+        completedAt: null,
+        endTime: {
+          gt: new Date(),
+        },
+      },
+      select: {
+        id: true,
+        hostId: true,
+        name: true,
+        bookId: true,
+        visibility: true,
+        startTime: true,
+        endTime: true,
+        completedAt: true,
+        cancelledAt: true,
+        challengeJoin: true,
+      },
+    });
+  }
 }

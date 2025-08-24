@@ -70,4 +70,22 @@ export class ChallengeDto {
             : ChallengeStatus.ACTIVE,
     };
   }
+
+  static fromArray(data: ChallengeData[]): ChallengeDto[] {
+    return data.map((challenge) => ChallengeDto.from(challenge));
+  }
+}
+
+export class ChallengeListDto {
+  @ApiProperty({
+    description: '챌린지 목록',
+    type: [ChallengeDto],
+  })
+  challenges!: ChallengeDto[];
+
+  static from(data: ChallengeData[]): ChallengeListDto {
+    return {
+      challenges: ChallengeDto.fromArray(data),
+    };
+  }
 }
