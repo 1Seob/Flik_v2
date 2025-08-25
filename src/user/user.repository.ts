@@ -22,8 +22,8 @@ export class UserRepository {
         id: userId,
       },
       data: {
-        gender: data.gender ?? undefined,
-        birthday: data.birthday ?? undefined,
+        gender: data.gender,
+        birthday: data.birthday,
         name: data.name,
       },
     });
