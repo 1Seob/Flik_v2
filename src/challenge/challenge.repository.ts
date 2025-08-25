@@ -5,6 +5,7 @@ import { ChallengeData } from './type/challenge-data.type';
 import { ParticipantStatus } from '@prisma/client';
 import { BookData } from 'src/book/type/book-data.type';
 import { ParticipantData } from './type/participant-data.type';
+import { UpdateChallengeData } from './type/update-challenge-data.type';
 
 @Injectable()
 export class ChallengeRepository {
@@ -223,6 +224,29 @@ export class ChallengeRepository {
         completedAt: true,
         cancelledAt: true,
         challengeJoin: true,
+      },
+    });
+  }
+
+  async updateChallenge(
+    id: number,
+    data: UpdateChallengeData,
+  ): Promise<ChallengeData> {
+    return this.prisma.challenge.update({
+      where: { id },
+      data: {
+        name: data.name,
+      },
+      select: {
+        id: true,
+        name: true,
+        hostId: true,
+        bookId: true,
+        visibility: true,
+        startTime: true,
+        endTime: true,
+        completedAt: true,
+        cancelledAt: true,
       },
     });
   }

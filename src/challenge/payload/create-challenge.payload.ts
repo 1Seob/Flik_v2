@@ -1,11 +1,19 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsDate, IsEnum, IsInt, IsString, MaxLength } from 'class-validator';
+import {
+  IsDate,
+  IsEnum,
+  IsInt,
+  IsString,
+  MaxLength,
+  MinLength,
+} from 'class-validator';
 import { ChallengeVisibility } from '@prisma/client';
 import { Type } from 'class-transformer';
 
 export class CreateChallengePayload {
   @IsString()
-  @MaxLength(25)
+  @MinLength(2, { message: '챌린지 이름은 최소 2자 이상이어야 합니다.' })
+  @MaxLength(25, { message: '챌린지 이름은 최대 25자 이하여야 합니다.' })
   @ApiProperty({
     description: '챌린지 이름',
     type: String,
