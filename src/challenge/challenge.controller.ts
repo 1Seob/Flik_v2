@@ -25,6 +25,7 @@ import { CreateChallengePayload } from './payload/create-challenge.payload';
 import { CurrentUser } from 'src/auth/decorator/user.decorator';
 import { UserBaseInfo } from 'src/auth/type/user-base-info.type';
 import { ParticipantListDto } from './dto/participant.dto';
+import { UpdateChallengePayload } from './payload/update-challenge.payload';
 
 @Controller('challenges')
 @ApiTags('Challenge API')
@@ -62,6 +63,20 @@ export class ChallengeController {
   @ApiOkResponse({ type: ChallengeDto })
   async getChallenge(@Param('id') id: number): Promise<ChallengeDto> {
     return this.challengeService.getChallengeById(id);
+  }
+
+  @Post(':id')
+  @Version('1')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '챌린지 수정' })
+  @ApiOkResponse({ type: ChallengeDto })
+  async updateChallenge(
+    @Param('id') id: number,
+    @Body() payload: UpdateChallengePayload,
+    @CurrentUser() user: UserBaseInfo,
+  ): Promise<ChallengeDto> {
+    return this.challengeService.updateChallenge(id, payload, user);
   }
 
   @Get(':id/participants')
@@ -102,6 +117,7 @@ export class ChallengeController {
     return this.challengeService.leaveChallenge(id, user);
   }
 
+  /*
   @Delete(':id')
   @Version('1')
   @ApiOperation({ summary: '챌린지 삭제' })
@@ -115,4 +131,5 @@ export class ChallengeController {
   ): Promise<void> {
     return this.challengeService.deleteChallenge(id, user);
   }
+    */
 }
