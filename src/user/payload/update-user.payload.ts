@@ -9,7 +9,7 @@ import {
 } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Gender as PrismaGender } from '@prisma/client';
-import { Type, Transform } from 'class-transformer';
+import { Type } from 'class-transformer';
 import { GenderEnum } from '../dto/user.dto';
 
 export class UpdateUserPayload {
@@ -21,7 +21,6 @@ export class UpdateUserPayload {
     message:
       '닉네임은 한글, 영문, 숫자, 밑줄(_) 또는 하이픈(-)만 사용할 수 있습니다.',
   })
-  @Transform(({ value }) => (value === '' ? undefined : value))
   @ApiPropertyOptional({
     description: '닉네임',
     type: String,
@@ -30,7 +29,6 @@ export class UpdateUserPayload {
 
   @IsEnum(GenderEnum)
   @IsOptional()
-  @Transform(({ value }) => (value === '' ? undefined : value))
   @ApiPropertyOptional({
     description: '성별',
     enum: GenderEnum,
@@ -40,11 +38,6 @@ export class UpdateUserPayload {
   @IsDate()
   @IsOptional()
   @Type(() => Date)
-  @Transform(({ value }) => {
-    if (!value) return undefined;
-    const date = new Date(value);
-    return isNaN(date.getTime()) ? undefined : date;
-  })
   @ApiPropertyOptional({
     description: '생년월일',
     type: Date,
