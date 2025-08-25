@@ -12,6 +12,8 @@ import { CreateChallengePayload } from './payload/create-challenge.payload';
 import { UserBaseInfo } from 'src/auth/type/user-base-info.type';
 import { CreateChallengeData } from './type/create-challenge-data.type';
 import { ParticipantListDto } from './dto/participant.dto';
+import { UpdateChallengePayload } from './payload/update-challenge.payload';
+import { UpdateChallengeData } from './type/update-challenge-data.type';
 
 @Injectable()
 export class ChallengeService {
@@ -162,5 +164,53 @@ export class ChallengeService {
       user.id,
     );
     return ChallengeListDto.from(challenges);
+  }
+
+  async updateChallenge(
+    id: number,
+    payload: UpdateChallengePayload,
+    user: UserBaseInfo,
+  ): Promise<ChallengeDto> {
+    if (payload.name === null) {
+      throw new BadRequestException('챌린지 이름은 null이 될 수 없습니다.');
+    }
+    if (payload.name && this.badWordsFilterService.isProfane(payload.name)) {
+      throw new ConflictException(
+        '챌린지 이름에 부적절한 단어가 포함되어 있습니다.',
+      );
+    }
+    if (
+      payload.name &&
+      this.badWordsFilterService.hasConsecutiveSpecialChars(payload.name)
+    ) {
+      throw new ConflictException(
+        '챌린지 이름에 연속된 특수문자가 포함되어 있습니다.',
+      );
+    }
+    if (
+      payload.name &&
+      this.badWordsFilterService.startsOrEndsWithSpecialChar(payload.name)
+    ) {
+      throw new ConflictException(
+        '챌린지 이름은 특수문자로 시작하거나 끝날 수 없습니다.',
+      );
+    }
+
+    const challenge = await this.challengeRepository.getChallengeById(id);
+    if (!challenge) {
+      throw new NotFoundException('챌린지를 찾을 수 없습니다.');
+    }
+    if (challenge.hostId !== user.id) {
+      throw new ForbiddenException('챌린지 주최자만 수정할 수 있습니다.');
+    }
+
+    const data: UpdateChallengeData = {
+      name: payload.name,
+    };
+    const updatedChallenge = await this.challengeRepository.updateChallenge(
+      id,
+      data,
+    );
+    return ChallengeDto.from(updatedChallenge);
   }
 }
