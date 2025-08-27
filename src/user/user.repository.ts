@@ -63,4 +63,15 @@ export class UserRepository {
       },
     });
   }
+
+  async updateLastAccess(userId: string): Promise<void> {
+    await this.prisma.user.update({
+      where: {
+        id: userId,
+      },
+      data: {
+        lastLoginAt: new Date(),
+      },
+    });
+  }
 }

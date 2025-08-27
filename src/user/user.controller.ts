@@ -30,6 +30,17 @@ import { FilePathPayload } from './payload/filepath.payload';
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
+  @Patch('last-access')
+  @Version('1')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiNoContentResponse()
+  @HttpCode(204)
+  @ApiOperation({ summary: '최근 접속 시간 업데이트' })
+  async updateLastAccess(@CurrentUser() user: UserBaseInfo): Promise<void> {
+    return this.userService.updateLastAccess(user.id);
+  }
+
   @Get('presigned-upload-url')
   @Version('1')
   @UseGuards(JwtAuthGuard)
