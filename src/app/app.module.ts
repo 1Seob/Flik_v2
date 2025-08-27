@@ -18,6 +18,7 @@ import { SearchRepository } from 'src/search/search.repository';
 import { PageModule } from 'src/page/page.module';
 import { ReadModule } from 'src/read/read.module';
 import { ChallengeModule } from 'src/challenge/challenge.module';
+import { redis } from 'src/search/redis.provider';
 
 @Module({
   imports: [
@@ -43,6 +44,10 @@ export class AppModule implements NestModule, OnModuleInit {
   }
 
   async onModuleInit() {
+    console.log('Redis 데이터 초기화 중...');
+    await redis.flushall(); //모든 Redis 데이터 삭제
+    console.log('Redis 데이터 초기화 완료.');
+
     console.log('데이터베이스에서 책 정보를 Redis로 로딩 중...');
     await this.searchRepository.loadBooksToRedis();
     console.log('Redis 로딩 완료!');
