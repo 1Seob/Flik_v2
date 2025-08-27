@@ -250,4 +250,36 @@ export class ChallengeRepository {
       },
     });
   }
+
+  async getParticipantIdByUserIdAndChallengeId(
+    challengeId: number,
+    userId: string,
+  ): Promise<number> {
+    const participation = await this.prisma.challengeJoin.findUnique({
+      where: {
+        challengeId_userId: {
+          challengeId,
+          userId,
+        },
+      },
+      select: { id: true },
+    });
+    return participation!.id;
+  }
+
+  async findChallengeExitLogs(participantId: number) {
+    return this.prisma.readingLog.findMany({
+      where: {
+        // '종료 로그'만 필터링 (startedAt은 null, endedAt은 값이 있음)
+        startedAt: null,
+        endedAt: { not: null },
+        // 해당 챌린지 참여 기록(participantId)과 연결된 로그만 조회
+        participantId,
+      },
+      select: {
+        pageNumber: true, // 필요한 데이터만 선택
+        endedAt: true,
+      },
+    });
+  }
 }

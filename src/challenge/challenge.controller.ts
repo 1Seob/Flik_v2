@@ -27,6 +27,7 @@ import { CurrentUser } from 'src/auth/decorator/user.decorator';
 import { UserBaseInfo } from 'src/auth/type/user-base-info.type';
 import { ParticipantListDto } from './dto/participant.dto';
 import { UpdateChallengePayload } from './payload/update-challenge.payload';
+import { ChallengeCompleteLogListDto } from './dto/challenge-complete-log.dto';
 
 @Controller('challenges')
 @ApiTags('Challenge API')
@@ -78,6 +79,19 @@ export class ChallengeController {
     @CurrentUser() user: UserBaseInfo,
   ): Promise<ChallengeDto> {
     return this.challengeService.updateChallenge(id, payload, user);
+  }
+
+  @Get(':id/logs')
+  @Version('1')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: '챌린지 완료(완독) 로그 조회' })
+  @ApiOkResponse({ type: ChallengeCompleteLogListDto })
+  async getChallengeCompleteLogs(
+    @Param('id') id: number,
+    @CurrentUser() user: UserBaseInfo,
+  ): Promise<ChallengeCompleteLogListDto> {
+    return this.challengeService.getChallengeCompleteLogs(id, user);
   }
 
   @Get(':id/participants')

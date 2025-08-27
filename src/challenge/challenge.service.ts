@@ -14,6 +14,9 @@ import { CreateChallengeData } from './type/create-challenge-data.type';
 import { ParticipantListDto } from './dto/participant.dto';
 import { UpdateChallengePayload } from './payload/update-challenge.payload';
 import { UpdateChallengeData } from './type/update-challenge-data.type';
+import { ChallengeCompleteLogListDto } from './dto/challenge-complete-log.dto';
+import { ChallengeCompleteLogData } from './type/challenge-complete-log-data.type';
+import { format } from 'date-fns';
 
 @Injectable()
 export class ChallengeService {
@@ -212,5 +215,65 @@ export class ChallengeService {
       data,
     );
     return ChallengeDto.from(updatedChallenge);
+  }
+
+  async getChallengeCompleteLogs(
+    id: number,
+    user: UserBaseInfo,
+  ): Promise<ChallengeCompleteLogListDto> {
+    const challenge = await this.challengeRepository.getChallengeById(id);
+    if (!challenge) {
+      throw new NotFoundException('챌린지를 찾을 수 없습니다.');
+    }
+
+    const isUserParticipating =
+      await this.challengeRepository.isUserParticipating(id, user.id);
+    if (!isUserParticipating) {
+      throw new ForbiddenException('챌린지에 참여하지 않은 유저입니다.');
+    }
+
+    if (challenge.endTime < new Date()) {
+      throw new ForbiddenException('챌린지가 이미 종료되었습니다.');
+    }
+
+    const participantId =
+      await this.challengeRepository.getParticipantIdByUserIdAndChallengeId(
+        id,
+        user.id,
+      );
+
+    const logs =
+      await this.challengeRepository.findChallengeExitLogs(participantId);
+
+    const dailyProgress = new Map<string, Set<number>>();
+
+    for (const log of logs) {
+      if (!log.endedAt) {
+        continue;
+      }
+
+      const dateKey = format(log.endedAt, 'yyyy-MM-dd');
+
+      // `Set`이 없는 경우 새로 생성하는 로직을 추가
+      if (!dailyProgress.has(dateKey)) {
+        dailyProgress.set(dateKey, new Set<number>());
+      }
+
+      // `!`를 추가하여 get()의 결과가 null 또는 undefined가 아님을 TypeScript에 알려줌
+      dailyProgress.get(dateKey)!.add(log.pageNumber);
+    }
+
+    const progressData: ChallengeCompleteLogData[] = [];
+    for (const [dateString, pages] of dailyProgress.entries()) {
+      progressData.push({
+        date: dateString,
+        pagesRead: pages.size,
+      });
+    }
+
+    // 문자열로 날짜를 비교. 'YYYY-MM-DD' 형식은 문자열 정렬이 시간순 정렬과 동일함
+    progressData.sort((a, b) => a.date.localeCompare(b.date));
+
+    return ChallengeCompleteLogListDto.from(progressData);
   }
 }
