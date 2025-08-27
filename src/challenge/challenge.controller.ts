@@ -8,6 +8,7 @@ import {
   UseGuards,
   Version,
   Post,
+  Patch,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
@@ -65,7 +66,7 @@ export class ChallengeController {
     return this.challengeService.getChallengeById(id);
   }
 
-  @Post(':id')
+  @Patch(':id')
   @Version('1')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()

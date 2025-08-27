@@ -132,4 +132,8 @@ export class UserService {
       user.profileImagePath,
     );
   }
+
+  async updateLastAccess(userId: string): Promise<void> {
+    await this.userRepository.updateLastAccess(userId);
+  }
 }
