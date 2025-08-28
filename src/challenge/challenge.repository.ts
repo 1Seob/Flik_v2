@@ -2,10 +2,30 @@ import { PrismaService } from '../common/services/prisma.service';
 import { Injectable } from '@nestjs/common';
 import { CreateChallengeData } from './type/create-challenge-data.type';
 import { ChallengeData } from './type/challenge-data.type';
-import { ParticipantStatus } from '@prisma/client';
+import { ParticipantStatus, ChallengeVisibility } from '@prisma/client';
 import { BookData } from 'src/book/type/book-data.type';
 import { ParticipantData } from './type/participant-data.type';
 import { UpdateChallengeData } from './type/update-challenge-data.type';
+
+type JoinRow = {
+  id: number; // ChallengeJoin.id
+  status: ParticipantStatus;
+  user: {
+    name: string;
+    lastLoginAt: Date;
+  };
+  challenge: {
+    id: number;
+    name: string;
+    hostId: string;
+    bookId: number;
+    visibility: ChallengeVisibility;
+    startTime: Date;
+    endTime: Date;
+    completedAt: Date | null;
+    cancelledAt: Date | null;
+  };
+};
 
 @Injectable()
 export class ChallengeRepository {
@@ -281,5 +301,56 @@ export class ChallengeRepository {
         endedAt: true,
       },
     });
+  }
+
+  /**
+   * 유저가 참가했던 모든 ChallengeJoin + user + challenge 기본정보
+   */
+  async findUserJoinsWithChallenge(userId: string): Promise<JoinRow[]> {
+    const rows = await this.prisma.challengeJoin.findMany({
+      where: { userId },
+      select: {
+        id: true,
+        status: true,
+        user: { select: { name: true, lastLoginAt: true } },
+        challenge: {
+          select: {
+            id: true,
+            name: true,
+            hostId: true,
+            bookId: true,
+            visibility: true,
+            startTime: true,
+            endTime: true,
+            completedAt: true,
+            cancelledAt: true,
+          },
+        },
+      },
+      orderBy: { challenge: { startTime: 'desc' } },
+    });
+
+    // 타입 단언으로 반환
+    return rows as unknown as JoinRow[];
+  }
+
+  /**
+   * participantId(=ChallengeJoin.id) 별 최대 pageNumber 집계
+   * 대용량 로그에서도 효율적 (logs 전체 include X)
+   */
+  async getMaxPageReadByJoinIds(
+    joinIds: number[],
+  ): Promise<Map<number, number>> {
+    if (joinIds.length === 0) return new Map();
+
+    const grouped = await this.prisma.readingLog.groupBy({
+      by: ['participantId'],
+      where: { participantId: { in: joinIds } },
+      _max: { pageNumber: true },
+    });
+
+    return new Map<number, number>(
+      grouped.map((g) => [g.participantId as number, g._max.pageNumber ?? 0]),
+    );
   }
 }
