@@ -17,11 +17,15 @@ import {
   isWithinInterval,
   startOfDay,
   startOfMonth,
+  subDays,
 } from 'date-fns';
 import { BookData } from 'src/book/type/book-data.type';
 import { ReadingProgressData } from './type/reading-progress-data.type';
 import { ReadingLogData } from './type/reading-log-data.type';
 import { CalendarQuery } from './query/calendar.query';
+import { ReadingStreakDto } from './dto/reading-streak.dto';
+import { format, toZonedTime } from 'date-fns-tz';
+import { ReadingStreakData } from './type/reading-streak-data.type';
 
 @Injectable()
 export class ReadService {
@@ -245,5 +249,81 @@ export class ReadService {
       });
     }
     return readingProgressList;
+  }
+
+  async getReadingStreak(user: UserBaseInfo): Promise<ReadingStreakDto> {
+    const KOREA_TIMEZONE = 'Asia/Seoul';
+    const streakData = await this.readRepository.getReadingStreak(user);
+    if (!streakData) {
+      await this.readRepository.initReadingStreak(user.id);
+    }
+    // 긴 스트릭을 커버하기 위해 충분한 기간(400일)의 데이터를 조회
+    const readingDates = await this.readRepository.findUniqueReadingDates(
+      user.id,
+      400,
+    );
+
+    if (readingDates.length === 0) {
+      const data: ReadingStreakData = {
+        currentStreak: 0,
+        readToday: false,
+        longestStreak: streakData ? streakData.days : 0,
+        lastUpdatedAt: streakData ? streakData.updatedAt : new Date(0),
+      };
+      return ReadingStreakDto.from(data);
+    }
+
+    const readingDateSet = new Set(
+      readingDates.map((date) => {
+        // 함수 호출을 'toZonedTime'으로 변경합니다.
+        const kstDate = toZonedTime(date, KOREA_TIMEZONE);
+        return format(kstDate, 'yyyy-MM-dd');
+      }),
+    );
+
+    const today = toZonedTime(new Date(), KOREA_TIMEZONE);
+    const todayStr = format(today, 'yyyy-MM-dd');
+    const readToday = readingDateSet.has(todayStr);
+
+    if (!readToday) {
+      const data: ReadingStreakData = {
+        currentStreak: 0,
+        readToday: false,
+        longestStreak: streakData ? streakData.days : 0,
+        lastUpdatedAt: streakData ? streakData.updatedAt : new Date(0),
+      };
+      return ReadingStreakDto.from(data);
+    }
+
+    let currentStreak = 0;
+    // 연속일 계산 시작점: 오늘 읽었으면 오늘부터, 안 읽었으면 어제부터 확인
+    let dateToCheck = readToday ? today : subDays(today, 1);
+
+    while (readingDateSet.has(format(dateToCheck, 'yyyy-MM-dd'))) {
+      currentStreak++;
+      dateToCheck = subDays(dateToCheck, 1);
+    }
+    // 현재 연속일이 기존 기록보다 길면 업데이트
+    if (streakData && currentStreak > streakData.days) {
+      const updatedData = await this.readRepository.updateReadingStreak(
+        user.id,
+        currentStreak,
+      );
+      const data: ReadingStreakData = {
+        currentStreak: currentStreak,
+        readToday: readToday,
+        longestStreak: updatedData.days,
+        lastUpdatedAt: updatedData.updatedAt,
+      };
+      return ReadingStreakDto.from(data);
+    }
+
+    const data: ReadingStreakData = {
+      currentStreak: currentStreak,
+      readToday: readToday,
+      longestStreak: streakData ? streakData.days : currentStreak,
+      lastUpdatedAt: streakData ? streakData.updatedAt : new Date(0),
+    };
+    return ReadingStreakDto.from(data);
   }
 }

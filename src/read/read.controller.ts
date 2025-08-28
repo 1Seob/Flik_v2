@@ -28,6 +28,7 @@ import { ReadingLogDto, ReadingLogListDto } from './dto/reading-log.dto';
 import { DateQuery } from './query/date.query';
 import { ReadingProgressListDto } from './dto/reading-progress.dto';
 import { CalendarQuery } from './query/calendar.query';
+import { ReadingStreakDto } from './dto/reading-streak.dto';
 
 @Controller('read')
 @ApiTags('Read API')
@@ -71,6 +72,18 @@ export class ReadController {
     @CurrentUser() user: UserBaseInfo,
   ): Promise<ReadingLogDto> {
     return this.readService.createReadingStartLog(payload, user);
+  }
+
+  @Get('streak')
+  @Version('1')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '독서 연속성(streak) 데이터 조회' })
+  @ApiOkResponse({ type: ReadingStreakDto })
+  async getReadingStreak(
+    @CurrentUser() user: UserBaseInfo,
+  ): Promise<ReadingStreakDto> {
+    return this.readService.getReadingStreak(user);
   }
 
   @Post('end')
