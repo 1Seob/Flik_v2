@@ -28,6 +28,7 @@ import { UserBaseInfo } from 'src/auth/type/user-base-info.type';
 import { ParticipantListDto } from './dto/participant.dto';
 import { UpdateChallengePayload } from './payload/update-challenge.payload';
 import { ChallengeCompleteLogListDto } from './dto/challenge-complete-log.dto';
+import { ChallengeHistoryListDto } from './dto/challenge-history.dto';
 
 @Controller('challenges')
 @ApiTags('Challenge API')
@@ -57,6 +58,18 @@ export class ChallengeController {
     @CurrentUser() user: UserBaseInfo,
   ): Promise<ChallengeDto> {
     return this.challengeService.createChallenge(payload, user);
+  }
+
+  @Get('history')
+  @Version('1')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: '유저가 참여한 챌린지 히스토리 조회' })
+  @ApiOkResponse({ type: ChallengeHistoryListDto })
+  async getUserChallengeHistory(
+    @CurrentUser() user: UserBaseInfo,
+  ): Promise<ChallengeHistoryListDto> {
+    return this.challengeService.getUserChallengeHistory(user);
   }
 
   @Get(':id')
