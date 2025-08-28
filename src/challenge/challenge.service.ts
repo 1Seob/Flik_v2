@@ -17,6 +17,10 @@ import { UpdateChallengeData } from './type/update-challenge-data.type';
 import { ChallengeCompleteLogListDto } from './dto/challenge-complete-log.dto';
 import { ChallengeCompleteLogData } from './type/challenge-complete-log-data.type';
 import { format } from 'date-fns';
+import { ChallengeHistoryListDto } from './dto/challenge-history.dto';
+import { ParticipantData } from './type/participant-data.type';
+import { ChallengeData } from './type/challenge-data.type';
+import { ChallengeHistoryData } from './type/challenge-history-data.type';
 
 @Injectable()
 export class ChallengeService {
@@ -275,5 +279,53 @@ export class ChallengeService {
     progressData.sort((a, b) => a.date.localeCompare(b.date));
 
     return ChallengeCompleteLogListDto.from(progressData);
+  }
+
+  // challenge.service.ts
+  async getUserChallengeHistory(
+    user: UserBaseInfo,
+  ): Promise<ChallengeHistoryListDto> {
+    // 1) 유저의 Join + Challenge/User 기본정보
+    const joins = await this.challengeRepository.findUserJoinsWithChallenge(
+      user.id,
+    );
+    if (joins.length === 0) {
+      return ChallengeHistoryListDto.from([]);
+    }
+
+    // 2) Join.id 기준으로 max(pageNumber) 집계
+    const joinIds = joins.map((j) => j.id);
+    const maxMap =
+      await this.challengeRepository.getMaxPageReadByJoinIds(joinIds);
+
+    // 3) DTO로 매핑(joins 순서 = 결과 순서)
+    const histories: ChallengeHistoryData[] = joins.map((j) => {
+      const challengeData: ChallengeData = {
+        id: j.challenge.id,
+        name: j.challenge.name,
+        hostId: j.challenge.hostId,
+        bookId: j.challenge.bookId,
+        visibility: j.challenge.visibility,
+        startTime: j.challenge.startTime,
+        endTime: j.challenge.endTime,
+        completedAt: j.challenge.completedAt,
+        cancelledAt: j.challenge.cancelledAt,
+      };
+
+      const participantData: ParticipantData = {
+        id: j.id, // ChallengeJoin 레코드 ID를 "참여자 ID"로 사용
+        name: j.user.name,
+        maxPageRead: maxMap.get(j.id) ?? 0,
+        lastLoginAt: j.user.lastLoginAt,
+      };
+
+      return {
+        challengeData,
+        participantData,
+        participantStatus: j.status,
+      };
+    });
+
+    return ChallengeHistoryListDto.from(histories);
   }
 }
