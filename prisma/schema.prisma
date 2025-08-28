@@ -28,6 +28,7 @@ model User {
   challenge             Challenge[]  
   challengeJoin         ChallengeJoin[]
   notifications         Notification[]
+  readingStreakHistory  ReadingStreakHistory[]
 
   @@map("user")
 }
@@ -214,6 +215,21 @@ model Notification {
   @@index([userId, targetType, targetId])
 
   @@map("notification")
+}
+
+model ReadingStreakHistory {
+  id          Int          @id @default(autoincrement())
+
+  userId      String       @map("user_id") @unique
+
+  days        Int          @default(0) @map("days")         // 갱신된 최장 연속일
+
+  updatedAt   DateTime     @default(now()) @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId, updatedAt])
+  @@map("reading_streak_history")
 }
 
 // ── enums ───────────────────────────────────────────────

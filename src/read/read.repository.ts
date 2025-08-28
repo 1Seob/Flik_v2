@@ -7,6 +7,8 @@ import { ReadingLogData } from './type/reading-log-data.type';
 import { BookData } from 'src/book/type/book-data.type';
 import { PageData } from 'src/page/type/page-type';
 import { ChallengeData } from 'src/challenge/type/challenge-data.type';
+import { subDays } from 'date-fns';
+import { ReadingStreakData } from './type/reading-streak-data.type';
 
 @Injectable()
 export class ReadRepository {
@@ -236,6 +238,58 @@ export class ReadRepository {
       select: {
         startedAt: true,
         endedAt: true,
+      },
+    });
+  }
+
+  async getReadingStreak(user: UserBaseInfo) {
+    return this.prisma.readingStreakHistory.findUnique({
+      where: {
+        userId: user.id,
+      },
+    });
+  }
+
+  async findUniqueReadingDates(userId: string, days: number): Promise<Date[]> {
+    // 성능을 위해 최근 N일 데이터만 가져옴.
+    const sinceDate = subDays(new Date(), days);
+
+    const logs = await this.prisma.readingLog.findMany({
+      where: {
+        userId: userId,
+        startedAt: {
+          gte: sinceDate,
+        },
+      },
+      select: {
+        startedAt: true,
+      },
+      orderBy: {
+        startedAt: 'desc',
+      },
+    });
+
+    // startedAt이 null이 아닌 로그만 필터링
+    return logs
+      .map((log) => log.startedAt)
+      .filter((date): date is Date => date !== null);
+  }
+
+  async initReadingStreak(userId: string): Promise<void> {
+    await this.prisma.readingStreakHistory.create({
+      data: {
+        userId,
+      },
+    });
+  }
+
+  async updateReadingStreak(userId: string, days: number) {
+    return this.prisma.readingStreakHistory.update({
+      where: {
+        userId,
+      },
+      data: {
+        days,
       },
     });
   }
