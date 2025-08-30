@@ -115,7 +115,7 @@ export class ChallengeRepository {
     challengeId: number,
   ): Promise<ParticipantData[]> {
     const joins = await this.prisma.challengeJoin.findMany({
-      where: { challengeId },
+      where: { challengeId, status: ParticipantStatus.JOINED, leftAt: null },
       include: {
         user: {
           select: {
@@ -197,6 +197,30 @@ export class ChallengeRepository {
     });
   }
 
+  async leaveAndDeleteChallenge(
+    challengeId: number,
+    userId: string,
+  ): Promise<void> {
+    await this.prisma.$transaction([
+      this.prisma.challengeJoin.delete({
+        where: {
+          challengeId_userId: {
+            challengeId,
+            userId,
+          },
+        },
+      }),
+      this.prisma.challenge.update({
+        where: {
+          id: challengeId,
+        },
+        data: {
+          cancelledAt: new Date(),
+        },
+      }),
+    ]);
+  }
+
   async updateChallengeJoinStatus(
     challengeId: number,
     userId: string,
@@ -213,6 +237,34 @@ export class ChallengeRepository {
         leftAt: new Date(),
       },
     });
+  }
+
+  async updateChallengeJoinStatusAndDeleteChallenge(
+    challengeId: number,
+    userId: string,
+  ): Promise<void> {
+    await this.prisma.$transaction([
+      this.prisma.challengeJoin.update({
+        where: {
+          challengeId_userId: {
+            challengeId,
+            userId,
+          },
+        },
+        data: {
+          status: ParticipantStatus.LEFT,
+          leftAt: new Date(),
+        },
+      }),
+      this.prisma.challenge.update({
+        where: {
+          id: challengeId,
+        },
+        data: {
+          cancelledAt: new Date(),
+        },
+      }),
+    ]);
   }
 
   async getUserActiveChallenges(userId: string): Promise<ChallengeData[]> {

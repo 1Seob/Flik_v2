@@ -21,12 +21,14 @@ import { ChallengeHistoryListDto } from './dto/challenge-history.dto';
 import { ParticipantData } from './type/participant-data.type';
 import { ChallengeData } from './type/challenge-data.type';
 import { ChallengeHistoryData } from './type/challenge-history-data.type';
+import { PrismaService } from 'src/common/services/prisma.service';
 
 @Injectable()
 export class ChallengeService {
   constructor(
     private readonly challengeRepository: ChallengeRepository,
     private readonly badWordsFilterService: BadWordsFilterService,
+    private readonly prisma: PrismaService,
   ) {}
 
   async createChallenge(
@@ -159,16 +161,37 @@ export class ChallengeService {
       throw new ConflictException('참가하지 않은 챌린지입니다.');
     }
 
-    if (challenge.hostId === user.id) {
-      throw new ConflictException('챌린지 주최자는 포기할 수 없습니다.');
-    }
+    const participants =
+      await this.challengeRepository.getParticipantsByChallengeId(id);
 
     if (new Date() < challenge.startTime) {
       //챌린지 시작 이전
+      if (challenge.hostId === user.id) {
+        if (participants.length >= 2) {
+          throw new ConflictException(
+            '챌린지 주최자는 참가자가 있을 때 포기할 수 없습니다.',
+          );
+        }
+        await this.challengeRepository.leaveAndDeleteChallenge(id, user.id);
+        return this.getUserActiveChallenges(user);
+      }
       await this.challengeRepository.leaveChallenge(id, user.id);
     }
+
     if (challenge.startTime <= new Date()) {
       //챌린지 시작 이후
+      if (challenge.hostId === user.id) {
+        if (participants.length >= 2) {
+          throw new ConflictException(
+            '챌린지 주최자는 참가자가 있을 때 포기할 수 없습니다.',
+          );
+        }
+        await this.challengeRepository.updateChallengeJoinStatusAndDeleteChallenge(
+          id,
+          user.id,
+        );
+        return this.getUserActiveChallenges(user);
+      }
       await this.challengeRepository.updateChallengeJoinStatus(id, user.id);
     }
     return this.getUserActiveChallenges(user);
