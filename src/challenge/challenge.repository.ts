@@ -6,6 +6,7 @@ import { ParticipantStatus, ChallengeVisibility } from '@prisma/client';
 import { BookData } from 'src/book/type/book-data.type';
 import { ParticipantData } from './type/participant-data.type';
 import { UpdateChallengeData } from './type/update-challenge-data.type';
+import { ChallengeSearchQuery } from 'src/search/query/challenge-search-query';
 
 type JoinRow = {
   id: number; // ChallengeJoin.id
@@ -404,5 +405,38 @@ export class ChallengeRepository {
     return new Map<number, number>(
       grouped.map((g) => [g.participantId as number, g._max.pageNumber ?? 0]),
     );
+  }
+
+  async searchChallenges(
+    query: ChallengeSearchQuery,
+  ): Promise<ChallengeData[]> {
+    return this.prisma.challenge.findMany({
+      where: {
+        cancelledAt: null,
+        visibility: ChallengeVisibility.PUBLIC,
+        startTime: {
+          gte: new Date(),
+        },
+        OR: [
+          {
+            name: {
+              contains: query.query,
+              mode: 'insensitive',
+            },
+          },
+          {
+            book: {
+              title: {
+                contains: query.query,
+                mode: 'insensitive',
+              },
+            },
+          },
+        ],
+      },
+      orderBy: {
+        startTime: 'asc',
+      },
+    });
   }
 }
