@@ -63,7 +63,7 @@ export class AppModule implements NestModule, OnModuleInit {
     (async () => {
       console.log('🚀 Redis warm-up 시작');
       try {
-        const isCoverImageCachingInitialized: boolean = true; // 책 표지 이미지 캐싱 초기화 여부
+        const isCoverImageCachingInitialized: boolean = false; // 책 표지 이미지 캐싱 초기화 여부
 
         if (isCoverImageCachingInitialized) {
           let urlCount = 0;
