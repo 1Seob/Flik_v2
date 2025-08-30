@@ -3,7 +3,6 @@ import {
   Controller,
   Delete,
   Get,
-  HttpCode,
   Param,
   UseGuards,
   Version,
@@ -13,7 +12,6 @@ import {
 import {
   ApiBearerAuth,
   ApiCreatedResponse,
-  ApiNoContentResponse,
   ApiOkResponse,
   ApiOperation,
 } from '@nestjs/swagger';
@@ -122,12 +120,11 @@ export class ChallengeController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: '챌린지 참가' })
-  @ApiNoContentResponse()
-  @HttpCode(204)
+  @ApiOkResponse({ type: ChallengeListDto })
   async joinChallenge(
     @Param('id') id: number,
     @CurrentUser() user: UserBaseInfo,
-  ): Promise<void> {
+  ): Promise<ChallengeListDto> {
     return this.challengeService.joinChallenge(id, user);
   }
 
@@ -136,12 +133,11 @@ export class ChallengeController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: '챌린지 포기' })
-  @ApiNoContentResponse()
-  @HttpCode(204)
+  @ApiOkResponse({ type: ChallengeListDto })
   async leaveChallenge(
     @Param('id') id: number,
     @CurrentUser() user: UserBaseInfo,
-  ): Promise<void> {
+  ): Promise<ChallengeListDto> {
     return this.challengeService.leaveChallenge(id, user);
   }
 

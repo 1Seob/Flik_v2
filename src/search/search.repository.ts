@@ -71,4 +71,16 @@ export class SearchRepository {
       },
     });
   }
+
+  async getAllBookIds(): Promise<number[]> {
+    const books = await this.prisma.book.findMany({
+      where: {
+        deletedAt: null,
+      },
+      select: {
+        id: true,
+      },
+    });
+    return books.map((book) => book.id);
+  }
 }

@@ -73,7 +73,7 @@ export class BookController {
   @ApiOperation({ summary: '책 검색' })
   @ApiOkResponse({ type: BookListDto })
   async getBooks(@Query() query: BookSearchQuery): Promise<BookListDto> {
-    return this.searchService.getBooks(query);
+    return this.bookService.getBooks(query);
   }
 
   @Get(':id')
@@ -105,6 +105,7 @@ export class BookController {
     return this.bookService.getBookPages(id);
   }
 
+  /*
   @Post('save/:fileName')
   @Version('1')
   @ApiOperation({ summary: 'DB에 책 추가' })
@@ -116,6 +117,7 @@ export class BookController {
     return this.bookService.saveBook(fileName, payload);
   }
   // 프로젝트 루트 디렉토리에 있는 원문 텍스트 파일의 이름을 fileName으로 받습니다. ex) Frankenstein.txt
+  */
 
   @Patch(':id')
   @Version('1')

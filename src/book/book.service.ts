@@ -14,10 +14,15 @@ import { UpdateBookData } from './type/update-book-data.type';
 import axios from 'axios';
 import { PageListDto } from 'src/page/dto/page.dto';
 import { redis } from 'src/search/redis.provider';
+import { BookSearchQuery } from 'src/search/query/book-search-query';
+import { SearchRepository } from 'src/search/search.repository';
 
 @Injectable()
 export class BookService {
-  constructor(private readonly bookRepository: BookRepository) {}
+  constructor(
+    private readonly bookRepository: BookRepository,
+    private readonly searchRepository: SearchRepository,
+  ) {}
 
   private readonly baseUrl = 'https://www.aladin.co.kr/ttb/api/ItemSearch.aspx';
   private readonly ttbKey = process.env.ALADIN_TTB_KEY;
@@ -29,10 +34,12 @@ export class BookService {
     if (!book) {
       throw new NotFoundException('책을 찾을 수 없습니다.');
     }
+    const url = await this.getBookCoverImage(bookId);
 
-    return BookDto.from(book);
+    return BookDto.from(book, url);
   }
 
+  /*
   async saveBook(fileName: string, payload: SaveBookPayload): Promise<BookDto> {
     const isBookExist = await this.bookRepository.getBookByTitleAndAuthor(
       payload.title,
@@ -53,6 +60,7 @@ export class BookService {
     const book = await this.bookRepository.saveBook(data, paragraphs);
     return BookDto.from(book);
   }
+    */
 
   async deleteBook(bookId: number): Promise<void> {
     const book = await this.bookRepository.getBookById(bookId);
@@ -68,8 +76,13 @@ export class BookService {
     if (!book) {
       throw new NotFoundException('책을 찾을 수 없습니다.');
     }
+    const url = await this.getBookCoverImage(bookId);
     const pages = await this.bookRepository.getBookPages(bookId);
-    return PageListDto.from(BookDto.from(book), book.totalPagesCount, pages);
+    return PageListDto.from(
+      BookDto.from(book, url),
+      book.totalPagesCount,
+      pages,
+    );
   }
 
   async patchUpdateBook(
@@ -88,6 +101,8 @@ export class BookService {
       throw new NotFoundException('책을 찾을 수 없습니다.');
     }
 
+    const url = await this.getBookCoverImage(bookId);
+
     const data: UpdateBookData = {
       title: payload.title,
       author: payload.author,
@@ -96,7 +111,7 @@ export class BookService {
     };
 
     const updatedBook = await this.bookRepository.updateBook(bookId, data);
-    return BookDto.from(updatedBook);
+    return BookDto.from(updatedBook, url);
   }
 
   async saveBookToUser(bookId: number, userId: string): Promise<BookDto> {
@@ -105,8 +120,10 @@ export class BookService {
       throw new NotFoundException('책을 찾을 수 없습니다.');
     }
 
+    const url = await this.getBookCoverImage(bookId);
+
     await this.bookRepository.saveBookToUser(userId, bookId);
-    return BookDto.from(book);
+    return BookDto.from(book, url);
   }
 
   async unsaveBookFromUser(bookId: number, userId: string): Promise<void> {
@@ -124,7 +141,10 @@ export class BookService {
 
   async getSavedBooksByUser(userId: string): Promise<BookListDto> {
     const savedBooks = await this.bookRepository.getSavedBooksByUser(userId);
-    return BookListDto.from(savedBooks);
+    const urls: (string | null)[] = await Promise.all(
+      savedBooks.map((book) => this.getBookCoverImage(book.id)),
+    );
+    return BookListDto.from(savedBooks, urls);
   }
 
   private async checkImageExists(url: string): Promise<boolean> {
@@ -219,5 +239,15 @@ export class BookService {
 
     const pages = parsePagesFromJson(fileName);
     await this.bookRepository.updateBookPages(bookId, pages);
+  }
+
+  async getBooks(query: BookSearchQuery): Promise<BookListDto> {
+    const books = await this.searchRepository.getBooks(query);
+
+    const urls: (string | null)[] = await Promise.all(
+      books.map((book) => this.getBookCoverImage(book.id)),
+    );
+
+    return BookListDto.from(books, urls);
   }
 }

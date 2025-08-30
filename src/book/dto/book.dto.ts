@@ -39,7 +39,14 @@ export class BookDto {
   })
   totalPages!: number;
 
-  static from(data: BookData): BookDto {
+  @ApiProperty({
+    description: '책 커버 이미지 URL',
+    type: String,
+    nullable: true,
+  })
+  coverImageUrl!: string | null;
+
+  static from(data: BookData, url?: string | null): BookDto {
     return {
       id: data.id,
       title: data.title,
@@ -47,11 +54,13 @@ export class BookDto {
       isbn: data.isbn,
       views: data.views,
       totalPages: data.totalPagesCount,
+      coverImageUrl: url ?? null,
     };
   }
 
-  static fromArray(data: BookData[]): BookDto[] {
-    return data.map((book) => BookDto.from(book));
+  static fromArray(data: BookData[], url?: (string | null)[]): BookDto[] {
+    const urls = url ?? data.map(() => null);
+    return data.map((book, index) => BookDto.from(book, urls[index]));
   }
 }
 
@@ -62,9 +71,10 @@ export class BookListDto {
   })
   books!: BookDto[];
 
-  static from(data: BookData[]): BookListDto {
+  static from(data: BookData[], url?: (string | null)[]): BookListDto {
+    const urls = url ?? data.map(() => null);
     return {
-      books: BookDto.fromArray(data),
+      books: BookDto.fromArray(data, urls),
     };
   }
 }
