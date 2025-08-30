@@ -55,24 +55,37 @@ export class AppModule implements NestModule, OnModuleInit {
     console.log('데이터베이스에서 책 정보를 Redis로 로딩 중...');
     await this.searchRepository.loadBooksToRedis();
     console.log('Redis 로딩 완료!');
+    this.warmUpCache();
+  }
 
-    const isCoverImageCachingInitialized: boolean = false; // 책 표지 이미지 캐싱 초기화 여부
+  private async warmUpCache() {
+    // 비동기로 돌리되, 앱 부팅은 지연 안 시킴
+    (async () => {
+      console.log('🚀 Redis warm-up 시작');
+      try {
+        const isCoverImageCachingInitialized: boolean = true; // 책 표지 이미지 캐싱 초기화 여부
 
-    if (isCoverImageCachingInitialized) {
-      let urlCount = 0;
+        if (isCoverImageCachingInitialized) {
+          let urlCount = 0;
 
-      const bookIds = (await this.searchRepository.getAllBookIds()).sort(
-        (a, b) => a - b,
-      );
-      for (const id of bookIds) {
-        const url = await this.bookService.getBookCoverImage(id);
-        if (url) {
-          urlCount++;
+          const bookIds = (await this.searchRepository.getAllBookIds()).sort(
+            (a, b) => a - b,
+          );
+          for (const id of bookIds) {
+            const url = await this.bookService.getBookCoverImage(id);
+            if (url) {
+              urlCount++;
+            }
+            console.log(`[Preload] cover cached for bookId=${id}`);
+            await new Promise((resolve) => setTimeout(resolve, 1000)); // 1초 sleep
+          }
+          console.log(
+            `모든 책 표지 이미지 캐싱 완료! 총 ${urlCount}개 캐시됨.`,
+          );
         }
-        console.log(`[Preload] cover cached for bookId=${id}`);
-        await new Promise((resolve) => setTimeout(resolve, 1000)); // 1초 sleep
+      } catch (e) {
+        console.error('❌ Redis warm-up 실패:', e);
       }
-      console.log(`모든 책 표지 이미지 캐싱 완료! 총 ${urlCount}개 캐시됨.`);
-    }
+    })();
   }
 }
