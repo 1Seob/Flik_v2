@@ -8,6 +8,7 @@ import {
   Version,
   Post,
   Patch,
+  Query,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
@@ -27,6 +28,7 @@ import { ParticipantListDto } from './dto/participant.dto';
 import { UpdateChallengePayload } from './payload/update-challenge.payload';
 import { ChallengeCompleteLogListDto } from './dto/challenge-complete-log.dto';
 import { ChallengeHistoryListDto } from './dto/challenge-history.dto';
+import { ChallengeSearchQuery } from 'src/search/query/challenge-search-query';
 
 @Controller('challenges')
 @ApiTags('Challenge API')
@@ -68,6 +70,16 @@ export class ChallengeController {
     @CurrentUser() user: UserBaseInfo,
   ): Promise<ChallengeHistoryListDto> {
     return this.challengeService.getUserChallengeHistory(user);
+  }
+
+  @Get('search')
+  @Version('1')
+  @ApiOperation({ summary: '챌린지 검색' })
+  @ApiOkResponse({ type: ChallengeListDto })
+  async searchChallenges(
+    @Query() query: ChallengeSearchQuery,
+  ): Promise<ChallengeListDto> {
+    return this.challengeService.searchChallenges(query);
   }
 
   @Get(':id')

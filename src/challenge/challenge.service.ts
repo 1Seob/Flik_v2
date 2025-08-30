@@ -21,14 +21,13 @@ import { ChallengeHistoryListDto } from './dto/challenge-history.dto';
 import { ParticipantData } from './type/participant-data.type';
 import { ChallengeData } from './type/challenge-data.type';
 import { ChallengeHistoryData } from './type/challenge-history-data.type';
-import { PrismaService } from 'src/common/services/prisma.service';
+import { ChallengeSearchQuery } from 'src/search/query/challenge-search-query';
 
 @Injectable()
 export class ChallengeService {
   constructor(
     private readonly challengeRepository: ChallengeRepository,
     private readonly badWordsFilterService: BadWordsFilterService,
-    private readonly prisma: PrismaService,
   ) {}
 
   async createChallenge(
@@ -358,5 +357,12 @@ export class ChallengeService {
     });
 
     return ChallengeHistoryListDto.from(histories);
+  }
+
+  async searchChallenges(
+    query: ChallengeSearchQuery,
+  ): Promise<ChallengeListDto> {
+    const challenges = await this.challengeRepository.searchChallenges(query);
+    return ChallengeListDto.from(challenges);
   }
 }
