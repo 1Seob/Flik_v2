@@ -112,7 +112,10 @@ export class ChallengeService {
     return ParticipantListDto.from(participants);
   }
 
-  async joinChallenge(id: number, user: UserBaseInfo): Promise<void> {
+  async joinChallenge(
+    id: number,
+    user: UserBaseInfo,
+  ): Promise<ChallengeListDto> {
     const challenge = await this.challengeRepository.getChallengeById(id);
     if (!challenge) {
       throw new NotFoundException('챌린지를 찾을 수 없습니다.');
@@ -138,9 +141,13 @@ export class ChallengeService {
     }
 
     await this.challengeRepository.joinChallenge(id, user.id);
+    return this.getUserActiveChallenges(user);
   }
 
-  async leaveChallenge(id: number, user: UserBaseInfo): Promise<void> {
+  async leaveChallenge(
+    id: number,
+    user: UserBaseInfo,
+  ): Promise<ChallengeListDto> {
     const challenge = await this.challengeRepository.getChallengeById(id);
     if (!challenge) {
       throw new NotFoundException('챌린지를 찾을 수 없습니다.');
@@ -164,6 +171,7 @@ export class ChallengeService {
       //챌린지 시작 이후
       await this.challengeRepository.updateChallengeJoinStatus(id, user.id);
     }
+    return this.getUserActiveChallenges(user);
   }
 
   async getUserActiveChallenges(user: UserBaseInfo): Promise<ChallengeListDto> {

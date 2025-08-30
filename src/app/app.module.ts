@@ -19,6 +19,7 @@ import { PageModule } from 'src/page/page.module';
 import { ReadModule } from 'src/read/read.module';
 import { ChallengeModule } from 'src/challenge/challenge.module';
 import { redis } from 'src/search/redis.provider';
+import { BookService } from 'src/book/book.service';
 
 @Module({
   imports: [
@@ -37,7 +38,10 @@ import { redis } from 'src/search/redis.provider';
   providers: [AppService],
 })
 export class AppModule implements NestModule, OnModuleInit {
-  constructor(private readonly searchRepository: SearchRepository) {}
+  constructor(
+    private readonly searchRepository: SearchRepository,
+    private readonly bookService: BookService,
+  ) {}
 
   configure(consumer: MiddlewareConsumer) {
     consumer.apply(LoggerMiddleware).forRoutes('*');
@@ -51,5 +55,24 @@ export class AppModule implements NestModule, OnModuleInit {
     console.log('데이터베이스에서 책 정보를 Redis로 로딩 중...');
     await this.searchRepository.loadBooksToRedis();
     console.log('Redis 로딩 완료!');
+
+    const isCoverImageCachingInitialized: boolean = false; // 책 표지 이미지 캐싱 초기화 여부
+
+    if (isCoverImageCachingInitialized) {
+      let urlCount = 0;
+
+      const bookIds = (await this.searchRepository.getAllBookIds()).sort(
+        (a, b) => a - b,
+      );
+      for (const id of bookIds) {
+        const url = await this.bookService.getBookCoverImage(id);
+        if (url) {
+          urlCount++;
+        }
+        console.log(`[Preload] cover cached for bookId=${id}`);
+        await new Promise((resolve) => setTimeout(resolve, 1000)); // 1초 sleep
+      }
+      console.log(`모든 책 표지 이미지 캐싱 완료! 총 ${urlCount}개 캐시됨.`);
+    }
   }
 }
