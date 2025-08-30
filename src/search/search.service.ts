@@ -1,7 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import { SearchRepository } from './search.repository';
-import { BookListDto } from 'src/book/dto/book.dto';
-import { BookSearchQuery } from './query/book-search-query';
 
 @Injectable()
 export class SearchService {
@@ -19,10 +17,5 @@ export class SearchService {
       lexical: lexical, // 사전식 정렬 목록
       views: views, // 조회수 순 정렬 목록
     };
-  }
-
-  async getBooks(query: BookSearchQuery): Promise<BookListDto> {
-    const books = await this.searchRepository.getBooks(query);
-    return BookListDto.from(books);
   }
 }
