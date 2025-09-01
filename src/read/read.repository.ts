@@ -8,7 +8,7 @@ import { BookData } from 'src/book/type/book-data.type';
 import { PageData } from 'src/page/type/page-type';
 import { ChallengeData } from 'src/challenge/type/challenge-data.type';
 import { subDays } from 'date-fns';
-import { ReadingStreakData } from './type/reading-streak-data.type';
+import { ParticipantStatus } from 'src/challenge/dto/challenge-history.dto';
 
 @Injectable()
 export class ReadRepository {
@@ -290,6 +290,140 @@ export class ReadRepository {
       },
       data: {
         days,
+      },
+    });
+  }
+
+  async getRecentBooks(user: UserBaseInfo): Promise<BookData[]> {
+    // 1) 사용자별, 책별로 가장 최신 startedAt을 구해 최신순 상위 10개 bookId 추출
+    const latestPerBook = await this.prisma.readingLog.groupBy({
+      by: ['bookId'],
+      where: { userId: user.id },
+      _max: { startedAt: true },
+      orderBy: { _max: { startedAt: 'desc' } },
+      take: 10,
+    });
+
+    const idsInOrder = latestPerBook.map((g) => g.bookId);
+
+    // 2) 책 정보를 한 번에 가져오고, 메모리에서 순서를 복원
+    const books = await this.prisma.book.findMany({
+      where: { id: { in: idsInOrder } },
+    });
+
+    const orderMap = new Map(idsInOrder.map((id, idx) => [id, idx]));
+    books.sort((a, b) => orderMap.get(a.id)! - orderMap.get(b.id)!);
+
+    return books;
+  }
+
+  async isChallengeActive(challengeId: number): Promise<boolean> {
+    const challenge = await this.prisma.challenge.findUnique({
+      where: { id: challengeId },
+    });
+    return challenge
+      ? challenge.startTime <= new Date() && challenge.endTime >= new Date()
+      : false;
+  }
+
+  async getUserActiveChallenges(userId: string): Promise<ChallengeData[]> {
+    return this.prisma.challenge.findMany({
+      where: {
+        // 1. ChallengeJoin 관계를 통해 참여자 정보를 필터링
+        challengeJoin: {
+          some: {
+            userId,
+            status: ParticipantStatus.JOINED,
+            leftAt: null,
+          },
+        },
+        //2. 챌린지가 진행 중
+        cancelledAt: null,
+        completedAt: null,
+        startTime: {
+          lte: new Date(),
+        },
+        endTime: {
+          gt: new Date(),
+        },
+      },
+      select: {
+        id: true,
+        hostId: true,
+        name: true,
+        bookId: true,
+        visibility: true,
+        startTime: true,
+        endTime: true,
+        completedAt: true,
+        cancelledAt: true,
+        challengeJoin: true,
+      },
+    });
+  }
+
+  async getParticipantIdByUserIdAndChallengeId(
+    challengeId: number,
+    userId: string,
+  ): Promise<number> {
+    const participation = await this.prisma.challengeJoin.findUnique({
+      where: {
+        challengeId_userId: {
+          challengeId,
+          userId,
+        },
+      },
+      select: { id: true },
+    });
+    return participation!.id;
+  }
+
+  async getLastNormalPage(
+    bookId: number,
+    userId: string,
+  ): Promise<PageData | null> {
+    const log = await this.prisma.readingLog.findFirst({
+      where: {
+        userId: userId,
+        bookId: bookId,
+        participantId: null,
+      },
+      orderBy: {
+        startedAt: 'desc',
+      },
+      select: {
+        page: true,
+      },
+    });
+    return log ? log.page : null;
+  }
+
+  async getLastChallengePage(
+    bookId: number,
+    userId: string,
+    participantId: number,
+  ): Promise<PageData | null> {
+    const log = await this.prisma.readingLog.findFirst({
+      where: {
+        userId: userId,
+        bookId: bookId,
+        participantId: participantId,
+      },
+      orderBy: {
+        startedAt: 'desc',
+      },
+      select: {
+        page: true,
+      },
+    });
+    return log ? log.page : null;
+  }
+
+  async getFirstPageOfBook(bookId: number): Promise<PageData | null> {
+    return this.prisma.page.findFirst({
+      where: {
+        bookId: bookId,
+        number: 1,
       },
     });
   }
