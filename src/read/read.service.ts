@@ -26,6 +26,8 @@ import { CalendarQuery } from './query/calendar.query';
 import { ReadingStreakDto } from './dto/reading-streak.dto';
 import { format, toZonedTime } from 'date-fns-tz';
 import { ReadingStreakData } from './type/reading-streak-data.type';
+import { BookListDto } from 'src/book/dto/book.dto';
+import { PageDto } from 'src/page/dto/page.dto';
 
 @Injectable()
 export class ReadService {
@@ -69,6 +71,12 @@ export class ReadService {
         throw new BadRequestException(
           '사용자가 챌린지에 참여하고 있지 않습니다.',
         );
+      }
+      const isChallengeActive = await this.readRepository.isChallengeActive(
+        challenge.id,
+      );
+      if (!isChallengeActive) {
+        throw new BadRequestException('챌린지가 진행 중이 아닙니다.');
       }
     }
 
@@ -114,6 +122,12 @@ export class ReadService {
         throw new BadRequestException(
           '사용자가 챌린지에 참여하고 있지 않습니다.',
         );
+      }
+      const isChallengeActive = await this.readRepository.isChallengeActive(
+        challenge.id,
+      );
+      if (!isChallengeActive) {
+        throw new BadRequestException('챌린지가 진행 중이 아닙니다.');
       }
     }
 
@@ -325,5 +339,70 @@ export class ReadService {
       lastUpdatedAt: streakData ? streakData.updatedAt : new Date(0),
     };
     return ReadingStreakDto.from(data);
+  }
+
+  async getRecentBooks(user: UserBaseInfo): Promise<BookListDto> {
+    const recentBooks = await this.readRepository.getRecentBooks(user);
+    return BookListDto.from(recentBooks);
+  }
+
+  async getLastPage(bookId: number, user: UserBaseInfo): Promise<PageDto> {
+    const book = await this.readRepository.getBookById(bookId);
+    if (!book) {
+      throw new NotFoundException('책을 찾을 수 없습니다.');
+    }
+    const challenges = await this.readRepository.getUserActiveChallenges(
+      user.id,
+    );
+
+    console.log('challenges:', challenges);
+
+    let isChallengeReading = false;
+    let challengeId: number | null = null;
+    for (const challenge of challenges) {
+      if (challenge.bookId === bookId) {
+        isChallengeReading = true;
+        challengeId = challenge.id;
+        break;
+      }
+    }
+
+    console.log('isChallengeReading:', isChallengeReading);
+    console.log('challengeId:', challengeId);
+
+    if (isChallengeReading && challengeId) {
+      //챌린지 독서인 경우
+      const participantId =
+        await this.readRepository.getParticipantIdByUserIdAndChallengeId(
+          challengeId,
+          user.id,
+        );
+      const lastPage = await this.readRepository.getLastChallengePage(
+        bookId,
+        user.id,
+        participantId,
+      );
+      if (!lastPage) {
+        const firstPage = await this.readRepository.getFirstPageOfBook(bookId);
+        if (!firstPage) {
+          throw new NotFoundException('책의 첫 페이지를 찾을 수 없습니다.');
+        }
+        return PageDto.from(firstPage);
+      }
+      return PageDto.from(lastPage);
+    }
+
+    const lastPage = await this.readRepository.getLastNormalPage(
+      bookId,
+      user.id,
+    );
+    if (!lastPage) {
+      const firstPage = await this.readRepository.getFirstPageOfBook(bookId);
+      if (!firstPage) {
+        throw new NotFoundException('책의 첫 페이지를 찾을 수 없습니다.');
+      }
+      return PageDto.from(firstPage);
+    }
+    return PageDto.from(lastPage);
   }
 }
