@@ -279,7 +279,7 @@ export class ChallengeRepository {
             leftAt: null,
           },
         },
-        //2. 챌린지가 종료되지 않았고, 취소/완료되지 않았어야 함
+        //2. 챌린지가 종료되지 않았고, 취소/완료되지 않았어야 함 (준비 중 + 진행 중)
         cancelledAt: null,
         completedAt: null,
         endTime: {
