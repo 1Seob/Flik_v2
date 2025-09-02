@@ -32,6 +32,7 @@ model User {
   notes                 ChallengeNote[]
   noteLikes             ChallengeNoteLike[]
   noteComments          ChallengeNoteComment[]
+  sentenceLikes         SentenceLike[]
 
   @@map("user")
 }
@@ -55,6 +56,7 @@ model Book {
   pages                 Page[]
   logs                  ReadingLog[]
   challenges            Challenge[]
+  sentenceLikes         SentenceLike[]
 
   @@map("book")
 }
@@ -112,7 +114,7 @@ model Page {
   book                  Book                    @relation(fields: [bookId], references: [id])
 
   readingLog            ReadingLog[]
-  quotedInNotes         ChallengeNote[] 
+  sentenceLikes         SentenceLike[]
 
   @@map("page")
 }
@@ -248,9 +250,9 @@ model ChallengeNote {
   authorId     String   @map("author_id")      // 작성자(User.id)
 
   body         String   @map("body")
+  imagePath    String?  @map("image_path")
 
-  quoteText    String?  @map("quote_text")
-  quotePageId  Int?     @map("quote_page_id")
+  quoteLikeId  Int?     @map("quote_like_id")
 
   likesCount   Int      @default(0) @map("likes_count")
   commentsCount Int     @default(0) @map("comments_count")
@@ -261,7 +263,7 @@ model ChallengeNote {
   
   challenge Challenge  @relation(fields: [challengeId], references: [id])
   author    User       @relation(fields: [authorId], references: [id])
-  quotePage Page?      @relation(fields: [quotePageId], references: [id])
+  quoteLike SentenceLike? @relation(fields: [quoteLikeId], references: [id], onDelete: SetNull)
 
   likes    ChallengeNoteLike[]
   comments ChallengeNoteComment[]
@@ -303,6 +305,33 @@ model ChallengeNoteComment {
   @@index([noteId, createdAt])
   @@index([userId, createdAt])
   @@map("challenge_note_comment")
+}
+
+
+model SentenceLike {
+  id         Int      @id @default(autoincrement())
+  userId     String   @map("user_id")
+  bookId     Int      @map("book_id")
+  pageId     Int      @map("page_id")
+  
+  text       String   @map("text")
+
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  
+  user User @relation(fields: [userId], references: [id])
+  book Book @relation(fields: [bookId], references: [id])
+  page Page @relation(fields: [pageId], references: [id])
+   
+  quotedByNotes ChallengeNote[]
+  
+  @@unique([id, userId])
+  @@unique([userId, pageId, text])
+
+  @@index([userId, createdAt])
+  @@index([bookId, pageId])
+  
+  @@map("sentence_like")
 }
 
 

@@ -2,6 +2,9 @@ import { PrismaService } from 'src/common/services/prisma.service';
 import { Injectable } from '@nestjs/common';
 import { PageData } from './type/page-type';
 import { BookData } from 'src/book/type/book-data.type';
+import { CreateSentenceLikePayload } from './payload/create-sentence-like.payload';
+import { UserBaseInfo } from 'src/auth/type/user-base-info.type';
+import { SentenceLikeData } from './type/sentence-like-type';
 
 @Injectable()
 export class PageRepository {
@@ -24,10 +27,62 @@ export class PageRepository {
     });
   }
 
-  async getPage(pageId: number): Promise<PageData | null> {
+  async getPageById(pageId: number): Promise<PageData | null> {
     return this.prisma.page.findUnique({
       where: {
         id: pageId,
+      },
+    });
+  }
+
+  async createSentenceLike(
+    payload: CreateSentenceLikePayload,
+    user: UserBaseInfo,
+  ): Promise<SentenceLikeData> {
+    return this.prisma.sentenceLike.create({
+      data: {
+        userId: user.id,
+        bookId: payload.bookId,
+        pageId: payload.pageId,
+        text: payload.text,
+      },
+    });
+  }
+
+  async getSentenceLikeById(id: number): Promise<SentenceLikeData | null> {
+    return this.prisma.sentenceLike.findUnique({
+      where: {
+        id,
+      },
+    });
+  }
+
+  async deleteSentenceLike(id: number): Promise<void> {
+    await this.prisma.sentenceLike.delete({
+      where: {
+        id,
+      },
+    });
+  }
+
+  async getSentenceLikeByPageIdAndUserId(
+    pageId: number,
+    text: string,
+    userId: string,
+  ): Promise<SentenceLikeData | null> {
+    return this.prisma.sentenceLike.findFirst({
+      where: {
+        pageId,
+        text,
+        userId,
+      },
+    });
+  }
+
+  async getSentenceLikesByUserId(userId: string): Promise<SentenceLikeData[]> {
+    return this.prisma.sentenceLike.findMany({
+      where: {
+        userId,
       },
     });
   }
