@@ -29,6 +29,9 @@ model User {
   challengeJoin         ChallengeJoin[]
   notifications         Notification[]
   readingStreakHistory  ReadingStreakHistory[]
+  notes                 ChallengeNote[]
+  noteLikes             ChallengeNoteLike[]
+  noteComments          ChallengeNoteComment[]
 
   @@map("user")
 }
@@ -109,6 +112,7 @@ model Page {
   book                  Book                    @relation(fields: [bookId], references: [id])
 
   readingLog            ReadingLog[]
+  quotedInNotes         ChallengeNote[] 
 
   @@map("page")
 }
@@ -165,6 +169,7 @@ model Challenge {
   book   Book @relation(fields: [bookId], references: [id])
   host   User @relation(fields: [hostId], references: [id])
   challengeJoin  ChallengeJoin[]
+  notes          ChallengeNote[]
 
   @@index([visibility, startTime])
   @@index([bookId])
@@ -234,6 +239,72 @@ model ReadingStreakHistory {
   @@index([userId, updatedAt])
   @@map("reading_streak_history")
 }
+
+
+model ChallengeNote {
+  id           Int      @id @default(autoincrement())
+
+  challengeId  Int      @map("challenge_id")
+  authorId     String   @map("author_id")      // 작성자(User.id)
+
+  body         String   @map("body")
+
+  quoteText    String?  @map("quote_text")
+  quotePageId  Int?     @map("quote_page_id")
+
+  likesCount   Int      @default(0) @map("likes_count")
+  commentsCount Int     @default(0) @map("comments_count")
+
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt      @map("updated_at")
+
+  
+  challenge Challenge  @relation(fields: [challengeId], references: [id])
+  author    User       @relation(fields: [authorId], references: [id])
+  quotePage Page?      @relation(fields: [quotePageId], references: [id])
+
+  likes    ChallengeNoteLike[]
+  comments ChallengeNoteComment[]
+
+  @@index([challengeId, createdAt])
+  @@index([authorId, createdAt])
+
+  @@map("challenge_note")
+}
+
+
+model ChallengeNoteLike {
+  id      Int    @id @default(autoincrement())
+  noteId  Int    @map("note_id")
+  userId  String @map("user_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  note ChallengeNote @relation(fields: [noteId], references: [id])
+  user User          @relation(fields: [userId], references: [id])
+
+  @@unique([noteId, userId])
+  @@index([userId, noteId])
+  @@map("challenge_note_like")
+}
+
+
+model ChallengeNoteComment {
+  id       Int     @id @default(autoincrement())
+  noteId   Int     @map("note_id")
+  userId   String  @map("user_id")
+  content  String  @map("content")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt      @map("updated_at")
+
+  note ChallengeNote @relation(fields: [noteId], references: [id])
+  user User          @relation(fields: [userId], references: [id])
+
+  @@index([noteId, createdAt])
+  @@index([userId, createdAt])
+  @@map("challenge_note_comment")
+}
+
 
 // ── enums ───────────────────────────────────────────────
 
