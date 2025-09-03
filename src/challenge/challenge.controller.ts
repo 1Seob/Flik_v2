@@ -9,10 +9,12 @@ import {
   Post,
   Patch,
   Query,
+  HttpCode,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiCreatedResponse,
+  ApiNoContentResponse,
   ApiOkResponse,
   ApiOperation,
 } from '@nestjs/swagger';
@@ -35,6 +37,8 @@ import {
 } from './dto/challenge-note.dto';
 import { CreateChallengeNotePayload } from './payload/create-challenge-note.payload';
 import { UpdateChallengeNotePayload } from './payload/update-challenge-note.payload';
+import { ChallengeNoteCommentDto } from './dto/challenge-note-comment.dto';
+import { CreateChallengeNoteCommentPayload } from './payload/create-challenge-note-comment.payload';
 
 @Controller('challenges')
 @ApiTags('Challenge API')
@@ -99,6 +103,33 @@ export class ChallengeController {
     @Query() query: ChallengeSearchQuery,
   ): Promise<ChallengeListDto> {
     return this.challengeService.searchChallenges(query);
+  }
+
+  @Post('note/comment')
+  @Version('1')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: '챌린지 노트 댓글 생성' })
+  @ApiCreatedResponse({ type: ChallengeNoteCommentDto })
+  async createChallengeNoteComment(
+    @Body() payload: CreateChallengeNoteCommentPayload,
+    @CurrentUser() user: UserBaseInfo,
+  ): Promise<ChallengeNoteCommentDto> {
+    return this.challengeService.createChallengeNoteComment(payload, user);
+  }
+
+  @Delete('note/comment/:id')
+  @Version('1')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: '챌린지 노트 댓글 삭제' })
+  @ApiNoContentResponse()
+  @HttpCode(204)
+  async deleteChallengeNoteComment(
+    @Param('id') id: number,
+    @CurrentUser() user: UserBaseInfo,
+  ): Promise<void> {
+    return this.challengeService.deleteChallengeNoteComment(id, user);
   }
 
   @Get('note/:id')

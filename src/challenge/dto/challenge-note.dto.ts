@@ -1,9 +1,9 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { ChallengeNoteData } from '../type/challenge-note-data.type';
+import { ChallengeNoteWithCountData } from '../type/challenge-note-with-count-data.type';
 
 export class ChallengeNoteDto {
   @ApiProperty({
-    description: '챌린지 노트 ID',
+    description: '독서 노트 ID',
     type: Number,
   })
   id!: number;
@@ -58,7 +58,7 @@ export class ChallengeNoteDto {
   })
   imagePath!: string | null;
 
-  static from(data: ChallengeNoteData): ChallengeNoteDto {
+  static from(data: ChallengeNoteWithCountData): ChallengeNoteDto {
     return {
       id: data.id,
       authorId: data.authorId,
@@ -72,7 +72,7 @@ export class ChallengeNoteDto {
     };
   }
 
-  static fromArray(data: ChallengeNoteData[]): ChallengeNoteDto[] {
+  static fromArray(data: ChallengeNoteWithCountData[]): ChallengeNoteDto[] {
     return data.map((item) => this.from(item));
   }
 }
@@ -84,7 +84,7 @@ export class ChallengeNoteListDto {
   })
   notes!: ChallengeNoteDto[];
 
-  static from(data: ChallengeNoteData[]): ChallengeNoteListDto {
+  static from(data: ChallengeNoteWithCountData[]): ChallengeNoteListDto {
     return {
       notes: ChallengeNoteDto.fromArray(data),
     };
