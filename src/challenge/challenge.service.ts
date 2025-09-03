@@ -22,6 +22,14 @@ import { ParticipantData } from './type/participant-data.type';
 import { ChallengeData } from './type/challenge-data.type';
 import { ChallengeHistoryData } from './type/challenge-history-data.type';
 import { ChallengeSearchQuery } from 'src/search/query/challenge-search-query';
+import {
+  ChallengeNoteDto,
+  ChallengeNoteListDto,
+} from './dto/challenge-note.dto';
+import { CreateChallengeNotePayload } from './payload/create-challenge-note.payload';
+import { CreateChallengeNoteData } from './type/create-challenge-note-data.type';
+import { UpdateChallengeNotePayload } from './payload/update-challenge-note.payload';
+import { UpdateChallengeNoteData } from './type/update-challenge-note-data.type';
 
 @Injectable()
 export class ChallengeService {
@@ -364,5 +372,182 @@ export class ChallengeService {
   ): Promise<ChallengeListDto> {
     const challenges = await this.challengeRepository.searchChallenges(query);
     return ChallengeListDto.from(challenges);
+  }
+
+  async createChallengeNote(
+    payload: CreateChallengeNotePayload,
+    user: UserBaseInfo,
+  ): Promise<ChallengeNoteDto> {
+    const challenge = await this.challengeRepository.getChallengeById(
+      payload.challengeId,
+    );
+    if (!challenge) {
+      throw new NotFoundException('챌린지를 찾을 수 없습니다.');
+    }
+
+    const isUserParticipating =
+      await this.challengeRepository.isUserParticipating(
+        payload.challengeId,
+        user.id,
+      );
+    if (!isUserParticipating) {
+      throw new ForbiddenException('챌린지에 참여하지 않은 유저입니다.');
+    }
+
+    if (this.badWordsFilterService.isProfane(payload.body)) {
+      throw new BadRequestException(
+        '노트 내용에 부적절한 단어가 포함되어 있습니다.',
+      );
+    }
+
+    //인용문 존재 시
+    if (payload.quoteId) {
+      const sentenceLike = await this.challengeRepository.getSentenceLikeById(
+        payload.quoteId,
+      );
+      if (!sentenceLike) {
+        throw new NotFoundException('인용된 문장을 찾을 수 없습니다.');
+      }
+
+      if (sentenceLike.userId !== user.id) {
+        throw new ForbiddenException('인용된 문장의 작성자가 아닙니다.');
+      }
+
+      const page = await this.challengeRepository.getPageById(
+        sentenceLike.pageId,
+      );
+      if (!page) {
+        throw new NotFoundException('페이지를 찾을 수 없습니다.');
+      }
+
+      const book = await this.challengeRepository.getBookById(
+        sentenceLike.bookId,
+      );
+      if (!book) {
+        throw new NotFoundException('책을 찾을 수 없습니다.');
+      }
+
+      if (page.bookId !== book.id) {
+        throw new BadRequestException('페이지와 책이 일치하지 않습니다.');
+      }
+
+      const createData: CreateChallengeNoteData = {
+        challengeId: payload.challengeId,
+        authorId: user.id,
+        body: payload.body,
+        quoteText: sentenceLike.text,
+        quotePageId: sentenceLike.pageId,
+        quoteBookId: sentenceLike.bookId,
+      };
+
+      const note =
+        await this.challengeRepository.createChallengeNote(createData);
+      return ChallengeNoteDto.from(note);
+    }
+
+    const createData: CreateChallengeNoteData = {
+      challengeId: payload.challengeId,
+      authorId: user.id,
+      body: payload.body,
+    };
+
+    const note = await this.challengeRepository.createChallengeNote(createData);
+    return ChallengeNoteDto.from(note);
+  }
+
+  async getChallengeNotes(id: number): Promise<ChallengeNoteListDto> {
+    const challenge = await this.challengeRepository.getChallengeById(id);
+    if (!challenge) {
+      throw new NotFoundException('챌린지를 찾을 수 없습니다.');
+    }
+
+    const notes =
+      await this.challengeRepository.getChallengeNotesByChallengeId(id);
+    return ChallengeNoteListDto.from(notes);
+  }
+
+  async updateChallengeNote(
+    id: number,
+    payload: UpdateChallengeNotePayload,
+    user: UserBaseInfo,
+  ): Promise<ChallengeNoteDto> {
+    const note = await this.challengeRepository.getChallengeNoteById(id);
+    if (!note) {
+      throw new NotFoundException('챌린지 노트를 찾을 수 없습니다.');
+    }
+
+    if (note.authorId !== user.id) {
+      throw new ForbiddenException('노트의 작성자가 아닙니다.');
+    }
+
+    if (payload.body === null) {
+      throw new BadRequestException('노트 내용은 null이 될 수 없습니다.');
+    }
+
+    if (payload.body) {
+      if (this.badWordsFilterService.isProfane(payload.body)) {
+        throw new BadRequestException(
+          '노트 내용에 부적절한 단어가 포함되어 있습니다.',
+        );
+      }
+    }
+
+    //인용문 존재 시
+    if (payload.quoteId) {
+      const sentenceLike = await this.challengeRepository.getSentenceLikeById(
+        payload.quoteId,
+      );
+      if (!sentenceLike) {
+        throw new NotFoundException('인용된 문장을 찾을 수 없습니다.');
+      }
+
+      if (sentenceLike.userId !== user.id) {
+        throw new ForbiddenException('인용된 문장의 작성자가 아닙니다.');
+      }
+
+      const page = await this.challengeRepository.getPageById(
+        sentenceLike.pageId,
+      );
+      if (!page) {
+        throw new NotFoundException('페이지를 찾을 수 없습니다.');
+      }
+
+      const book = await this.challengeRepository.getBookById(
+        sentenceLike.bookId,
+      );
+      if (!book) {
+        throw new NotFoundException('책을 찾을 수 없습니다.');
+      }
+
+      if (page.bookId !== book.id) {
+        throw new BadRequestException('페이지와 책이 일치하지 않습니다.');
+      }
+
+      const updateData: UpdateChallengeNoteData = {
+        body: payload.body,
+        quoteText: sentenceLike.text,
+        quotePageId: sentenceLike.pageId,
+        quoteBookId: sentenceLike.bookId,
+      };
+
+      const note = await this.challengeRepository.updateChallengeNote(
+        id,
+        updateData,
+      );
+      return ChallengeNoteDto.from(note);
+    }
+
+    const updateData: UpdateChallengeNoteData = {
+      body: payload.body,
+      quoteText: null,
+      quotePageId: null,
+      quoteBookId: null,
+    };
+
+    const updatedNote = await this.challengeRepository.updateChallengeNote(
+      id,
+      updateData,
+    );
+    return ChallengeNoteDto.from(updatedNote);
   }
 }

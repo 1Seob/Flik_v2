@@ -7,6 +7,11 @@ import { BookData } from 'src/book/type/book-data.type';
 import { ParticipantData } from './type/participant-data.type';
 import { UpdateChallengeData } from './type/update-challenge-data.type';
 import { ChallengeSearchQuery } from 'src/search/query/challenge-search-query';
+import { PageData } from 'src/page/type/page-type';
+import { ChallengeNoteData } from './type/challenge-note-data.type';
+import { CreateChallengeNoteData } from './type/create-challenge-note-data.type';
+import { SentenceLikeData } from 'src/page/type/sentence-like-type';
+import { UpdateChallengeNoteData } from './type/update-challenge-note-data.type';
 
 type JoinRow = {
   id: number; // ChallengeJoin.id
@@ -151,6 +156,8 @@ export class ChallengeRepository {
       where: {
         challengeId,
         userId,
+        status: ParticipantStatus.JOINED,
+        leftAt: null,
       },
     });
     return participation !== null;
@@ -436,6 +443,105 @@ export class ChallengeRepository {
       },
       orderBy: {
         startTime: 'asc',
+      },
+    });
+  }
+
+  async getPageById(pageId: number): Promise<PageData | null> {
+    return this.prisma.page.findUnique({
+      where: {
+        id: pageId,
+      },
+    });
+  }
+
+  async getSentenceLikeById(id: number): Promise<SentenceLikeData | null> {
+    return this.prisma.sentenceLike.findUnique({
+      where: {
+        id,
+      },
+    });
+  }
+
+  async createChallengeNote(
+    data: CreateChallengeNoteData,
+  ): Promise<ChallengeNoteData> {
+    return this.prisma.challengeNote.create({
+      data: {
+        challengeId: data.challengeId,
+        authorId: data.authorId,
+        body: data.body,
+        quoteText: data.quoteText,
+        quotePageId: data.quotePageId,
+        quoteBookId: data.quoteBookId,
+      },
+      select: {
+        id: true,
+        challengeId: true,
+        authorId: true,
+        body: true,
+        quoteText: true,
+        createdAt: true,
+        likesCount: true,
+        commentsCount: true,
+        imagePath: true,
+      },
+    });
+  }
+
+  async getChallengeNotesByChallengeId(
+    challengeId: number,
+  ): Promise<ChallengeNoteData[]> {
+    return this.prisma.challengeNote.findMany({
+      where: { challengeId },
+      select: {
+        id: true,
+        challengeId: true,
+        authorId: true,
+        body: true,
+        quoteText: true,
+        createdAt: true,
+        likesCount: true,
+        commentsCount: true,
+        imagePath: true,
+      },
+    });
+  }
+
+  async getChallengeNoteById(id: number): Promise<ChallengeNoteData | null> {
+    return this.prisma.challengeNote.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        challengeId: true,
+        authorId: true,
+        body: true,
+        quoteText: true,
+        createdAt: true,
+        likesCount: true,
+        commentsCount: true,
+        imagePath: true,
+      },
+    });
+  }
+
+  async updateChallengeNote(
+    id: number,
+    data: UpdateChallengeNoteData,
+  ): Promise<ChallengeNoteData> {
+    return this.prisma.challengeNote.update({
+      where: { id },
+      data,
+      select: {
+        id: true,
+        challengeId: true,
+        authorId: true,
+        body: true,
+        quoteText: true,
+        createdAt: true,
+        likesCount: true,
+        commentsCount: true,
+        imagePath: true,
       },
     });
   }

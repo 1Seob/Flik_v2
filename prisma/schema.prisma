@@ -252,7 +252,9 @@ model ChallengeNote {
   body         String   @map("body")
   imagePath    String?  @map("image_path")
 
-  quoteLikeId  Int?     @map("quote_like_id")
+  quoteText    String?  @map("quote_text")
+  quoteBookId  Int?     @map("quote_book_id")
+  quotePageId  Int?     @map("quote_page_id")
 
   likesCount   Int      @default(0) @map("likes_count")
   commentsCount Int     @default(0) @map("comments_count")
@@ -263,7 +265,6 @@ model ChallengeNote {
   
   challenge Challenge  @relation(fields: [challengeId], references: [id])
   author    User       @relation(fields: [authorId], references: [id])
-  quoteLike SentenceLike? @relation(fields: [quoteLikeId], references: [id], onDelete: SetNull)
 
   likes    ChallengeNoteLike[]
   comments ChallengeNoteComment[]
@@ -318,12 +319,9 @@ model SentenceLike {
 
   createdAt  DateTime @default(now()) @map("created_at")
 
-  
   user User @relation(fields: [userId], references: [id])
   book Book @relation(fields: [bookId], references: [id])
   page Page @relation(fields: [pageId], references: [id])
-   
-  quotedByNotes ChallengeNote[]
   
   @@unique([id, userId])
   @@unique([userId, pageId, text])
