@@ -52,6 +52,12 @@ export class ChallengeNoteDto {
   commentsCount!: number;
 
   @ApiProperty({
+    description: '좋아요 여부',
+    type: Boolean,
+  })
+  liked!: boolean;
+
+  @ApiProperty({
     description: '이미지 경로',
     type: String,
     nullable: true,
@@ -69,6 +75,7 @@ export class ChallengeNoteDto {
       likesCount: data.likesCount,
       commentsCount: data.commentsCount,
       imagePath: data.imagePath,
+      liked: data.liked,
     };
   }
 
