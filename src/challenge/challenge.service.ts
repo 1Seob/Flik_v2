@@ -30,6 +30,10 @@ import { CreateChallengeNotePayload } from './payload/create-challenge-note.payl
 import { CreateChallengeNoteData } from './type/create-challenge-note-data.type';
 import { UpdateChallengeNotePayload } from './payload/update-challenge-note.payload';
 import { UpdateChallengeNoteData } from './type/update-challenge-note-data.type';
+import { CreateChallengeNoteCommentPayload } from './payload/create-challenge-note-comment.payload';
+import { ChallengeNoteCommentDto } from './dto/challenge-note-comment.dto';
+import { CreateChallengeNoteCommentData } from './type/create-challenge-note-comment-data,type';
+import { ChallengeNoteWithCountData } from './type/challenge-note-with-count-data.type';
 
 @Injectable()
 export class ChallengeService {
@@ -442,7 +446,12 @@ export class ChallengeService {
 
       const note =
         await this.challengeRepository.createChallengeNote(createData);
-      return ChallengeNoteDto.from(note);
+      const dataWithCount: ChallengeNoteWithCountData = {
+        ...note,
+        commentsCount: 0,
+        likesCount: 0,
+      };
+      return ChallengeNoteDto.from(dataWithCount);
     }
 
     const createData: CreateChallengeNoteData = {
@@ -452,7 +461,12 @@ export class ChallengeService {
     };
 
     const note = await this.challengeRepository.createChallengeNote(createData);
-    return ChallengeNoteDto.from(note);
+    const dataWithCount: ChallengeNoteWithCountData = {
+      ...note,
+      commentsCount: 0,
+      likesCount: 0,
+    };
+    return ChallengeNoteDto.from(dataWithCount);
   }
 
   async getChallengeNotes(id: number): Promise<ChallengeNoteListDto> {
@@ -463,7 +477,17 @@ export class ChallengeService {
 
     const notes =
       await this.challengeRepository.getChallengeNotesByChallengeId(id);
-    return ChallengeNoteListDto.from(notes);
+    const dataWithCount: ChallengeNoteWithCountData[] = await Promise.all(
+      notes.map(async (note) => ({
+        ...note,
+        commentsCount:
+          await this.challengeRepository.getChallengeNoteCommentsCount(note.id),
+        likesCount: await this.challengeRepository.getChallengeNoteLikesCount(
+          note.id,
+        ),
+      })),
+    );
+    return ChallengeNoteListDto.from(dataWithCount);
   }
 
   async updateChallengeNote(
@@ -474,6 +498,15 @@ export class ChallengeService {
     const note = await this.challengeRepository.getChallengeNoteById(id);
     if (!note) {
       throw new NotFoundException('챌린지 노트를 찾을 수 없습니다.');
+    }
+
+    const isUserParticipating =
+      await this.challengeRepository.isUserParticipating(
+        note.challengeId,
+        user.id,
+      );
+    if (!isUserParticipating) {
+      throw new ForbiddenException('챌린지에 참여하지 않은 유저입니다.');
     }
 
     if (note.authorId !== user.id) {
@@ -534,7 +567,15 @@ export class ChallengeService {
         id,
         updateData,
       );
-      return ChallengeNoteDto.from(note);
+      const dataWithCount: ChallengeNoteWithCountData = {
+        ...note,
+        commentsCount:
+          await this.challengeRepository.getChallengeNoteCommentsCount(note.id),
+        likesCount: await this.challengeRepository.getChallengeNoteLikesCount(
+          note.id,
+        ),
+      };
+      return ChallengeNoteDto.from(dataWithCount);
     }
 
     const updateData: UpdateChallengeNoteData = {
@@ -548,6 +589,89 @@ export class ChallengeService {
       id,
       updateData,
     );
-    return ChallengeNoteDto.from(updatedNote);
+    const dataWithCount: ChallengeNoteWithCountData = {
+      ...updatedNote,
+      commentsCount:
+        await this.challengeRepository.getChallengeNoteCommentsCount(
+          updatedNote.id,
+        ),
+      likesCount: await this.challengeRepository.getChallengeNoteLikesCount(
+        updatedNote.id,
+      ),
+    };
+    return ChallengeNoteDto.from(dataWithCount);
+  }
+
+  async createChallengeNoteComment(
+    payload: CreateChallengeNoteCommentPayload,
+    user: UserBaseInfo,
+  ): Promise<ChallengeNoteCommentDto> {
+    const note = await this.challengeRepository.getChallengeNoteById(
+      payload.noteId,
+    );
+    if (!note) {
+      throw new NotFoundException('챌린지 노트를 찾을 수 없습니다.');
+    }
+    if (note.id !== payload.noteId) {
+      throw new BadRequestException('노트 ID가 일치하지 않습니다.');
+    }
+
+    const isUserParticipating =
+      await this.challengeRepository.isUserParticipating(
+        note.challengeId,
+        user.id,
+      );
+    if (!isUserParticipating) {
+      throw new ForbiddenException('챌린지에 참여하지 않은 유저입니다.');
+    }
+
+    if (this.badWordsFilterService.isProfane(payload.content)) {
+      throw new BadRequestException(
+        '댓글 내용에 부적절한 단어가 포함되어 있습니다.',
+      );
+    }
+
+    const createData: CreateChallengeNoteCommentData = {
+      noteId: payload.noteId,
+      userId: user.id,
+      content: payload.content,
+    };
+
+    const comment =
+      await this.challengeRepository.createChallengeNoteComment(createData);
+    return ChallengeNoteCommentDto.from(comment);
+  }
+
+  async deleteChallengeNoteComment(
+    id: number,
+    user: UserBaseInfo,
+  ): Promise<void> {
+    const comment =
+      await this.challengeRepository.getChallengeNoteCommentById(id);
+    if (!comment) {
+      throw new NotFoundException('댓글을 찾을 수 없습니다.');
+    }
+
+    const note = await this.challengeRepository.getChallengeNoteById(
+      comment.noteId,
+    );
+    if (!note) {
+      throw new NotFoundException('챌린지 노트를 찾을 수 없습니다.');
+    }
+
+    const isUserParticipating =
+      await this.challengeRepository.isUserParticipating(
+        note.challengeId,
+        user.id,
+      );
+    if (!isUserParticipating) {
+      throw new ForbiddenException('챌린지에 참여하지 않은 유저입니다.');
+    }
+
+    if (comment.userId !== user.id) {
+      throw new ForbiddenException('댓글의 작성자가 아닙니다.');
+    }
+
+    await this.challengeRepository.deleteChallengeNoteComment(id);
   }
 }
