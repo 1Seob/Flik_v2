@@ -1,10 +1,10 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsInt, IsOptional, IsString, Min } from 'class-validator';
+import { IsInt, IsOptional, IsString, MinLength } from 'class-validator';
 
 export class UpdateChallengeNotePayload {
   @IsOptional()
   @IsString()
-  @Min(1, { message: '노트 내용은 최소 1글자 이상이어야 합니다.' })
+  @MinLength(1, { message: '노트 내용은 최소 1글자 이상이어야 합니다.' })
   @ApiPropertyOptional({
     description: '노트 내용',
     type: String,

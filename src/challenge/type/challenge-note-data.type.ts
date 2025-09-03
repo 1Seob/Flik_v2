@@ -5,7 +5,5 @@ export type ChallengeNoteData = {
   body: string;
   quoteText: string | null;
   createdAt: Date;
-  likesCount: number;
-  commentsCount: number;
   imagePath: string | null;
 };

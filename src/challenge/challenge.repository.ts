@@ -12,6 +12,8 @@ import { ChallengeNoteData } from './type/challenge-note-data.type';
 import { CreateChallengeNoteData } from './type/create-challenge-note-data.type';
 import { SentenceLikeData } from 'src/page/type/sentence-like-type';
 import { UpdateChallengeNoteData } from './type/update-challenge-note-data.type';
+import { ChallengeNoteCommentData } from './type/challenge-note-comment-data.type';
+import { CreateChallengeNoteCommentData } from './type/create-challenge-note-comment-data,type';
 
 type JoinRow = {
   id: number; // ChallengeJoin.id
@@ -482,8 +484,6 @@ export class ChallengeRepository {
         body: true,
         quoteText: true,
         createdAt: true,
-        likesCount: true,
-        commentsCount: true,
         imagePath: true,
       },
     });
@@ -501,8 +501,6 @@ export class ChallengeRepository {
         body: true,
         quoteText: true,
         createdAt: true,
-        likesCount: true,
-        commentsCount: true,
         imagePath: true,
       },
     });
@@ -518,8 +516,6 @@ export class ChallengeRepository {
         body: true,
         quoteText: true,
         createdAt: true,
-        likesCount: true,
-        commentsCount: true,
         imagePath: true,
       },
     });
@@ -539,10 +535,56 @@ export class ChallengeRepository {
         body: true,
         quoteText: true,
         createdAt: true,
-        likesCount: true,
-        commentsCount: true,
         imagePath: true,
       },
+    });
+  }
+
+  async getChallengeNoteCommentsCount(noteId: number): Promise<number> {
+    return this.prisma.challengeNoteComment.count({
+      where: { noteId },
+    });
+  }
+
+  async getChallengeNoteLikesCount(noteId: number): Promise<number> {
+    return this.prisma.challengeNoteLike.count({
+      where: { noteId },
+    });
+  }
+
+  async createChallengeNoteComment(
+    data: CreateChallengeNoteCommentData,
+  ): Promise<ChallengeNoteCommentData> {
+    return this.prisma.challengeNoteComment.create({
+      data,
+      select: {
+        id: true,
+        userId: true,
+        noteId: true,
+        content: true,
+        createdAt: true,
+      },
+    });
+  }
+
+  async getChallengeNoteCommentById(
+    id: number,
+  ): Promise<ChallengeNoteCommentData | null> {
+    return this.prisma.challengeNoteComment.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        userId: true,
+        noteId: true,
+        content: true,
+        createdAt: true,
+      },
+    });
+  }
+
+  async deleteChallengeNoteComment(id: number): Promise<void> {
+    await this.prisma.challengeNoteComment.delete({
+      where: { id },
     });
   }
 }

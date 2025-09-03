@@ -256,9 +256,6 @@ model ChallengeNote {
   quoteBookId  Int?     @map("quote_book_id")
   quotePageId  Int?     @map("quote_page_id")
 
-  likesCount   Int      @default(0) @map("likes_count")
-  commentsCount Int     @default(0) @map("comments_count")
-
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt      @map("updated_at")
 
