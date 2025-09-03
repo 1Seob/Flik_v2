@@ -29,6 +29,12 @@ import { UpdateChallengePayload } from './payload/update-challenge.payload';
 import { ChallengeCompleteLogListDto } from './dto/challenge-complete-log.dto';
 import { ChallengeHistoryListDto } from './dto/challenge-history.dto';
 import { ChallengeSearchQuery } from 'src/search/query/challenge-search-query';
+import {
+  ChallengeNoteDto,
+  ChallengeNoteListDto,
+} from './dto/challenge-note.dto';
+import { CreateChallengeNotePayload } from './payload/create-challenge-note.payload';
+import { UpdateChallengeNotePayload } from './payload/update-challenge-note.payload';
 
 @Controller('challenges')
 @ApiTags('Challenge API')
@@ -72,6 +78,19 @@ export class ChallengeController {
     return this.challengeService.getUserChallengeHistory(user);
   }
 
+  @Post('note')
+  @Version('1')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: '챌린지 노트 생성' })
+  @ApiCreatedResponse({ type: ChallengeNoteDto })
+  async createChallengeNote(
+    @Body() payload: CreateChallengeNotePayload,
+    @CurrentUser() user: UserBaseInfo,
+  ): Promise<ChallengeNoteDto> {
+    return this.challengeService.createChallengeNote(payload, user);
+  }
+
   @Get('search')
   @Version('1')
   @ApiOperation({ summary: '챌린지 검색' })
@@ -80,6 +99,30 @@ export class ChallengeController {
     @Query() query: ChallengeSearchQuery,
   ): Promise<ChallengeListDto> {
     return this.challengeService.searchChallenges(query);
+  }
+
+  @Get('note/:id')
+  @Version('1')
+  @ApiOperation({ summary: '챌린지의 독서 노트 조회' })
+  @ApiOkResponse({ type: ChallengeNoteListDto })
+  async getChallengeNotes(
+    @Param('id') id: number,
+  ): Promise<ChallengeNoteListDto> {
+    return this.challengeService.getChallengeNotes(id);
+  }
+
+  @Patch('note/:id')
+  @Version('1')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '챌린지 노트 수정' })
+  @ApiOkResponse({ type: ChallengeNoteDto })
+  async updateChallengeNote(
+    @Param('id') id: number,
+    @Body() payload: UpdateChallengeNotePayload,
+    @CurrentUser() user: UserBaseInfo,
+  ): Promise<ChallengeNoteDto> {
+    return this.challengeService.updateChallengeNote(id, payload, user);
   }
 
   @Get(':id')
