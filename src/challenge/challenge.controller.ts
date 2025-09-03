@@ -132,14 +132,31 @@ export class ChallengeController {
     return this.challengeService.deleteChallengeNoteComment(id, user);
   }
 
+  @Post('note/:id/like')
+  @Version('1')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: '챌린지 노트 좋아요 (다시 누르면 취소)' })
+  @ApiNoContentResponse()
+  @HttpCode(204)
+  async toggleChallengeNoteLike(
+    @Param('id') id: number,
+    @CurrentUser() user: UserBaseInfo,
+  ): Promise<void> {
+    return this.challengeService.toggleChallengeNoteLike(id, user);
+  }
+
   @Get('note/:id')
   @Version('1')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: '챌린지의 독서 노트 조회' })
   @ApiOkResponse({ type: ChallengeNoteListDto })
   async getChallengeNotes(
     @Param('id') id: number,
+    @CurrentUser() user: UserBaseInfo,
   ): Promise<ChallengeNoteListDto> {
-    return this.challengeService.getChallengeNotes(id);
+    return this.challengeService.getChallengeNotes(id, user);
   }
 
   @Patch('note/:id')

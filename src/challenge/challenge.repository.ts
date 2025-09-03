@@ -587,4 +587,45 @@ export class ChallengeRepository {
       where: { id },
     });
   }
+
+  async toggleChallengeNoteLike(noteId: number, userId: string): Promise<void> {
+    const existingLike = await this.prisma.challengeNoteLike.findUnique({
+      where: {
+        noteId_userId: {
+          noteId,
+          userId,
+        },
+      },
+    });
+
+    if (existingLike) {
+      await this.prisma.challengeNoteLike.delete({
+        where: {
+          id: existingLike.id,
+        },
+      });
+    } else {
+      await this.prisma.challengeNoteLike.create({
+        data: {
+          noteId,
+          userId,
+        },
+      });
+    }
+  }
+
+  async isUserLikedChallengeNote(
+    noteId: number,
+    userId: string,
+  ): Promise<boolean> {
+    const like = await this.prisma.challengeNoteLike.findUnique({
+      where: {
+        noteId_userId: {
+          noteId,
+          userId,
+        },
+      },
+    });
+    return !!like;
+  }
 }

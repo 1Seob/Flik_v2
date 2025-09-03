@@ -450,6 +450,7 @@ export class ChallengeService {
         ...note,
         commentsCount: 0,
         likesCount: 0,
+        liked: false,
       };
       return ChallengeNoteDto.from(dataWithCount);
     }
@@ -465,11 +466,15 @@ export class ChallengeService {
       ...note,
       commentsCount: 0,
       likesCount: 0,
+      liked: false,
     };
     return ChallengeNoteDto.from(dataWithCount);
   }
 
-  async getChallengeNotes(id: number): Promise<ChallengeNoteListDto> {
+  async getChallengeNotes(
+    id: number,
+    user: UserBaseInfo,
+  ): Promise<ChallengeNoteListDto> {
     const challenge = await this.challengeRepository.getChallengeById(id);
     if (!challenge) {
       throw new NotFoundException('챌린지를 찾을 수 없습니다.');
@@ -484,6 +489,10 @@ export class ChallengeService {
           await this.challengeRepository.getChallengeNoteCommentsCount(note.id),
         likesCount: await this.challengeRepository.getChallengeNoteLikesCount(
           note.id,
+        ),
+        liked: await this.challengeRepository.isUserLikedChallengeNote(
+          note.id,
+          user.id,
         ),
       })),
     );
@@ -574,6 +583,10 @@ export class ChallengeService {
         likesCount: await this.challengeRepository.getChallengeNoteLikesCount(
           note.id,
         ),
+        liked: await this.challengeRepository.isUserLikedChallengeNote(
+          note.id,
+          user.id,
+        ),
       };
       return ChallengeNoteDto.from(dataWithCount);
     }
@@ -597,6 +610,10 @@ export class ChallengeService {
         ),
       likesCount: await this.challengeRepository.getChallengeNoteLikesCount(
         updatedNote.id,
+      ),
+      liked: await this.challengeRepository.isUserLikedChallengeNote(
+        updatedNote.id,
+        user.id,
       ),
     };
     return ChallengeNoteDto.from(dataWithCount);
@@ -673,5 +690,26 @@ export class ChallengeService {
     }
 
     await this.challengeRepository.deleteChallengeNoteComment(id);
+  }
+
+  async toggleChallengeNoteLike(
+    noteId: number,
+    user: UserBaseInfo,
+  ): Promise<void> {
+    const note = await this.challengeRepository.getChallengeNoteById(noteId);
+    if (!note) {
+      throw new NotFoundException('챌린지 노트를 찾을 수 없습니다.');
+    }
+
+    const isUserParticipating =
+      await this.challengeRepository.isUserParticipating(
+        note.challengeId,
+        user.id,
+      );
+    if (!isUserParticipating) {
+      throw new ForbiddenException('챌린지에 참여하지 않은 유저입니다.');
+    }
+
+    await this.challengeRepository.toggleChallengeNoteLike(noteId, user.id);
   }
 }
