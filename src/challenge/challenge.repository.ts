@@ -628,4 +628,18 @@ export class ChallengeRepository {
     });
     return !!like;
   }
+
+  async deleteChallengeNote(id: number): Promise<void> {
+    await this.prisma.$transaction([
+      this.prisma.challengeNoteComment.deleteMany({
+        where: { noteId: id },
+      }),
+      this.prisma.challengeNoteLike.deleteMany({
+        where: { noteId: id },
+      }),
+      this.prisma.challengeNote.delete({
+        where: { id },
+      }),
+    ]);
+  }
 }

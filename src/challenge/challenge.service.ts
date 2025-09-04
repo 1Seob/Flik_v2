@@ -712,4 +712,26 @@ export class ChallengeService {
 
     await this.challengeRepository.toggleChallengeNoteLike(noteId, user.id);
   }
+
+  async deleteChallengeNote(id: number, user: UserBaseInfo): Promise<void> {
+    const note = await this.challengeRepository.getChallengeNoteById(id);
+    if (!note) {
+      throw new NotFoundException('챌린지 노트를 찾을 수 없습니다.');
+    }
+
+    const isUserParticipating =
+      await this.challengeRepository.isUserParticipating(
+        note.challengeId,
+        user.id,
+      );
+    if (!isUserParticipating) {
+      throw new ForbiddenException('챌린지에 참여하지 않은 유저입니다.');
+    }
+
+    if (note.authorId !== user.id) {
+      throw new ForbiddenException('챌린지 노트의 작성자가 아닙니다.');
+    }
+
+    await this.challengeRepository.deleteChallengeNote(id);
+  }
 }

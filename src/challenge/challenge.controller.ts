@@ -146,19 +146,6 @@ export class ChallengeController {
     return this.challengeService.toggleChallengeNoteLike(id, user);
   }
 
-  @Get('note/:id')
-  @Version('1')
-  @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
-  @ApiOperation({ summary: '챌린지의 독서 노트 조회' })
-  @ApiOkResponse({ type: ChallengeNoteListDto })
-  async getChallengeNotes(
-    @Param('id') id: number,
-    @CurrentUser() user: UserBaseInfo,
-  ): Promise<ChallengeNoteListDto> {
-    return this.challengeService.getChallengeNotes(id, user);
-  }
-
   @Patch('note/:id')
   @Version('1')
   @UseGuards(JwtAuthGuard)
@@ -173,12 +160,31 @@ export class ChallengeController {
     return this.challengeService.updateChallengeNote(id, payload, user);
   }
 
-  @Get(':id')
+  @Delete('note/:id')
   @Version('1')
-  @ApiOperation({ summary: '챌린지 조회' })
-  @ApiOkResponse({ type: ChallengeDto })
-  async getChallenge(@Param('id') id: number): Promise<ChallengeDto> {
-    return this.challengeService.getChallengeById(id);
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '챌린지 노트 삭제' })
+  @ApiNoContentResponse()
+  @HttpCode(204)
+  async deleteChallengeNote(
+    @Param('id') id: number,
+    @CurrentUser() user: UserBaseInfo,
+  ): Promise<void> {
+    return this.challengeService.deleteChallengeNote(id, user);
+  }
+
+  @Get(':id/note')
+  @Version('1')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: '챌린지의 독서 노트 조회' })
+  @ApiOkResponse({ type: ChallengeNoteListDto })
+  async getChallengeNotes(
+    @Param('id') id: number,
+    @CurrentUser() user: UserBaseInfo,
+  ): Promise<ChallengeNoteListDto> {
+    return this.challengeService.getChallengeNotes(id, user);
   }
 
   @Patch(':id')
@@ -242,6 +248,14 @@ export class ChallengeController {
     @CurrentUser() user: UserBaseInfo,
   ): Promise<ChallengeListDto> {
     return this.challengeService.leaveChallenge(id, user);
+  }
+
+  @Get(':id')
+  @Version('1')
+  @ApiOperation({ summary: '챌린지 조회' })
+  @ApiOkResponse({ type: ChallengeDto })
+  async getChallenge(@Param('id') id: number): Promise<ChallengeDto> {
+    return this.challengeService.getChallengeById(id);
   }
 
   /*
