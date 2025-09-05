@@ -60,26 +60,22 @@ export class UserController {
 
   @Post('profile-image/commit')
   @Version('1')
-  @ApiNoContentResponse()
-  @HttpCode(204)
+  @ApiOkResponse({ type: String })
   @ApiOperation({ summary: '프로필 사진 업로드 완료 커밋' })
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   async commitProfileImage(
     @CurrentUser() user: UserBaseInfo,
     @Body() payload: FilePathPayload,
-  ): Promise<void> {
-    return this.userService.commitProfileImage(user.id, payload.filePath);
+  ): Promise<string> {
+    return this.userService.commitProfileImage(user, payload.filePath);
   }
 
   @Get('profile-image-url')
   @Version('1')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOkResponse({
-    description: '프로필 사진 URL',
-    type: String,
-  })
+  @ApiOkResponse({ type: String })
   @ApiOperation({
     summary: '프로필 사진 URL 요청 (12시간 유효)',
   })
