@@ -34,13 +34,20 @@ import { CreateChallengeNoteCommentPayload } from './payload/create-challenge-no
 import { ChallengeNoteCommentDto } from './dto/challenge-note-comment.dto';
 import { CreateChallengeNoteCommentData } from './type/create-challenge-note-comment-data,type';
 import { ChallengeNoteWithCountData } from './type/challenge-note-with-count-data.type';
+import { SupabaseService } from 'src/common/services/supabase.service';
+import { ConfigService } from '@nestjs/config';
+import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
 export class ChallengeService {
   constructor(
     private readonly challengeRepository: ChallengeRepository,
     private readonly badWordsFilterService: BadWordsFilterService,
+    private readonly supabaseService: SupabaseService,
+    private readonly configService: ConfigService,
   ) {}
+
+  private readonly BUCKET_NAME = process.env.NEXT_PUBLIC_STORAGE_BUCKET_2;
 
   async createChallenge(
     payload: CreateChallengePayload,
@@ -713,8 +720,8 @@ export class ChallengeService {
     await this.challengeRepository.toggleChallengeNoteLike(noteId, user.id);
   }
 
-  async deleteChallengeNote(id: number, user: UserBaseInfo): Promise<void> {
-    const note = await this.challengeRepository.getChallengeNoteById(id);
+  async deleteChallengeNote(noteId: number, user: UserBaseInfo): Promise<void> {
+    const note = await this.challengeRepository.getChallengeNoteById(noteId);
     if (!note) {
       throw new NotFoundException('챌린지 노트를 찾을 수 없습니다.');
     }
@@ -731,7 +738,156 @@ export class ChallengeService {
     if (note.authorId !== user.id) {
       throw new ForbiddenException('챌린지 노트의 작성자가 아닙니다.');
     }
+    if (!this.BUCKET_NAME) {
+      throw new Error(
+        'NEXT_PUBLIC_STORAGE_BUCKET_2 환경 변수가 정의되지 않았습니다.',
+      );
+    }
 
-    await this.challengeRepository.deleteChallengeNote(id);
+    if (note.imagePath) {
+      await this.supabaseService
+        .deleteImage(this.BUCKET_NAME, note.imagePath)
+        .catch((err) =>
+          console.warn(`Failed to delete challenge note image: ${err.message}`),
+        );
+    }
+    await this.challengeRepository.deleteChallengeNote(noteId);
+  }
+
+  async getChallengeNotePresignedUploadUrl(
+    noteId: number,
+    user: UserBaseInfo,
+  ): Promise<{ url: string; filePath: string }> {
+    const note = await this.challengeRepository.getChallengeNoteById(noteId);
+    if (!note) {
+      throw new NotFoundException('챌린지 노트를 찾을 수 없습니다.');
+    }
+
+    const isUserParticipating =
+      await this.challengeRepository.isUserParticipating(
+        note.challengeId,
+        user.id,
+      );
+    if (!isUserParticipating) {
+      throw new ForbiddenException('챌린지에 참여하지 않은 유저입니다.');
+    }
+
+    if (user.id !== note.authorId) {
+      throw new ForbiddenException('챌린지 노트의 작성자가 아닙니다.');
+    }
+
+    if (!this.BUCKET_NAME) {
+      throw new Error(
+        'NEXT_PUBLIC_STORAGE_BUCKET_2 환경 변수가 정의되지 않았습니다.',
+      );
+    }
+    const filePath = `${this.BUCKET_NAME}/${note.id}/${uuidv4()}/image.png`;
+    const url = await this.supabaseService.getSignedUploadUrl(
+      this.BUCKET_NAME,
+      filePath,
+    );
+    return { url, filePath };
+  }
+  async commitChallengeNoteImage(
+    noteId: number,
+    filePath: string,
+    user: UserBaseInfo,
+  ): Promise<string> {
+    const note = await this.challengeRepository.getChallengeNoteById(noteId);
+    if (!note) {
+      throw new NotFoundException('챌린지 노트를 찾을 수 없습니다.');
+    }
+
+    const isUserParticipating =
+      await this.challengeRepository.isUserParticipating(
+        note.challengeId,
+        user.id,
+      );
+    if (!isUserParticipating) {
+      throw new ForbiddenException('챌린지에 참여하지 않은 유저입니다.');
+    }
+
+    if (user.id !== note.authorId) {
+      throw new ForbiddenException('챌린지 노트의 작성자가 아닙니다.');
+    }
+
+    // 기존 이미지 삭제 (실패해도 경고만)
+    if (!this.BUCKET_NAME) {
+      throw new Error(
+        'NEXT_PUBLIC_STORAGE_BUCKET_2 환경 변수가 정의되지 않았습니다.',
+      );
+    }
+    if (note.imagePath) {
+      await this.supabaseService
+        .deleteImage(this.BUCKET_NAME, note.imagePath)
+        .catch((err) =>
+          console.warn(
+            `Failed to delete old challenge note image: ${err.message}`,
+          ),
+        );
+    }
+
+    // 새 경로 반영
+    await this.challengeRepository.updateChallengeNoteImagePath(
+      noteId,
+      filePath,
+    );
+    return this.getChallengeNoteImageUrl(noteId);
+  }
+
+  async getChallengeNoteImageUrl(id: number): Promise<string> {
+    const note = await this.challengeRepository.getChallengeNoteById(id);
+    if (!note) {
+      throw new NotFoundException('챌린지 노트를 찾을 수 없습니다.');
+    }
+    if (!note.imagePath) {
+      throw new NotFoundException('챌린지 노트 이미지가 존재하지 않습니다.');
+    }
+
+    if (!this.BUCKET_NAME) {
+      throw new Error(
+        'NEXT_PUBLIC_STORAGE_BUCKET_2 환경 변수가 정의되지 않았습니다.',
+      );
+    }
+    return this.supabaseService.getSignedUrl(this.BUCKET_NAME, note.imagePath);
+  }
+
+  async deleteChallengeNoteImage(
+    noteId: number,
+    user: UserBaseInfo,
+  ): Promise<void> {
+    const note = await this.challengeRepository.getChallengeNoteById(noteId);
+    if (!note) {
+      throw new NotFoundException('챌린지 노트를 찾을 수 없습니다.');
+    }
+
+    const isUserParticipating =
+      await this.challengeRepository.isUserParticipating(
+        note.challengeId,
+        user.id,
+      );
+    if (!isUserParticipating) {
+      throw new ForbiddenException('챌린지에 참여하지 않은 유저입니다.');
+    }
+
+    if (user.id !== note.authorId) {
+      throw new ForbiddenException('챌린지 노트의 작성자가 아닙니다.');
+    }
+
+    if (!this.BUCKET_NAME) {
+      throw new Error(
+        'NEXT_PUBLIC_STORAGE_BUCKET_2 환경 변수가 정의되지 않았습니다.',
+      );
+    }
+
+    if (!note.imagePath) {
+      throw new NotFoundException('챌린지 노트 이미지가 존재하지 않습니다.');
+    }
+    await this.supabaseService
+      .deleteImage(this.BUCKET_NAME, note.imagePath)
+      .catch((err) =>
+        console.warn(`Failed to delete challenge note image: ${err.message}`),
+      );
+    await this.challengeRepository.updateChallengeNoteImagePath(noteId, null);
   }
 }

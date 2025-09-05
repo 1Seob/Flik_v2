@@ -642,4 +642,18 @@ export class ChallengeRepository {
       }),
     ]);
   }
+
+  async updateChallengeNoteImagePath(
+    noteId: number,
+    imagePath: string | null,
+  ): Promise<void> {
+    await this.prisma.challengeNote.update({
+      where: {
+        id: noteId,
+      },
+      data: {
+        imagePath,
+      },
+    });
+  }
 }
