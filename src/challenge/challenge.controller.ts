@@ -39,6 +39,7 @@ import { CreateChallengeNotePayload } from './payload/create-challenge-note.payl
 import { UpdateChallengeNotePayload } from './payload/update-challenge-note.payload';
 import { ChallengeNoteCommentDto } from './dto/challenge-note-comment.dto';
 import { CreateChallengeNoteCommentPayload } from './payload/create-challenge-note-comment.payload';
+import { FilePathPayload } from 'src/user/payload/filepath.payload';
 
 @Controller('challenges')
 @ApiTags('Challenge API')
@@ -86,7 +87,7 @@ export class ChallengeController {
   @Version('1')
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
-  @ApiOperation({ summary: '챌린지 노트 생성' })
+  @ApiOperation({ summary: '독서 노트 생성' })
   @ApiCreatedResponse({ type: ChallengeNoteDto })
   async createChallengeNote(
     @Body() payload: CreateChallengeNotePayload,
@@ -109,7 +110,7 @@ export class ChallengeController {
   @Version('1')
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
-  @ApiOperation({ summary: '챌린지 노트 댓글 생성' })
+  @ApiOperation({ summary: '독서 노트 댓글 생성' })
   @ApiCreatedResponse({ type: ChallengeNoteCommentDto })
   async createChallengeNoteComment(
     @Body() payload: CreateChallengeNoteCommentPayload,
@@ -122,7 +123,7 @@ export class ChallengeController {
   @Version('1')
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
-  @ApiOperation({ summary: '챌린지 노트 댓글 삭제' })
+  @ApiOperation({ summary: '독서 노트 댓글 삭제' })
   @ApiNoContentResponse()
   @HttpCode(204)
   async deleteChallengeNoteComment(
@@ -136,7 +137,7 @@ export class ChallengeController {
   @Version('1')
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
-  @ApiOperation({ summary: '챌린지 노트 좋아요 (다시 누르면 취소)' })
+  @ApiOperation({ summary: '독서 노트 좋아요 (다시 누르면 취소)' })
   @ApiNoContentResponse()
   @HttpCode(204)
   async toggleChallengeNoteLike(
@@ -146,11 +147,66 @@ export class ChallengeController {
     return this.challengeService.toggleChallengeNoteLike(id, user);
   }
 
+  @Get('note/:id/presigned-url')
+  @Version('1')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @ApiOkResponse({ type: Object })
+  @ApiOperation({
+    summary: '독서 노트 사진 : Presigned 업로드 URL 요청 (2시간 유효)',
+  })
+  async getChallengeNotePresignedUploadUrl(
+    @Param('id') id: number,
+    @CurrentUser() user: UserBaseInfo,
+  ): Promise<{ url: string; filePath: string }> {
+    return this.challengeService.getChallengeNotePresignedUploadUrl(id, user);
+  }
+
+  @Delete('note/:id/image')
+  @Version('1')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: '독서 노트 이미지 삭제' })
+  @ApiNoContentResponse()
+  @HttpCode(204)
+  async deleteChallengeNoteImage(
+    @Param('id') id: number,
+    @CurrentUser() user: UserBaseInfo,
+  ): Promise<void> {
+    return this.challengeService.deleteChallengeNoteImage(id, user);
+  }
+
+  @Get('note/:id/image-url')
+  @Version('1')
+  @ApiOkResponse({ type: String })
+  @ApiOperation({ summary: '독서 노트 이미지 URL 요청 (12시간 유효)' })
+  async getChallengeNoteImageUrl(@Param('id') id: number): Promise<string> {
+    return this.challengeService.getChallengeNoteImageUrl(id);
+  }
+
+  @Post('note/:id/image/commit')
+  @Version('1')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: '독서 노트 이미지 업로드 커밋' })
+  @ApiOkResponse({ type: String })
+  async commitChallengeNoteImage(
+    @Param('id') id: number,
+    @Body() payload: FilePathPayload,
+    @CurrentUser() user: UserBaseInfo,
+  ): Promise<string> {
+    return this.challengeService.commitChallengeNoteImage(
+      id,
+      payload.filePath,
+      user,
+    );
+  }
+
   @Patch('note/:id')
   @Version('1')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: '챌린지 노트 수정' })
+  @ApiOperation({ summary: '독서 노트 수정' })
   @ApiOkResponse({ type: ChallengeNoteDto })
   async updateChallengeNote(
     @Param('id') id: number,
@@ -164,7 +220,7 @@ export class ChallengeController {
   @Version('1')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: '챌린지 노트 삭제' })
+  @ApiOperation({ summary: '독서 노트 삭제' })
   @ApiNoContentResponse()
   @HttpCode(204)
   async deleteChallengeNote(

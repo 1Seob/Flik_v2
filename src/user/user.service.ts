@@ -21,6 +21,8 @@ export class UserService {
     private readonly badWordsFilterService: BadWordsFilterService,
   ) {}
 
+  private readonly BUCKET_NAME = process.env.NEXT_PUBLIC_STORAGE_BUCKET_1;
+
   async getUserById(userId: string): Promise<UserDto> {
     const user = await this.userRepository.getUserById(userId);
 
@@ -96,39 +98,59 @@ export class UserService {
   async getPresignedUploadUrl(
     user: UserBaseInfo,
   ): Promise<{ url: string; filePath: string }> {
-    const filePath = `profile-images/${user.id}/${uuidv4()}/profile-image.png`;
+    if (!this.BUCKET_NAME) {
+      throw new Error(
+        'NEXT_PUBLIC_STORAGE_BUCKET_1 환경 변수가 정의되지 않았습니다.',
+      );
+    }
+    const filePath = `${this.BUCKET_NAME}/${user.id}/${uuidv4()}/profile-image.png`;
     const url = await this.supabaseService.getSignedUploadUrl(
-      'profile-images',
+      this.BUCKET_NAME,
       filePath,
     );
     return { url, filePath };
   }
 
-  async commitProfileImage(userId: string, filePath: string): Promise<void> {
-    const user = await this.userRepository.getUserById(userId);
-    if (!user) {
-      throw new NotFoundException('사용자를 찾을 수 없습니다.');
+  async commitProfileImage(
+    user: UserBaseInfo,
+    filePath: string,
+  ): Promise<string> {
+    if (!this.BUCKET_NAME) {
+      throw new Error(
+        'NEXT_PUBLIC_STORAGE_BUCKET_1 환경 변수가 정의되지 않았습니다.',
+      );
     }
 
     // 기존 이미지 삭제 (실패해도 경고만)
     if (user.profileImagePath) {
       this.supabaseService
-        .deleteImage('profile-images', user.profileImagePath)
+        .deleteImage(this.BUCKET_NAME, user.profileImagePath)
         .catch((err) =>
           console.warn(`Failed to delete old profile image: ${err.message}`),
         );
     }
 
     // 새 경로 반영
-    await this.userRepository.updateProfileImagePath(userId, filePath);
+    await this.userRepository.updateProfileImagePath(user.id, filePath);
+    const updatedUser = await this.userRepository.getUserById(user.id);
+    if (!updatedUser) {
+      throw new NotFoundException('사용자를 찾을 수 없습니다.');
+    }
+    return this.getProfileImageUrl(updatedUser);
   }
 
   async getProfileImageUrl(user: UserBaseInfo): Promise<string> {
     if (!user.profileImagePath) {
       throw new NotFoundException('프로필 이미지가 존재하지 않습니다.');
     }
+    if (!this.BUCKET_NAME) {
+      throw new Error(
+        'NEXT_PUBLIC_STORAGE_BUCKET_1 환경 변수가 정의되지 않았습니다.',
+      );
+    }
+
     return this.supabaseService.getSignedUrl(
-      'profile-images',
+      this.BUCKET_NAME,
       user.profileImagePath,
     );
   }
