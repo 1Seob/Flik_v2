@@ -45,18 +45,26 @@ export class ReviewService {
       userId: user.id,
       bookId: payload.bookId,
       content: payload.content,
+      rating: payload.rating,
     };
 
     const createdReview = await this.reviewRepository.createReview(createData);
-    return ReviewDto.from(createdReview);
+    const createdReviewWithLiked = { ...createdReview, liked: false };
+    return ReviewDto.from(createdReviewWithLiked);
   }
 
-  async getReviewsByBookId(bookId: number): Promise<ReviewListDto> {
+  async getReviewsByBookId(
+    bookId: number,
+    user: UserBaseInfo,
+  ): Promise<ReviewListDto> {
     const book = await this.bookRepository.getBookById(bookId);
     if (!book) {
       throw new NotFoundException('존재하지 않는 책입니다.');
     }
-    const reviews = await this.reviewRepository.getReviewsByBookId(bookId);
+    const reviews = await this.reviewRepository.getReviewsByBookId(
+      bookId,
+      user.id,
+    );
     return ReviewListDto.from(reviews);
   }
 
@@ -88,7 +96,11 @@ export class ReviewService {
       id,
       updateData,
     );
-    return ReviewDto.from(updatedReview);
+    const updatedReviewWithLiked = {
+      ...updatedReview,
+      liked: await this.reviewRepository.isUserLikedReview(id, user.id),
+    };
+    return ReviewDto.from(updatedReviewWithLiked);
   }
 
   async toggleReviewLike(reviewId: number, user: UserBaseInfo): Promise<void> {

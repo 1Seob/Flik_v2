@@ -47,12 +47,15 @@ export class ReviewController {
 
   @Get(':id')
   @Version('1')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: '책의 리뷰들 조회' })
   @ApiOkResponse({ type: ReviewListDto })
   async getReviewsByBookId(
     @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: UserBaseInfo,
   ): Promise<ReviewListDto> {
-    return this.reviewService.getReviewsByBookId(id);
+    return this.reviewService.getReviewsByBookId(id, user);
   }
 
   @Put(':id')
