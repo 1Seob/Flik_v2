@@ -80,6 +80,7 @@ model Review {
   userId       String
   bookId       Int
   content      String
+  rating       Decimal   @db.Decimal(2, 1)
   
   createdAt    DateTime  @default(now()) @map("created_at")
   updatedAt    DateTime  @updatedAt @map("updated_at")
