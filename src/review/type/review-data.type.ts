@@ -4,5 +4,6 @@ export type ReviewData = {
   bookId: number;
   content: string;
   likeCount: number;
+  rating: number;
   createdAt: Date;
 };

@@ -3,6 +3,7 @@ import { PrismaService } from '../common/services/prisma.service';
 import { CreateReviewData } from './type/create-review-data.type';
 import { ReviewData } from './type/review-data.type';
 import { UpdateReviewData } from './type/update-review-data.type';
+import { ReviewWithLikedData } from './type/review-with-liked-data.type';
 
 @Injectable()
 export class ReviewRepository {
@@ -14,6 +15,7 @@ export class ReviewRepository {
         userId: data.userId,
         bookId: data.bookId,
         content: data.content,
+        rating: data.rating,
         createdAt: new Date(),
       },
       select: {
@@ -22,6 +24,7 @@ export class ReviewRepository {
         bookId: true,
         content: true,
         createdAt: true,
+        rating: true,
       },
     });
     return {
@@ -31,19 +34,24 @@ export class ReviewRepository {
       content: review.content,
       createdAt: review.createdAt,
       likeCount: 0, // 초기 좋아요 수는 0
+      rating: review.rating.toNumber(),
     };
   }
 
-  async getReviewsByBookId(bookId: number): Promise<ReviewData[]> {
+  async getReviewsByBookId(
+    bookId: number,
+    userId: string,
+  ): Promise<ReviewWithLikedData[]> {
     const reviews = await this.prisma.review.findMany({
       where: { bookId },
       include: {
         _count: {
           select: { likedBy: true },
         },
-      },
-      orderBy: {
-        createdAt: 'desc',
+        likedBy: {
+          where: { userId: userId }, // 현재 유저만 필터링
+          select: { id: true }, // 존재 여부만 확인
+        },
       },
     });
 
@@ -54,6 +62,8 @@ export class ReviewRepository {
       content: review.content,
       createdAt: review.createdAt,
       likeCount: review._count.likedBy,
+      liked: review.likedBy.length > 0, // 한 번에 Boolean 계산
+      rating: review.rating.toNumber(),
     }));
   }
 
@@ -76,6 +86,7 @@ export class ReviewRepository {
       content: review.content,
       createdAt: review.createdAt,
       likeCount: review._count.likedBy,
+      rating: review.rating.toNumber(),
     };
   }
 
@@ -97,6 +108,7 @@ export class ReviewRepository {
       content: review.content,
       createdAt: review.createdAt,
       likeCount: review._count.likedBy,
+      rating: review.rating.toNumber(),
     };
   }
 
@@ -138,5 +150,17 @@ export class ReviewRepository {
         where: { id },
       }),
     ]);
+  }
+
+  async isUserLikedReview(reviewId: number, userId: string): Promise<boolean> {
+    const like = await this.prisma.reviewLike.findUnique({
+      where: {
+        userId_reviewId: {
+          userId,
+          reviewId,
+        },
+      },
+    });
+    return !!like;
   }
 }
