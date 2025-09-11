@@ -28,6 +28,8 @@ import { format, toZonedTime } from 'date-fns-tz';
 import { ReadingStreakData } from './type/reading-streak-data.type';
 import { BookListDto } from 'src/book/dto/book.dto';
 import { PageDto } from 'src/page/dto/page.dto';
+import { CreateReadingStartLogData } from './type/create-reading-start-log-data.typte';
+import { CreateReadingEndLogData } from './type/create-reading-end-log-data.type';
 
 @Injectable()
 export class ReadService {
@@ -80,8 +82,16 @@ export class ReadService {
       }
     }
 
-    const data = await this.readRepository.createReadingStartLog(payload, user);
-    return ReadingLogDto.from(data);
+    const createData: CreateReadingStartLogData = {
+      userId: user.id,
+      bookId: payload.bookId,
+      pageId: payload.pageId,
+      pageNumber: payload.pageNumber,
+      participantId: payload.participantId,
+    };
+
+    const log = await this.readRepository.createReadingStartLog(createData);
+    return ReadingLogDto.from(log);
   }
 
   async createReadingEndLog(
@@ -131,8 +141,17 @@ export class ReadService {
       }
     }
 
-    const data = await this.readRepository.createReadingEndLog(payload, user);
-    return ReadingLogDto.from(data);
+    const createData: CreateReadingEndLogData = {
+      userId: user.id,
+      bookId: payload.bookId,
+      pageId: payload.pageId,
+      pageNumber: payload.pageNumber,
+      participantId: payload.participantId,
+      durationSec: payload.durationSec,
+    };
+
+    const log = await this.readRepository.createReadingEndLog(createData);
+    return ReadingLogDto.from(log);
   }
 
   async getReadingLog(id: number): Promise<ReadingLogDto> {
