@@ -30,6 +30,7 @@ import { PageListDto } from 'src/page/dto/page.dto';
 import { UpdatePagesPayload } from './payload/update-pages-payload';
 import { SearchService } from 'src/search/search.service';
 import { BookSearchQuery } from 'src/search/query/book-search-query';
+import { RecommendService } from './recommend.service';
 
 @Controller('books')
 @ApiTags('Book API')
@@ -37,6 +38,7 @@ export class BookController {
   constructor(
     private readonly bookService: BookService,
     private readonly searchService: SearchService,
+    private readonly recommendService: RecommendService,
   ) {}
 
   @Post()
@@ -54,6 +56,14 @@ export class BookController {
   @ApiOkResponse({ type: [String] })
   async getAutocomplete(@Query() query: BookSearchQuery) {
     return this.searchService.getAutocompleteSuggestions(query.query);
+  }
+
+  @Get('recommend')
+  @Version('1')
+  @ApiOkResponse({ type: BookListDto })
+  @ApiOperation({ summary: '추천 책 조회' })
+  async getRecommendedBooks(): Promise<BookListDto> {
+    return this.recommendService.getRecommendedBooks();
   }
 
   @Get('save')
