@@ -57,6 +57,7 @@ model Book {
   logs                  ReadingLog[]
   challenges            Challenge[]
   sentenceLikes         SentenceLike[]
+  recommend             Recommend[]
 
   @@map("book")
 }
@@ -328,6 +329,15 @@ model SentenceLike {
   @@index([bookId, pageId])
   
   @@map("sentence_like")
+}
+
+model Recommend {
+  id         Int      @id @default(autoincrement())
+  bookId     Int      @map("book_id")
+
+  book Book @relation(fields: [bookId], references: [id])
+
+  @@map("recommend")
 }
 
 
