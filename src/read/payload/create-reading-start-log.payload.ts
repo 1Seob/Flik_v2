@@ -1,6 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsDate, IsInt, IsOptional } from 'class-validator';
-import { Type } from 'class-transformer';
+import { IsInt, IsOptional } from 'class-validator';
 
 export class CreateReadingStartLogPayload {
   @IsInt()
@@ -31,12 +30,4 @@ export class CreateReadingStartLogPayload {
     nullable: true,
   })
   participantId?: number | null;
-
-  @IsDate()
-  @Type(() => Date)
-  @ApiProperty({
-    description: '읽기 시작 시간',
-    type: Date,
-  })
-  startedAt!: Date;
 }

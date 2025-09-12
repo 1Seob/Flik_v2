@@ -1,14 +1,14 @@
 import { PrismaService } from 'src/common/services/prisma.service';
 import { Injectable } from '@nestjs/common';
-import { CreateReadingStartLogPayload } from './payload/create-reading-start-log.payload';
 import { UserBaseInfo } from 'src/auth/type/user-base-info.type';
-import { CreateReadingEndLogPayload } from './payload/create-reading-end-log.payload';
 import { ReadingLogData } from './type/reading-log-data.type';
 import { BookData } from 'src/book/type/book-data.type';
 import { PageData } from 'src/page/type/page-type';
 import { ChallengeData } from 'src/challenge/type/challenge-data.type';
 import { subDays } from 'date-fns';
 import { ParticipantStatus } from 'src/challenge/dto/challenge-history.dto';
+import { CreateReadingStartLogData } from './type/create-reading-start-log-data.typte';
+import { CreateReadingEndLogData } from './type/create-reading-end-log-data.type';
 
 @Injectable()
 export class ReadRepository {
@@ -40,34 +40,32 @@ export class ReadRepository {
   }
 
   async createReadingStartLog(
-    payload: CreateReadingStartLogPayload,
-    user: UserBaseInfo,
+    data: CreateReadingStartLogData,
   ): Promise<ReadingLogData> {
     return this.prisma.readingLog.create({
       data: {
-        startedAt: payload.startedAt,
-        pageNumber: payload.pageNumber,
+        startedAt: new Date(),
+        pageNumber: data.pageNumber,
         user: {
           connect: {
-            id: user.id,
+            id: data.userId,
           },
         },
         book: {
           connect: {
-            id: payload.bookId,
+            id: data.bookId,
           },
         },
         page: {
           connect: {
-            id: payload.pageId,
+            id: data.pageId,
           },
         },
-        ...(payload.participantId !== undefined &&
-        payload.participantId !== null
+        ...(data.participantId !== undefined && data.participantId !== null
           ? {
               join: {
                 connect: {
-                  id: payload.participantId,
+                  id: data.participantId,
                 },
               },
             }
@@ -77,35 +75,33 @@ export class ReadRepository {
   }
 
   async createReadingEndLog(
-    payload: CreateReadingEndLogPayload,
-    user: UserBaseInfo,
+    data: CreateReadingEndLogData,
   ): Promise<ReadingLogData> {
     return this.prisma.readingLog.create({
       data: {
-        endedAt: payload.endedAt,
-        pageNumber: payload.pageNumber,
-        durationSec: payload.durationSec,
+        endedAt: new Date(),
+        pageNumber: data.pageNumber,
+        durationSec: data.durationSec,
         user: {
           connect: {
-            id: user.id,
+            id: data.userId,
           },
         },
         book: {
           connect: {
-            id: payload.bookId,
+            id: data.bookId,
           },
         },
         page: {
           connect: {
-            id: payload.pageId,
+            id: data.pageId,
           },
         },
-        ...(payload.participantId !== undefined &&
-        payload.participantId !== null
+        ...(data.participantId !== undefined && data.participantId !== null
           ? {
               join: {
                 connect: {
-                  id: payload.participantId,
+                  id: data.participantId,
                 },
               },
             }
