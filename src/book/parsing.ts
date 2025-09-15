@@ -12,195 +12,160 @@ const NEWLINE_LOGICAL_COST = 20;
  */
 export function parsePagesFromJson(basename: string): string[] {
   const file = path.resolve(`${basename}.json`);
-  const raw = fs.readFileSync(file, 'utf8');
+  const raw = fs.readFileSync(file, "utf8");
   const obj = JSON.parse(raw) as Record<string, string>;
 
-  // 인덱스 순으로 정렬 후 문단 배열 생성, "\n" (또는 공백뿐) 항목 제거
-  const paragraphs = Object.keys(obj)
+  // 1) 인덱스 순 정렬 → 문단 정규화 → 빈 항목 제거
+  const rawParas = Object.keys(obj)
     .sort((a, b) => Number(a) - Number(b))
-    .map((k) => normalizeParagraph(obj[k]))
-    .filter((p) => p.length > 0);
+    .map(k => normalizeParagraph(obj[k]))
+    .filter(p => p.length > 0);
 
+  // 2) "초장문장(>300)"은 공백 단위로 잘라 각각을 별도 문단으로 '승격'
+  const paras = explodeLongSentencesIntoParagraphs(rawParas);
+
+  // 3) 페이지 빌드
   const pages: string[] = [];
-  let curText = '';
-  let curLogicalLen = 0;
+  let buf = "";           // 실제 렌더링 문자열
+  let logical = 0;        // 논리 길이 (개행 20)
 
-  const flushPage = () => {
-    if (curText.trim().length > 0) {
-      pages.push(curText.trim());
-      curText = '';
-      curLogicalLen = 0;
-    }
+  const flush = () => {
+    if (buf.trim().length > 0) pages.push(buf.trim());
+    buf = "";
+    logical = 0;
   };
 
-  for (const para of paragraphs) {
-    if (para.length <= MAX_LOGICAL) {
-      // 일반 문단: 현재 페이지에 들어갈 수 있는지 확인
-      const cost = (curText ? NEWLINE_LOGICAL_COST : 0) + para.length;
-      if (curLogicalLen + cost <= MAX_LOGICAL) {
-        if (curText) {
-          curText += NEWLINE_BETWEEN_PARAS;
-          curLogicalLen += NEWLINE_LOGICAL_COST;
-        }
-        curText += para;
-        curLogicalLen += para.length;
-      } else {
-        flushPage();
-        curText += para;
-        curLogicalLen += para.length;
-      }
+  let i = 0; // 문단 인덱스
+  while (i < paras.length) {
+    const p = paras[i];
+    const pPieces = splitSentences(p);         // 문장 단위
+    const pFull = pPieces.join(" ");           // 문단 전체 문자열
+    const pFullCost = (buf ? NEWLINE_LOGICAL_COST : 0) + pFull.length;
+
+    // 3-1) 문단 전체가 현재 페이지에 들어가면 통째로 배치
+    if (logical + pFullCost <= MAX_LOGICAL) {
+      if (buf) { buf += NEWLINE_BETWEEN_PARAS; logical += NEWLINE_LOGICAL_COST; }
+      buf += pFull;
+      logical += pFull.length;
+      i++;
       continue;
     }
 
-    // 긴 문단: 문장 단위로 분해
-    const sentences = splitSentences(para);
+    // 3-2) 문단 전체는 안 들어감 → "개행(필요시) + 문장 하나"씩 시도
+    let j = 0; // 문장 인덱스
+    while (j < pPieces.length) {
+      const firstPieceOnThisPageForThisPara = (buf.length > 0) && (j === 0);
+      const headerCost = firstPieceOnThisPageForThisPara ? NEWLINE_LOGICAL_COST : 0;
 
-    let i = 0;
-    let isFirstChunkOnThisPageForThisPara = true;
+      const glueCost = (j > 0 && !endsWithSpace(buf)) ? 1 : 0; // 같은 문단 내 이어 붙일 때 공백 1자
+      const piece = pPieces[j];
+      const pieceCost = headerCost + glueCost + piece.length;
 
-    while (i < sentences.length) {
-      let s = sentences[i];
-
-      if (s.length <= MAX_LOGICAL) {
-        // 같은 문단 내 문장 연결: 첫 문장만 문단 헤더 비용(20) 부과
-        const headerCost =
-          curText && isFirstChunkOnThisPageForThisPara
-            ? NEWLINE_LOGICAL_COST
-            : 0;
-        const glueCost =
-          !isFirstChunkOnThisPageForThisPara && !endsWithSpace(curText) ? 1 : 0;
-        const wouldBe = curLogicalLen + headerCost + glueCost + s.length;
-
-        if (wouldBe <= MAX_LOGICAL) {
-          if (headerCost) {
-            curText += NEWLINE_BETWEEN_PARAS;
-            curLogicalLen += NEWLINE_LOGICAL_COST;
+      if (logical + pieceCost <= MAX_LOGICAL) {
+        if (headerCost) { buf += NEWLINE_BETWEEN_PARAS; logical += NEWLINE_LOGICAL_COST; }
+        if (glueCost) { buf += " "; logical += 1; }
+        buf += piece;
+        logical += piece.length;
+        j++;
+      } else {
+        // 더 못 넣으면 페이지 마감
+        if (buf) { flush(); }
+        else {
+          // 페이지가 비어있는데도 한 문장이 안 들어가는 비정상 케이스는
+          // (사전 분해에 의해 거의 불가) 안전장치로 하드 컷
+          const forced = hardCutByLimit(piece, MAX_LOGICAL);
+          buf += forced[0];
+          logical += forced[0].length;
+          flush();
+          // 남은 조각은 현재 문단의 다음 문장처럼 이어서 처리
+          const tail = forced.slice(1).join(" ");
+          if (tail) {
+            pPieces.splice(j, 1, tail);
+          } else {
+            j++; // 모두 소비됨
           }
-          if (glueCost) {
-            curText += ' ';
-            curLogicalLen += 1;
-          }
-          curText += s;
-          curLogicalLen += s.length;
-          isFirstChunkOnThisPageForThisPara = false;
-          i++;
-        } else {
-          flushPage();
-          isFirstChunkOnThisPageForThisPara = true;
-        }
-        continue;
-      }
-
-      // 문장 자체가 300자 초과 → 공백 기준으로 분할하여 "개별 문단"처럼 취급
-      const forcedParas = splitLongSentenceAsParagraphs(s, MAX_LOGICAL);
-
-      for (const fp of forcedParas) {
-        const cost = (curText ? NEWLINE_LOGICAL_COST : 0) + fp.length;
-        if (curLogicalLen + cost <= MAX_LOGICAL) {
-          if (curText) {
-            curText += NEWLINE_BETWEEN_PARAS;
-            curLogicalLen += NEWLINE_LOGICAL_COST;
-          }
-          curText += fp;
-          curLogicalLen += fp.length;
-        } else {
-          flushPage();
-          // 새 페이지 시작 (맨 앞은 개행 비용 없음)
-          curText += fp;
-          curLogicalLen += fp.length;
         }
       }
-
-      // 강제 문단으로 다 배치했으니 이 초장문장은 처리 완료
-      // 다음 원래 문장으로 이동. 다음 문장은 '새 문단 시작' 상태로 취급
-      i++;
-      isFirstChunkOnThisPageForThisPara = true;
     }
+    // 이 문단을 모두 소비했으면 다음 문단으로
+    if (j >= pPieces.length) i++;
   }
 
-  flushPage();
+  flush();
   return pages;
 }
 
-/** 문단 전처리: 내부 개행을 공백으로, 양끝 공백 정리 */
+/* ---------- 유틸들 ---------- */
+
+/** 문단 전처리: "\n" 문단 제거, 내부 줄바꿈→공백, 다중 공백 정리 */
 function normalizeParagraph(p: string): string {
-  if (!p) return '';
-  if (/^\s*\\?n\s*$/.test(p) || /^[\s\n\r]*$/.test(p)) return '';
-  return p
-    .replace(/\r?\n+/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
+  if (!p) return "";
+  if (/^\s*\\?n\s*$/.test(p) || /^[\s\r\n]*$/.test(p)) return "";
+  return p.replace(/\r?\n+/g, " ").replace(/\s+/g, " ").trim();
 }
 
-/** 문장 분리(한국어/기호 대응) */
+/** 문장 분리: 종결부호(., !, ?, …, 한중일 종결부호) + 뒤따르는 닫힘기호까지 포함 */
 function splitSentences(text: string): string[] {
-  const enders = /[.!?…！？。]+(?=(?:["')\]\}»”’〉》」』]|$))/g;
-  const parts: string[] = [];
-  let last = 0;
-  let m: RegExpExecArray | null;
-
-  // 종결부호 단위로 끊기
-  while ((m = enders.exec(text)) !== null) {
-    const endIdx = m.index + m[0].length;
-    const chunk = text.slice(last, endIdx).trim();
-    if (chunk) parts.push(chunk);
-    last = endIdx;
-  }
-  const tail = text.slice(last).trim();
-  if (tail) parts.push(tail);
-
-  // 종결부호가 전혀 없는 경우: 통째로 반환
+  const re = /[^.!?…！？。]+[.!?…！？。]+(?=(?:\s*["')\]\}»”’〉》」』])*\s*)|[^.!?…！？。]+$/g;
+  const parts = text.match(re)?.map(s => s.trim()).filter(Boolean) ?? [];
   return parts.length ? parts : [text.trim()];
 }
 
-/**
- * 300 초과 문장을 "공백 기준"으로 잘라 각 조각을 <= MAX_LOGICAL 로 만든다.
- * (단어가 300자보다 길면 어쩔 수 없이 하드 컷)
- */
-function splitLongSentenceAsParagraphs(
-  sentence: string,
-  limit: number,
-): string[] {
-  const words = sentence.split(/\s+/).filter(Boolean);
-  const chunks: string[] = [];
+/** 300 초과 문장 → 공백 단위로 쪼개어 각각을 '문단'으로 승격 */
+function explodeLongSentencesIntoParagraphs(paragraphs: string[]): string[] {
+  const out: string[] = [];
+  for (const para of paragraphs) {
+    const sents = splitSentences(para);
+    let acc = ""; // 300 이하 문장들을 모아 하나의 문단으로
+    for (const s of sents) {
+      if (s.length <= MAX_LOGICAL) {
+        acc = acc ? `${acc} ${s}` : s;
+        continue;
+      }
+      // 긴 문장 등장 → 앞서 모은 acc를 문단으로 배출
+      if (acc) { out.push(acc); acc = ""; }
+      // 긴 문장을 공백 기준으로 limit 이하로 분해하여 각 조각을 독립 문단으로
+      const chunks = splitByWordsWithLimit(s, MAX_LOGICAL);
+      out.push(...chunks);
+    }
+    if (acc) out.push(acc);
+  }
+  return out;
+}
 
-  let buf = '';
-  let curLen = 0;
+/** 공백 기준 분할(필요 시 단어가 너무 길면 하드 컷) */
+function splitByWordsWithLimit(text: string, limit: number): string[] {
+  const words = text.split(/\s+/).filter(Boolean);
+  const res: string[] = [];
+  let buf = "";
+  let len = 0;
 
-  const pushBuf = () => {
-    const t = buf.trim();
-    if (t) chunks.push(t);
-    buf = '';
-    curLen = 0;
-  };
+  const push = () => { if (buf) res.push(buf); buf = ""; len = 0; };
 
   for (const w of words) {
-    // 단어가 limit를 초과하는 병적인 케이스: 하드 컷(희귀)
     if (w.length > limit) {
-      if (curLen > 0) pushBuf();
-      // 고정 길이로 강제 분할
-      for (let i = 0; i < w.length; i += limit) {
-        chunks.push(w.slice(i, i + limit));
-      }
+      push();
+      for (let i = 0; i < w.length; i += limit) res.push(w.slice(i, i + limit));
       continue;
     }
-
-    const extra = (curLen === 0 ? 0 : 1) + w.length; // 앞 공백 + 단어
-    if (curLen + extra <= limit) {
-      if (curLen > 0) {
-        buf += ' ';
-        curLen += 1;
-      }
-      buf += w;
-      curLen += w.length;
+    const extra = (len === 0 ? 0 : 1) + w.length;
+    if (len + extra <= limit) {
+      if (len > 0) { buf += " "; len += 1; }
+      buf += w; len += w.length;
     } else {
-      pushBuf();
-      buf = w;
-      curLen = w.length;
+      push();
+      buf = w; len = w.length;
     }
   }
-  pushBuf();
-  return chunks;
+  push();
+  return res;
+}
+
+/** 안전장치: 어떤 문자열이 limit를 초과하면 하드 컷 조각 배열 반환 */
+function hardCutByLimit(text: string, limit: number): string[] {
+  const out: string[] = [];
+  for (let i = 0; i < text.length; i += limit) out.push(text.slice(i, i + limit));
+  return out;
 }
 
 function endsWithSpace(s: string) {
