@@ -6,6 +6,8 @@ import { SearchModule } from 'src/search/search.module';
 import { SearchRepository } from 'src/search/search.repository';
 import { RecommendRepository } from './recommend.repository';
 import { RecommendService } from './recommend.service';
+import { RankingRepository } from './ranking.repository';
+import { RankingService } from './ranking.service';
 
 @Module({
   providers: [
@@ -14,6 +16,8 @@ import { RecommendService } from './recommend.service';
     SearchRepository,
     RecommendRepository,
     RecommendService,
+    RankingRepository,
+    RankingService,
   ],
   controllers: [BookController],
   imports: [SearchModule],

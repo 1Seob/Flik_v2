@@ -31,6 +31,8 @@ import { UpdatePagesPayload } from './payload/update-pages-payload';
 import { SearchService } from 'src/search/search.service';
 import { BookSearchQuery } from 'src/search/query/book-search-query';
 import { RecommendService } from './recommend.service';
+import { BookRankingListDto } from './dto/book-ranking.dto';
+import { RankingService } from './ranking.service';
 
 @Controller('books')
 @ApiTags('Book API')
@@ -39,6 +41,7 @@ export class BookController {
     private readonly bookService: BookService,
     private readonly searchService: SearchService,
     private readonly recommendService: RecommendService,
+    private readonly rankingService: RankingService,
   ) {}
 
   @Post()
@@ -56,6 +59,14 @@ export class BookController {
   @ApiOkResponse({ type: [String] })
   async getAutocomplete(@Query() query: BookSearchQuery) {
     return this.searchService.getAutocompleteSuggestions(query.query);
+  }
+
+  @Get('ranking')
+  @Version('1')
+  @ApiOkResponse({ type: BookRankingListDto })
+  @ApiOperation({ summary: '책 랭킹 조회' })
+  async getBookRankings(): Promise<BookRankingListDto> {
+    return this.rankingService.getBookRankings();
   }
 
   @Get('recommend')

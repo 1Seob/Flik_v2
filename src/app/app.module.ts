@@ -20,6 +20,8 @@ import { ReadModule } from 'src/read/read.module';
 import { ChallengeModule } from 'src/challenge/challenge.module';
 import { redis } from 'src/search/redis.provider';
 import { BookService } from 'src/book/book.service';
+import { ScheduleModule } from '@nestjs/schedule';
+import { RankingScheduler } from 'src/book/ranking.scheduler';
 
 @Module({
   imports: [
@@ -33,9 +35,10 @@ import { BookService } from 'src/book/book.service';
     ChallengeModule,
     ReviewModule,
     SearchModule,
+    ScheduleModule.forRoot(),
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, RankingScheduler],
 })
 export class AppModule implements NestModule, OnModuleInit {
   constructor(
