@@ -58,6 +58,7 @@ model Book {
   challenges            Challenge[]
   sentenceLikes         SentenceLike[]
   recommend             Recommend[]
+  rankingHistory        BookRanking[]
 
   @@map("book")
 }
@@ -338,6 +339,20 @@ model Recommend {
   book Book @relation(fields: [bookId], references: [id])
 
   @@map("recommend")
+}
+
+model BookRanking {
+  id            Int      @id @default(autoincrement())
+  bookId        Int      @map("book_id")
+  rank          Int      // 해당 시점의 순위
+  views         Int      // 해당 시점의 조회수
+  calculatedAt  DateTime @map("calculated_at") // 랭킹 집계 시점
+
+  book Book @relation(fields: [bookId], references: [id])
+
+  @@unique([calculatedAt, bookId])  // 특정 시점에 동일한 책이 중복 저장되는 것을 방지
+  @@index([calculatedAt, rank])     // 특정 시점의 랭킹을 빠르게 조회하기 위한 인덱스
+  @@map("book_ranking")
 }
 
 
