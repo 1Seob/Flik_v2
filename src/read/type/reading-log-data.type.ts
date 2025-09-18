@@ -4,7 +4,6 @@ export type ReadingLogData = {
   bookId: number;
   pageId: number;
   pageNumber: number;
-  participantId: number | null;
   startedAt: Date | null;
   endedAt: Date | null;
   durationSec: number | null;

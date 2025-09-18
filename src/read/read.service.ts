@@ -55,39 +55,11 @@ export class ReadService {
       throw new BadRequestException('페이지 번호가 일치하지 않습니다.');
     }
 
-    if (payload.participantId) {
-      const challenge = await this.readRepository.getChallengeByParticipantId(
-        payload.participantId,
-      );
-      if (!challenge) {
-        throw new NotFoundException('챌린지를 찾을 수 없습니다.');
-      }
-      if (challenge.bookId !== book.id) {
-        throw new BadRequestException('챌린지와 책이 일치하지 않습니다.');
-      }
-      const isUserParticipating = await this.readRepository.isUserParticipating(
-        challenge.id,
-        user.id,
-      );
-      if (!isUserParticipating) {
-        throw new BadRequestException(
-          '사용자가 챌린지에 참여하고 있지 않습니다.',
-        );
-      }
-      const isChallengeActive = await this.readRepository.isChallengeActive(
-        challenge.id,
-      );
-      if (!isChallengeActive) {
-        throw new BadRequestException('챌린지가 진행 중이 아닙니다.');
-      }
-    }
-
     const createData: CreateReadingStartLogData = {
       userId: user.id,
       bookId: payload.bookId,
       pageId: payload.pageId,
       pageNumber: payload.pageNumber,
-      participantId: payload.participantId,
     };
 
     const log = await this.readRepository.createReadingStartLog(createData);
@@ -114,39 +86,11 @@ export class ReadService {
       throw new BadRequestException('페이지 번호가 일치하지 않습니다.');
     }
 
-    if (payload.participantId) {
-      const challenge = await this.readRepository.getChallengeByParticipantId(
-        payload.participantId,
-      );
-      if (!challenge) {
-        throw new NotFoundException('챌린지를 찾을 수 없습니다.');
-      }
-      if (challenge.bookId !== book.id) {
-        throw new BadRequestException('챌린지와 책이 일치하지 않습니다.');
-      }
-      const isUserParticipating = await this.readRepository.isUserParticipating(
-        challenge.id,
-        user.id,
-      );
-      if (!isUserParticipating) {
-        throw new BadRequestException(
-          '사용자가 챌린지에 참여하고 있지 않습니다.',
-        );
-      }
-      const isChallengeActive = await this.readRepository.isChallengeActive(
-        challenge.id,
-      );
-      if (!isChallengeActive) {
-        throw new BadRequestException('챌린지가 진행 중이 아닙니다.');
-      }
-    }
-
     const createData: CreateReadingEndLogData = {
       userId: user.id,
       bookId: payload.bookId,
       pageId: payload.pageId,
       pageNumber: payload.pageNumber,
-      participantId: payload.participantId,
       durationSec: payload.durationSec,
     };
 
@@ -188,25 +132,15 @@ export class ReadService {
     const kstEnd = endOfDay(
       new Date(dateQuery.year, dateQuery.month - 1, dateQuery.day),
     );
-    const [normalLogs, challengeLogs] = await Promise.all([
-      this.readRepository.getNormalLogsWithBookByDate(kstStart, kstEnd, user),
-      this.readRepository.getChallengeLogsWithBookByDate(
-        kstStart,
-        kstEnd,
-        user,
-      ),
-    ]);
-
-    const normalProgress = this.processLogsToProgressData(normalLogs, false);
-    const challengeProgress = this.processLogsToProgressData(
-      challengeLogs,
-      true,
+    const normalLogs = await this.readRepository.getNormalLogsWithBookByDate(
+      kstStart,
+      kstEnd,
+      user,
     );
 
-    return ReadingProgressListDto.from([
-      ...normalProgress,
-      ...challengeProgress,
-    ]);
+    const normalProgress = this.processLogsToProgressData(normalLogs);
+
+    return ReadingProgressListDto.from(normalProgress);
   }
 
   async getReadingCalendar(
@@ -246,7 +180,6 @@ export class ReadService {
 
   private processLogsToProgressData(
     logsWithBook: (ReadingLogData & { book: BookData })[],
-    isChallenge: boolean,
   ): ReadingProgressData[] {
     // 책 ID를 키로 사용하여 최대 페이지 번호와 책 정보를 저장할 Map
     const progressMap = new Map<number, { book: BookData; maxPage: number }>();
@@ -278,7 +211,6 @@ export class ReadService {
         book: book,
         maxPageRead: maxPage,
         progress: Math.min(progress, 100), // 100%를 넘지 않도록 처리
-        challengeParticipation: isChallenge, // 요구사항에 따라 false로 고정
       });
     }
     return readingProgressList;
@@ -369,46 +301,6 @@ export class ReadService {
     const book = await this.readRepository.getBookById(bookId);
     if (!book) {
       throw new NotFoundException('책을 찾을 수 없습니다.');
-    }
-    const challenges = await this.readRepository.getUserActiveChallenges(
-      user.id,
-    );
-
-    console.log('challenges:', challenges);
-
-    let isChallengeReading = false;
-    let challengeId: number | null = null;
-    for (const challenge of challenges) {
-      if (challenge.bookId === bookId) {
-        isChallengeReading = true;
-        challengeId = challenge.id;
-        break;
-      }
-    }
-
-    console.log('isChallengeReading:', isChallengeReading);
-    console.log('challengeId:', challengeId);
-
-    if (isChallengeReading && challengeId) {
-      //챌린지 독서인 경우
-      const participantId =
-        await this.readRepository.getParticipantIdByUserIdAndChallengeId(
-          challengeId,
-          user.id,
-        );
-      const lastPage = await this.readRepository.getLastChallengePage(
-        bookId,
-        user.id,
-        participantId,
-      );
-      if (!lastPage) {
-        const firstPage = await this.readRepository.getFirstPageOfBook(bookId);
-        if (!firstPage) {
-          throw new NotFoundException('책의 첫 페이지를 찾을 수 없습니다.');
-        }
-        return PageDto.from(firstPage);
-      }
-      return PageDto.from(lastPage);
     }
 
     const lastPage = await this.readRepository.getLastNormalPage(
