@@ -4,9 +4,7 @@ import { UserBaseInfo } from 'src/auth/type/user-base-info.type';
 import { ReadingLogData } from './type/reading-log-data.type';
 import { BookData } from 'src/book/type/book-data.type';
 import { PageData } from 'src/page/type/page-type';
-import { ChallengeData } from 'src/challenge/type/challenge-data.type';
 import { subDays } from 'date-fns';
-import { ParticipantStatus } from 'src/challenge/dto/challenge-history.dto';
 import { CreateReadingStartLogData } from './type/create-reading-start-log-data.typte';
 import { CreateReadingEndLogData } from './type/create-reading-end-log-data.type';
 
@@ -61,15 +59,6 @@ export class ReadRepository {
             id: data.pageId,
           },
         },
-        ...(data.participantId !== undefined && data.participantId !== null
-          ? {
-              join: {
-                connect: {
-                  id: data.participantId,
-                },
-              },
-            }
-          : {}),
       },
     });
   }
@@ -97,15 +86,6 @@ export class ReadRepository {
             id: data.pageId,
           },
         },
-        ...(data.participantId !== undefined && data.participantId !== null
-          ? {
-              join: {
-                connect: {
-                  id: data.participantId,
-                },
-              },
-            }
-          : {}),
       },
     });
   }
@@ -146,7 +126,6 @@ export class ReadRepository {
     return this.prisma.readingLog.findMany({
       where: {
         userId: user.id,
-        participantId: null,
         OR: [
           { startedAt: { gte: startDate, lte: endDate } },
           { endedAt: { gte: startDate, lte: endDate } },
@@ -156,66 +135,6 @@ export class ReadRepository {
         book: true,
       },
     });
-  }
-
-  async getChallengeLogsWithBookByDate(
-    startDate: Date,
-    endDate: Date,
-    user: UserBaseInfo,
-  ): Promise<(ReadingLogData & { book: BookData })[]> {
-    return this.prisma.readingLog.findMany({
-      where: {
-        userId: user.id,
-        participantId: {
-          not: null,
-        },
-        OR: [
-          { startedAt: { gte: startDate, lte: endDate } },
-          { endedAt: { gte: startDate, lte: endDate } },
-        ],
-      },
-      include: {
-        book: true,
-      },
-    });
-  }
-
-  async getChallengeByParticipantId(
-    participantId: number,
-  ): Promise<ChallengeData | null> {
-    const join = await this.prisma.challengeJoin.findUnique({
-      where: { id: participantId },
-      include: {
-        challenge: true,
-      },
-    });
-
-    if (!join) return null;
-
-    return {
-      id: join.challenge.id,
-      name: join.challenge.name,
-      hostId: join.challenge.hostId,
-      bookId: join.challenge.bookId,
-      visibility: join.challenge.visibility,
-      startTime: join.challenge.startTime,
-      endTime: join.challenge.endTime,
-      completedAt: join.challenge.completedAt,
-      cancelledAt: join.challenge.cancelledAt,
-    };
-  }
-
-  async isUserParticipating(
-    challengeId: number,
-    userId: string,
-  ): Promise<boolean> {
-    const participation = await this.prisma.challengeJoin.findFirst({
-      where: {
-        challengeId,
-        userId,
-      },
-    });
-    return participation !== null;
   }
 
   async getMonthlyReadingLogs(
@@ -313,67 +232,6 @@ export class ReadRepository {
     return books;
   }
 
-  async isChallengeActive(challengeId: number): Promise<boolean> {
-    const challenge = await this.prisma.challenge.findUnique({
-      where: { id: challengeId },
-    });
-    return challenge
-      ? challenge.startTime <= new Date() && challenge.endTime >= new Date()
-      : false;
-  }
-
-  async getUserActiveChallenges(userId: string): Promise<ChallengeData[]> {
-    return this.prisma.challenge.findMany({
-      where: {
-        // 1. ChallengeJoin 관계를 통해 참여자 정보를 필터링
-        challengeJoin: {
-          some: {
-            userId,
-            status: ParticipantStatus.JOINED,
-            leftAt: null,
-          },
-        },
-        //2. 챌린지가 진행 중
-        cancelledAt: null,
-        completedAt: null,
-        startTime: {
-          lte: new Date(),
-        },
-        endTime: {
-          gt: new Date(),
-        },
-      },
-      select: {
-        id: true,
-        hostId: true,
-        name: true,
-        bookId: true,
-        visibility: true,
-        startTime: true,
-        endTime: true,
-        completedAt: true,
-        cancelledAt: true,
-        challengeJoin: true,
-      },
-    });
-  }
-
-  async getParticipantIdByUserIdAndChallengeId(
-    challengeId: number,
-    userId: string,
-  ): Promise<number> {
-    const participation = await this.prisma.challengeJoin.findUnique({
-      where: {
-        challengeId_userId: {
-          challengeId,
-          userId,
-        },
-      },
-      select: { id: true },
-    });
-    return participation!.id;
-  }
-
   async getLastNormalPage(
     bookId: number,
     userId: string,
@@ -382,28 +240,6 @@ export class ReadRepository {
       where: {
         userId: userId,
         bookId: bookId,
-        participantId: null,
-      },
-      orderBy: {
-        startedAt: 'desc',
-      },
-      select: {
-        page: true,
-      },
-    });
-    return log ? log.page : null;
-  }
-
-  async getLastChallengePage(
-    bookId: number,
-    userId: string,
-    participantId: number,
-  ): Promise<PageData | null> {
-    const log = await this.prisma.readingLog.findFirst({
-      where: {
-        userId: userId,
-        bookId: bookId,
-        participantId: participantId,
       },
       orderBy: {
         startedAt: 'desc',

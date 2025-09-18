@@ -79,7 +79,7 @@ export class ReadController {
   @Version('1')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: '마지막으로 진입한 페이지 조회 (이어읽기)' })
+  @ApiOperation({ summary: '책의 마지막으로 진입한 페이지 조회 (이어읽기)' })
   @ApiOkResponse({ type: PageDto })
   async getLastPage(
     @Param('id', ParseIntPipe) id: number,

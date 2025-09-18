@@ -25,13 +25,8 @@ model User {
   review                Review[]
   reviewLikes           ReviewLike[]
   readingLog            ReadingLog[]
-  challenge             Challenge[]  
-  challengeJoin         ChallengeJoin[]
   notifications         Notification[]
   readingStreakHistory  ReadingStreakHistory[]
-  notes                 ChallengeNote[]
-  noteLikes             ChallengeNoteLike[]
-  noteComments          ChallengeNoteComment[]
   sentenceLikes         SentenceLike[]
 
   @@map("user")
@@ -55,7 +50,6 @@ model Book {
   review                Review[]
   pages                 Page[]
   logs                  ReadingLog[]
-  challenges            Challenge[]
   sentenceLikes         SentenceLike[]
   recommend             Recommend[]
   rankingHistory        BookRanking[]
@@ -128,10 +122,7 @@ model ReadingLog {
   userId          String        @map("user_id")
   bookId          Int           @map("book_id")
   pageId          Int           @map("page_id")
-
-  pageNumber      Int           @map("page_number")
-
-  participantId   Int?          @map("participant_id")             
+  pageNumber      Int           @map("page_number")             
 
   startedAt       DateTime?                        @map("started_at")
   endedAt         DateTime?                        @map("ended_at")
@@ -140,7 +131,6 @@ model ReadingLog {
   user      User       @relation(fields: [userId], references: [id])
   book      Book       @relation(fields: [bookId], references: [id])
   page      Page       @relation(fields: [pageId], references: [id])
-  join      ChallengeJoin? @relation(fields: [participantId], references: [id])
 
   @@index([userId, startedAt])
   @@index([userId, endedAt])
@@ -149,60 +139,9 @@ model ReadingLog {
   // 페이지 단위 조회
   @@index([bookId, pageId, startedAt])
 
-  // 챌린지 전용 조회(랭킹/진척)
-  @@index([participantId, startedAt])
-
   @@map("reading-log")
 }
 
-model Challenge {
-  id            Int                @id @default(autoincrement())
-  name          String                                 @map("name")              
-  hostId        String                                 @map("host_id")
-  bookId        Int                                    @map("book_id")
-     
-  visibility    ChallengeVisibility                    @map("visibility") 
-
-  startTime     DateTime                               @map("start_at")
-  endTime       DateTime                               @map("end_at")
-
-  completedAt   DateTime?                              @map("completed_at")
-  cancelledAt   DateTime?                              @map("cancelled_at")
-
-  createdAt     DateTime             @default(now())   @map("created_at")  
-
-  book   Book @relation(fields: [bookId], references: [id])
-  host   User @relation(fields: [hostId], references: [id])
-  challengeJoin  ChallengeJoin[]
-  notes          ChallengeNote[]
-
-  @@index([visibility, startTime])
-  @@index([bookId])
-  @@index([hostId])
-  @@map("challenge")
-}
-
-model ChallengeJoin {
-  id              Int       @id @default(autoincrement())
-  challengeId     Int       @map("challenge_id")
-  userId          String    @map("user_id")
-
-  joinedAt        DateTime  @default(now()) @map("joined_at")
-
-  leftAt          DateTime? @map("left_at")             
-  status          ParticipantStatus  @map("status") 
-
-  challenge  Challenge    @relation(fields: [challengeId], references: [id])
-  user       User         @relation(fields: [userId], references: [id])
-
-  logs       ReadingLog[]
-
-
-  @@unique([challengeId, userId])        // 중복 참가 방지
-  @@index([userId])
-  
-  @@map("challenge_join")
-}
 
 model Notification {
   id           Int                  @id @default(autoincrement())
@@ -232,9 +171,7 @@ model Notification {
 
 model ReadingStreakHistory {
   id          Int          @id @default(autoincrement())
-
   userId      String       @map("user_id") @unique
-
   days        Int          @default(0) @map("days")         // 갱신된 최장 연속일
 
   updatedAt   DateTime     @default(now()) @updatedAt @map("updated_at")
@@ -244,70 +181,6 @@ model ReadingStreakHistory {
   @@index([userId, updatedAt])
   @@map("reading_streak_history")
 }
-
-
-model ChallengeNote {
-  id           Int      @id @default(autoincrement())
-
-  challengeId  Int      @map("challenge_id")
-  authorId     String   @map("author_id")      // 작성자(User.id)
-
-  body         String   @map("body")
-  imagePath    String?  @map("image_path")
-
-  quoteText    String?  @map("quote_text")
-  quoteBookId  Int?     @map("quote_book_id")
-  quotePageId  Int?     @map("quote_page_id")
-
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt      @map("updated_at")
-
-  
-  challenge Challenge  @relation(fields: [challengeId], references: [id])
-  author    User       @relation(fields: [authorId], references: [id])
-
-  likes    ChallengeNoteLike[]
-  comments ChallengeNoteComment[]
-
-  @@index([challengeId, createdAt])
-  @@index([authorId, createdAt])
-
-  @@map("challenge_note")
-}
-
-
-model ChallengeNoteLike {
-  id      Int    @id @default(autoincrement())
-  noteId  Int    @map("note_id")
-  userId  String @map("user_id")
-  createdAt DateTime @default(now()) @map("created_at")
-
-  note ChallengeNote @relation(fields: [noteId], references: [id])
-  user User          @relation(fields: [userId], references: [id])
-
-  @@unique([noteId, userId])
-  @@index([userId, noteId])
-  @@map("challenge_note_like")
-}
-
-
-model ChallengeNoteComment {
-  id       Int     @id @default(autoincrement())
-  noteId   Int     @map("note_id")
-  userId   String  @map("user_id")
-  content  String  @map("content")
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt      @map("updated_at")
-
-  note ChallengeNote @relation(fields: [noteId], references: [id])
-  user User          @relation(fields: [userId], references: [id])
-
-  @@index([noteId, createdAt])
-  @@index([userId, createdAt])
-  @@map("challenge_note_comment")
-}
-
 
 model SentenceLike {
   id         Int      @id @default(autoincrement())
@@ -361,16 +234,6 @@ model BookRanking {
 enum Gender {
   MALE   @map("MALE")
   FEMALE @map("FEMALE")
-}
-
-enum ChallengeVisibility {
-  PUBLIC
-  PRIVATE
-}
-
-enum ParticipantStatus {
-  JOINED     // 정상 참여 중
-  LEFT       // 자의/강제 이탈
 }
 
 enum NotificationTarget {

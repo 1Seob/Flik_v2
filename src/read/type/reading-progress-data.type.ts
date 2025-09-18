@@ -4,5 +4,4 @@ export type ReadingProgressData = {
   book: BookData;
   maxPageRead: number;
   progress: number;
-  challengeParticipation: boolean;
 };
