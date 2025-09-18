@@ -33,13 +33,6 @@ export class ReadingLogDto {
   pageNumber!: number;
 
   @ApiProperty({
-    description: '챌린지 참여 ID',
-    type: Number,
-    nullable: true,
-  })
-  participantId!: number | null;
-
-  @ApiProperty({
     description: '읽기 시작 시간',
     type: Date,
     nullable: true,
@@ -67,7 +60,6 @@ export class ReadingLogDto {
       bookId: data.bookId,
       pageId: data.pageId,
       pageNumber: data.pageNumber,
-      participantId: data.participantId,
       startedAt: data.startedAt,
       endedAt: data.endedAt,
       durationSec: data.durationSec,

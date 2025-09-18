@@ -3,6 +3,5 @@ export type CreateReadingEndLogData = {
   bookId: number;
   pageId: number;
   pageNumber: number;
-  participantId?: number | null;
   durationSec: number;
 };

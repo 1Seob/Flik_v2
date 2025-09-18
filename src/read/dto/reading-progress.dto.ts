@@ -20,18 +20,11 @@ export class ReadingProgressDto {
   })
   progress!: number;
 
-  @ApiProperty({
-    description: '챌린지 참여 여부',
-    type: Boolean,
-  })
-  challengeParticipation!: boolean;
-
   static from(data: ReadingProgressData): ReadingProgressDto {
     return {
       book: BookDto.from(data.book),
       maxPageRead: data.maxPageRead,
       progress: data.progress,
-      challengeParticipation: data.challengeParticipation,
     };
   }
 

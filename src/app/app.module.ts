@@ -17,7 +17,6 @@ import { SearchModule } from 'src/search/search.module';
 import { SearchRepository } from 'src/search/search.repository';
 import { PageModule } from 'src/page/page.module';
 import { ReadModule } from 'src/read/read.module';
-import { ChallengeModule } from 'src/challenge/challenge.module';
 import { redis } from 'src/search/redis.provider';
 import { BookService } from 'src/book/book.service';
 import { ScheduleModule } from '@nestjs/schedule';
@@ -32,7 +31,6 @@ import { RankingScheduler } from 'src/book/ranking.scheduler';
     configModule,
     CommonModule,
     ReadModule,
-    ChallengeModule,
     ReviewModule,
     SearchModule,
     ScheduleModule.forRoot(),

@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsInt, IsOptional } from 'class-validator';
+import { IsInt } from 'class-validator';
 
 export class CreateReadingStartLogPayload {
   @IsInt()
@@ -22,12 +22,4 @@ export class CreateReadingStartLogPayload {
     type: Number,
   })
   pageNumber!: number;
-
-  @IsOptional()
-  @ApiProperty({
-    description: '챌린지 참여 ID',
-    type: Number,
-    nullable: true,
-  })
-  participantId?: number | null;
 }
