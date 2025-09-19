@@ -41,6 +41,7 @@ export class ReviewRepository {
   async getReviewsByBookId(
     bookId: number,
     userId: string,
+    nickname: string,
   ): Promise<ReviewWithLikedData[]> {
     const reviews = await this.prisma.review.findMany({
       where: { bookId },
@@ -62,7 +63,9 @@ export class ReviewRepository {
       content: review.content,
       createdAt: review.createdAt,
       likeCount: review._count.likedBy,
+      nickname: nickname,
       liked: review.likedBy.length > 0, // 한 번에 Boolean 계산
+      isAuthor: review.userId === userId,
       rating: review.rating.toNumber(),
     }));
   }
