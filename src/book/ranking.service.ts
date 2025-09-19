@@ -34,7 +34,9 @@ export class RankingService {
     );
 
     const urls: (string | null)[] = await Promise.all(
-      latestBookIds.map((id) => this.bookService.getBookCoverImage(id)),
+      latestRankings.map((r) =>
+        this.bookService.getBookCoverImageUrlByNaverSearchApi(r.book.isbn),
+      ),
     );
 
     // 3. 최신 랭킹과 이전 랭킹을 비교하여 DTO를 만듭니다.
