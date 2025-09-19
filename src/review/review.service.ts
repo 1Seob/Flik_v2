@@ -49,7 +49,12 @@ export class ReviewService {
     };
 
     const createdReview = await this.reviewRepository.createReview(createData);
-    const createdReviewWithLiked = { ...createdReview, liked: false };
+    const createdReviewWithLiked = {
+      ...createdReview,
+      nickname: user.name,
+      liked: false,
+      isAuthor: true,
+    };
     return ReviewDto.from(createdReviewWithLiked);
   }
 
@@ -64,6 +69,7 @@ export class ReviewService {
     const reviews = await this.reviewRepository.getReviewsByBookId(
       bookId,
       user.id,
+      user.name,
     );
     return ReviewListDto.from(reviews);
   }
@@ -98,7 +104,9 @@ export class ReviewService {
     );
     const updatedReviewWithLiked = {
       ...updatedReview,
+      nickname: user.name,
       liked: await this.reviewRepository.isUserLikedReview(id, user.id),
+      isAuthor: true,
     };
     return ReviewDto.from(updatedReviewWithLiked);
   }
