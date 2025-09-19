@@ -13,7 +13,6 @@ import { PatchUpdateBookPayload } from './payload/patch-update-book.payload';
 import { UpdateBookData } from './type/update-book-data.type';
 import axios from 'axios';
 import { PageListDto } from 'src/page/dto/page.dto';
-import { redis } from 'src/search/redis.provider';
 import { BookSearchQuery } from 'src/search/query/book-search-query';
 import { SearchRepository } from 'src/search/search.repository';
 
@@ -26,15 +25,17 @@ export class BookService {
 
   private readonly baseUrl = 'https://www.aladin.co.kr/ttb/api/ItemSearch.aspx';
   private readonly ttbKey = process.env.ALADIN_TTB_KEY;
-  private readonly NONE_SENTINEL = '__none__'; // 존재하지 않음을 표시하는 센티넬 값 (부정 캐시)
-  private readonly NEGATIVE_TTL_SEC = 60 * 60 * 24 * 7; // 부정 캐시 TTL (없음이 확인된 케이스는 7일 캐시)
+  private readonly naverApiUrl =
+    'https://openapi.naver.com/v1/search/book_adv.json';
+  private readonly naverClientId = process.env.NAVER_CLIENT_ID;
+  private readonly naverClientSecret = process.env.NAVER_CLIENT_SECRET;
 
   async getBookById(bookId: number): Promise<BookDto> {
     const book = await this.bookRepository.getBookById(bookId);
     if (!book) {
       throw new NotFoundException('책을 찾을 수 없습니다.');
     }
-    const url = await this.getBookCoverImage(bookId);
+    const url = await this.getBookCoverImageUrlByNaverSearchApi(book.isbn);
 
     return BookDto.from(book, url);
   }
@@ -76,7 +77,7 @@ export class BookService {
     if (!book) {
       throw new NotFoundException('책을 찾을 수 없습니다.');
     }
-    const url = await this.getBookCoverImage(bookId);
+    const url = await this.getBookCoverImageUrlByNaverSearchApi(book.isbn);
     const pages = await this.bookRepository.getBookPages(bookId);
     return PageListDto.from(
       BookDto.from(book, url),
@@ -101,7 +102,7 @@ export class BookService {
       throw new NotFoundException('책을 찾을 수 없습니다.');
     }
 
-    const url = await this.getBookCoverImage(bookId);
+    const url = await this.getBookCoverImageUrlByNaverSearchApi(book.isbn);
 
     const data: UpdateBookData = {
       title: payload.title,
@@ -120,7 +121,7 @@ export class BookService {
       throw new NotFoundException('책을 찾을 수 없습니다.');
     }
 
-    const url = await this.getBookCoverImage(bookId);
+    const url = await this.getBookCoverImageUrlByNaverSearchApi(book.isbn);
 
     await this.bookRepository.saveBookToUser(userId, bookId);
     return BookDto.from(book, url);
@@ -142,7 +143,9 @@ export class BookService {
   async getSavedBooksByUser(userId: string): Promise<BookListDto> {
     const savedBooks = await this.bookRepository.getSavedBooksByUser(userId);
     const urls: (string | null)[] = await Promise.all(
-      savedBooks.map((book) => this.getBookCoverImage(book.id)),
+      savedBooks.map((book) =>
+        this.getBookCoverImageUrlByNaverSearchApi(book.isbn),
+      ),
     );
     return BookListDto.from(savedBooks, urls);
   }
@@ -156,33 +159,17 @@ export class BookService {
     }
   }
 
-  async getBookCoverImage(bookId: number): Promise<string | null> {
-    const cacheKey = `book:cover:${bookId}`;
-
-    // 1) 캐시 조회
-    const cached = await redis.get(cacheKey);
-    if (cached !== null) {
-      return cached === this.NONE_SENTINEL ? null : cached;
-    }
-
-    // 2) DB 조회
-    const book = await this.bookRepository.getBookById(bookId);
-    if (!book) throw new NotFoundException('책을 찾을 수 없습니다.');
-    if (!book.isbn) {
-      // ISBN이 없으면 커버도 없음 → 부정 캐시
-      await redis.set(
-        cacheKey,
-        this.NONE_SENTINEL,
-        'EX',
-        this.NEGATIVE_TTL_SEC,
-      );
+  async getBookCoverImageUrlByAladinOpenApi(
+    isbn: string | null,
+  ): Promise<string | null> {
+    if (!isbn) {
       return null;
     }
 
-    // 3) Aladin API 호출
+    // Aladin API 호출
     const params = new URLSearchParams({
       ttbkey: this.ttbKey as string,
-      Query: book.isbn,
+      Query: isbn,
       QueryType: 'ISBN',
       MaxResults: '1',
       output: 'js',
@@ -197,27 +184,50 @@ export class BookService {
       const cover = data?.item?.[0]?.cover ?? null;
 
       if (cover && (await this.checkImageExists(cover))) {
-        // 4) 성공 시: 영구 저장
-        await redis.set(cacheKey, cover);
         return cover;
       }
 
-      // 커버가 없으면 부정 캐시
-      await redis.set(
-        cacheKey,
-        this.NONE_SENTINEL,
-        'EX',
-        this.NEGATIVE_TTL_SEC,
-      );
       return null;
     } catch (err) {
       if (err instanceof Error) {
-        console.error(
-          `[Aladin] API 요청 실패 (ISBN=${book.isbn}):`,
-          err.message,
-        );
+        console.error(`[Aladin] API 요청 실패 (ISBN=${isbn}):`, err.message);
       } else {
-        console.error(`[Aladin] API 요청 실패 (ISBN=${book.isbn}):`, err);
+        console.error(`[Aladin] API 요청 실패 (ISBN=${isbn}):`, err);
+      }
+      return null;
+    }
+  }
+
+  async getBookCoverImageUrlByNaverSearchApi(
+    isbn: string | null,
+  ): Promise<string | null> {
+    if (!isbn) {
+      return null;
+    }
+    try {
+      const headers = {
+        'X-Naver-Client-Id': this.naverClientId,
+        'X-Naver-Client-Secret': this.naverClientSecret,
+      };
+
+      const response = await axios.get(this.naverApiUrl, {
+        headers,
+        params: { d_isbn: isbn },
+      });
+
+      const book = response.data.items?.[0];
+
+      if (!book || !book.image) {
+        console.log(`No image found for ISBN: ${isbn}`);
+        return null;
+      }
+
+      return book.image;
+    } catch (err) {
+      if (err instanceof Error) {
+        console.error(`[Naver] API 요청 실패 (ISBN=${isbn}):`, err.message);
+      } else {
+        console.error(`[Naver] API 요청 실패 (ISBN=${isbn}):`, err);
       }
       return null;
     }
@@ -245,7 +255,7 @@ export class BookService {
     const books = await this.searchRepository.getBooks(query);
 
     const urls: (string | null)[] = await Promise.all(
-      books.map((book) => this.getBookCoverImage(book.id)),
+      books.map((book) => this.getBookCoverImageUrlByNaverSearchApi(book.isbn)),
     );
 
     return BookListDto.from(books, urls);
