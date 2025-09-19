@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { ReviewWithLikedData } from '../type/review-with-liked-data.type';
+import { format } from 'date-fns-tz';
 
 export class ReviewDto {
   @ApiProperty({
@@ -9,10 +10,16 @@ export class ReviewDto {
   id!: number;
 
   @ApiProperty({
-    description: '사용자 ID',
+    description: '작성자 ID',
     type: String,
   })
   userId!: string;
+
+  @ApiProperty({
+    description: '작성자 닉네임',
+    type: String,
+  })
+  nickname!: string;
 
   @ApiProperty({
     description: '책 ID',
@@ -45,27 +52,39 @@ export class ReviewDto {
   liked!: boolean;
 
   @ApiProperty({
+    description: '리뷰 작성자 여부',
+    type: Boolean,
+  })
+  isAuthor!: boolean;
+
+  @ApiProperty({
     description: '리뷰 작성 시간',
     type: String,
     format: 'date-time',
   })
-  createdAt!: Date;
+  createdAt!: String;
 
   static from(data: ReviewWithLikedData): ReviewDto {
     return {
       id: data.id,
       userId: data.userId,
+      nickname: data.nickname,
       bookId: data.bookId,
       content: data.content,
       likeCount: data.likeCount,
       liked: data.liked,
+      isAuthor: data.isAuthor,
       rating: data.rating,
-      createdAt: data.createdAt,
+      createdAt: this.toKST(data.createdAt),
     };
   }
 
   static fromArray(reviews: ReviewWithLikedData[]): ReviewDto[] {
     return reviews.map((review) => this.from(review));
+  }
+
+  static toKST(date: Date): string {
+    return format(date, "yyyy-MM-dd'T'HH:mm:ssXXX", { timeZone: 'Asia/Seoul' });
   }
 }
 
