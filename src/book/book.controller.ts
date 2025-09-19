@@ -186,13 +186,4 @@ export class BookController {
   ): Promise<void> {
     return this.bookService.unsaveBookFromUser(id, user.id);
   }
-
-  @Get(':id/cover')
-  @Version('1')
-  @ApiOperation({ summary: '책 커버 이미지 URL 가져오기' })
-  async getBookCoverImage(
-    @Param('id', ParseIntPipe) id: number,
-  ): Promise<string | null> {
-    return this.bookService.getBookCoverImage(id);
-  }
 }

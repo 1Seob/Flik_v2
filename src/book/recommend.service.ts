@@ -23,7 +23,9 @@ export class RecommendService {
   async getRecommendedBooks(): Promise<BookListDto> {
     const books = await this.recommendRepository.getRecommendedBooks();
     const urls: (string | null)[] = await Promise.all(
-      books.map((book) => this.bookService.getBookCoverImage(book.id)),
+      books.map((book) =>
+        this.bookService.getBookCoverImageUrlByNaverSearchApi(book.isbn),
+      ),
     );
     return BookListDto.from(books, urls);
   }
