@@ -154,7 +154,7 @@ export class BookRepository {
           },
         },
       },
-      orderBy: { createdAt: 'asc' }, // 가장 오래된 순서대로
+      orderBy: { createdAt: 'desc' }, // 가장 최근에 저장된 순서대로
     });
     return savedBooks.map((item) => item.book);
   }

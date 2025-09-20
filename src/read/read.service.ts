@@ -249,16 +249,6 @@ export class ReadService {
     const todayStr = format(today, 'yyyy-MM-dd');
     const readToday = readingDateSet.has(todayStr);
 
-    if (!readToday) {
-      const data: ReadingStreakData = {
-        currentStreak: 0,
-        readToday: false,
-        longestStreak: streakData ? streakData.days : 0,
-        lastUpdatedAt: streakData ? streakData.updatedAt : new Date(0),
-      };
-      return ReadingStreakDto.from(data);
-    }
-
     let currentStreak = 0;
     // 연속일 계산 시작점: 오늘 읽었으면 오늘부터, 안 읽었으면 어제부터 확인
     let dateToCheck = readToday ? today : subDays(today, 1);
