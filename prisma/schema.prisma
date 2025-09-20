@@ -68,7 +68,7 @@ model BookSave {
   user   User @relation(fields: [userId], references: [id])
 
   @@unique([userId, bookId])
-  @@map("book-save")
+  @@map("book_save")
 }
 
 model Review {
@@ -99,7 +99,7 @@ model ReviewLike {
 
   @@unique([userId, reviewId])
 
-  @@map("review-like")
+  @@map("review_like")
 }
 
 model Page {
@@ -139,7 +139,7 @@ model ReadingLog {
   // 페이지 단위 조회
   @@index([bookId, pageId, startedAt])
 
-  @@map("reading-log")
+  @@map("reading_log")
 }
 
 

@@ -209,29 +209,6 @@ export class ReadRepository {
     });
   }
 
-  async getRecentBooks(user: UserBaseInfo): Promise<BookData[]> {
-    // 1) 사용자별, 책별로 가장 최신 startedAt을 구해 최신순 상위 10개 bookId 추출
-    const latestPerBook = await this.prisma.readingLog.groupBy({
-      by: ['bookId'],
-      where: { userId: user.id },
-      _max: { startedAt: true },
-      orderBy: { _max: { startedAt: 'desc' } },
-      take: 10,
-    });
-
-    const idsInOrder = latestPerBook.map((g) => g.bookId);
-
-    // 2) 책 정보를 한 번에 가져오고, 메모리에서 순서를 복원
-    const books = await this.prisma.book.findMany({
-      where: { id: { in: idsInOrder } },
-    });
-
-    const orderMap = new Map(idsInOrder.map((id, idx) => [id, idx]));
-    books.sort((a, b) => orderMap.get(a.id)! - orderMap.get(b.id)!);
-
-    return books;
-  }
-
   async getLastNormalPage(
     bookId: number,
     userId: string,
@@ -242,7 +219,7 @@ export class ReadRepository {
         bookId: bookId,
       },
       orderBy: {
-        startedAt: 'desc',
+        startedAt: { sort: 'desc', nulls: 'last' },
       },
       select: {
         page: true,

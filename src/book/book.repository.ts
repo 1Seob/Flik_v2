@@ -200,4 +200,34 @@ export class BookRepository {
       }),
     ]);
   }
+
+  //사용자가 최근에 읽은 순서대로 책과 각 책의 마지막 독서 기록을 조회
+  async findRecentBooksWithLastLog(userId: string, take: number = 10) {
+    const latestLogs = await this.prisma.readingLog.groupBy({
+      by: ['bookId'],
+      where: { userId },
+      _max: { startedAt: true },
+      orderBy: { _max: { startedAt: 'desc' } },
+      take,
+    });
+
+    const idsInOrder = latestLogs.map((log) => log.bookId);
+
+    if (idsInOrder.length === 0) {
+      return { booksWithLastLog: [], idsInOrder: [] };
+    }
+
+    const booksWithLastLog = await this.prisma.book.findMany({
+      where: { id: { in: idsInOrder } },
+      include: {
+        logs: {
+          where: { userId },
+          orderBy: { startedAt: { sort: 'desc', nulls: 'last' } },
+          take: 1,
+        },
+      },
+    });
+
+    return { booksWithLastLog, idsInOrder };
+  }
 }

@@ -26,7 +26,6 @@ import { CalendarQuery } from './query/calendar.query';
 import { ReadingStreakDto } from './dto/reading-streak.dto';
 import { format, toZonedTime } from 'date-fns-tz';
 import { ReadingStreakData } from './type/reading-streak-data.type';
-import { BookListDto } from 'src/book/dto/book.dto';
 import { PageDto } from 'src/page/dto/page.dto';
 import { CreateReadingStartLogData } from './type/create-reading-start-log-data.typte';
 import { CreateReadingEndLogData } from './type/create-reading-end-log-data.type';
@@ -290,11 +289,6 @@ export class ReadService {
       lastUpdatedAt: streakData ? streakData.updatedAt : new Date(0),
     };
     return ReadingStreakDto.from(data);
-  }
-
-  async getRecentBooks(user: UserBaseInfo): Promise<BookListDto> {
-    const recentBooks = await this.readRepository.getRecentBooks(user);
-    return BookListDto.from(recentBooks);
   }
 
   async getLastPage(bookId: number, user: UserBaseInfo): Promise<PageDto> {

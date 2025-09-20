@@ -15,6 +15,9 @@ import axios from 'axios';
 import { PageListDto } from 'src/page/dto/page.dto';
 import { BookSearchQuery } from 'src/search/query/book-search-query';
 import { SearchRepository } from 'src/search/search.repository';
+import { RecentBookListDto } from './dto/recent-book.dto';
+import { UserBaseInfo } from 'src/auth/type/user-base-info.type';
+import { RecentBookData } from './type/recent-book-data.type';
 
 @Injectable()
 export class BookService {
@@ -259,5 +262,42 @@ export class BookService {
     );
 
     return BookListDto.from(books, urls);
+  }
+
+  async getRecentBooks(user: UserBaseInfo): Promise<RecentBookListDto> {
+    const { booksWithLastLog, idsInOrder } =
+      await this.bookRepository.findRecentBooksWithLastLog(user.id);
+
+    if (booksWithLastLog.length === 0) {
+      return RecentBookListDto.from([]);
+    }
+
+    //순서 복원 및 진행률 계산
+    const orderMap = new Map(idsInOrder.map((id, idx) => [id, idx]));
+    booksWithLastLog.sort((a, b) => orderMap.get(a.id)! - orderMap.get(b.id)!);
+
+    const recentBookData: RecentBookData[] = booksWithLastLog.map((book) => {
+      const lastLog = book.logs[0];
+      const lastPage = lastLog?.pageNumber ?? 0;
+      const totalPages = book.totalPagesCount;
+
+      const progress = totalPages > 0 ? (lastPage / totalPages) * 100 : 0;
+      console.log(lastPage, totalPages);
+
+      const { logs, ...bookInfo } = book;
+
+      return {
+        ...bookInfo,
+        progress,
+      };
+    });
+
+    const urls: (string | null)[] = await Promise.all(
+      recentBookData.map((book) =>
+        this.getBookCoverImageUrlByNaverSearchApi(book.isbn),
+      ),
+    );
+
+    return RecentBookListDto.from(recentBookData, urls);
   }
 }

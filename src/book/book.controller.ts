@@ -33,6 +33,7 @@ import { BookSearchQuery } from 'src/search/query/book-search-query';
 import { RecommendService } from './recommend.service';
 import { BookRankingListDto } from './dto/book-ranking.dto';
 import { RankingService } from './ranking.service';
+import { RecentBookListDto } from './dto/recent-book.dto';
 
 @Controller('books')
 @ApiTags('Book API')
@@ -67,6 +68,18 @@ export class BookController {
   @ApiOperation({ summary: '책 랭킹 조회' })
   async getBookRankings(): Promise<BookRankingListDto> {
     return this.rankingService.getBookRankings();
+  }
+
+  @Get('recent')
+  @Version('1')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '유저가 최근에 읽은 책들 조회(최대 10권)' })
+  @ApiOkResponse({ type: RecentBookListDto })
+  async getRecentBooks(
+    @CurrentUser() user: UserBaseInfo,
+  ): Promise<RecentBookListDto> {
+    return this.bookService.getRecentBooks(user);
   }
 
   @Get('recommend')
