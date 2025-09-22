@@ -4,5 +4,7 @@ export type SentenceLikeData = {
   bookId: number;
   pageId: number;
   text: string;
+  startIndex: number;
+  endIndex: number;
   createdAt: Date;
 };
