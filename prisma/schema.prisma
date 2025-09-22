@@ -189,6 +189,8 @@ model SentenceLike {
   pageId     Int      @map("page_id")
   
   text       String   @map("text")
+  startIndex Int      @map("start_index")
+  endIndex   Int      @map("end_index")
 
   createdAt  DateTime @default(now()) @map("created_at")
 

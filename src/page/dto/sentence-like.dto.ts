@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { SentenceLikeData } from '../type/sentence-like-type';
+import { format } from 'date-fns-tz';
 
 export class SentenceLikeDto {
   @ApiProperty({
@@ -33,10 +34,23 @@ export class SentenceLikeDto {
   text!: string;
 
   @ApiProperty({
-    description: '생성일',
-    type: Date,
+    description: '문장 시작 인덱스',
+    type: Number,
   })
-  createdAt!: Date;
+  startIndex!: number;
+
+  @ApiProperty({
+    description: '문장 끝 인덱스',
+    type: Number,
+  })
+  endIndex!: number;
+
+  @ApiProperty({
+    description: '생성일',
+    type: String,
+    format: 'date-time',
+  })
+  createdAt!: string;
 
   static from(data: SentenceLikeData): SentenceLikeDto {
     return {
@@ -45,12 +59,18 @@ export class SentenceLikeDto {
       bookId: data.bookId,
       pageId: data.pageId,
       text: data.text,
-      createdAt: data.createdAt,
+      startIndex: data.startIndex,
+      endIndex: data.endIndex,
+      createdAt: this.toKST(data.createdAt),
     };
   }
 
   static fromArray(likes: SentenceLikeData[]): SentenceLikeDto[] {
     return likes.map((like) => this.from(like));
+  }
+
+  static toKST(date: Date): string {
+    return format(date, "yyyy-MM-dd'T'HH:mm:ssXXX", { timeZone: 'Asia/Seoul' });
   }
 }
 
