@@ -45,6 +45,8 @@ export class PageRepository {
         bookId: payload.bookId,
         pageId: payload.pageId,
         text: payload.text,
+        startIndex: payload.startIndex,
+        endIndex: payload.endIndex,
       },
     });
   }

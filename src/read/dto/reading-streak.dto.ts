@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { ReadingStreakData } from '../type/reading-streak-data.type';
+import { format } from 'date-fns-tz';
 
 export class ReadingStreakDto {
   @ApiProperty({
@@ -22,16 +23,21 @@ export class ReadingStreakDto {
 
   @ApiProperty({
     description: '마지막 업데이트 일시',
-    type: Date,
+    type: String,
+    format: 'date-time',
   })
-  lastUpdatedAt!: Date;
+  lastUpdatedAt!: string;
 
   static from(data: ReadingStreakData): ReadingStreakDto {
     return {
       currentStreak: data.currentStreak,
       readToday: data.readToday,
       longestStreak: data.longestStreak,
-      lastUpdatedAt: data.lastUpdatedAt,
+      lastUpdatedAt: this.toKST(data.lastUpdatedAt),
     };
+  }
+
+  static toKST(date: Date): string {
+    return format(date, "yyyy-MM-dd'T'HH:mm:ssXXX", { timeZone: 'Asia/Seoul' });
   }
 }
