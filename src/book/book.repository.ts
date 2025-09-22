@@ -6,6 +6,11 @@ import { UpdateBookData } from './type/update-book-data.type';
 import { redis } from '../search/redis.provider';
 import { PageData } from 'src/page/type/page-type';
 
+type TempReadingResult = {
+  book: BookData;
+  page: PageData;
+};
+
 @Injectable()
 export class BookRepository {
   constructor(private readonly prisma: PrismaService) {}
@@ -201,33 +206,82 @@ export class BookRepository {
     ]);
   }
 
-  //사용자가 최근에 읽은 순서대로 책과 각 책의 마지막 독서 기록을 조회
-  async findRecentBooksWithLastLog(userId: string, take: number = 10) {
-    const latestLogs = await this.prisma.readingLog.groupBy({
+  async findRecentBooksAndPages(
+    userId: string,
+    limit = 10,
+  ): Promise<[BookData[], PageData[]]> {
+    // [첫 번째 쿼리]
+    // 사용자가 읽은 책(bookId)별로 가장 최근의 독서 기록(startedAt)을 찾음
+    // 결과는 최근에 읽은 책 순서대로 정렬
+    const latestLogsByBook = await this.prisma.readingLog.groupBy({
       by: ['bookId'],
       where: { userId },
-      _max: { startedAt: true },
-      orderBy: { _max: { startedAt: 'desc' } },
-      take,
+      _max: {
+        startedAt: true,
+      },
+      orderBy: {
+        _max: {
+          startedAt: 'desc',
+        },
+      },
+      take: limit,
     });
 
-    const idsInOrder = latestLogs.map((log) => log.bookId);
-
-    if (idsInOrder.length === 0) {
-      return { booksWithLastLog: [], idsInOrder: [] };
+    // 독서 기록이 없으면 빈 배열 튜플을 반환
+    if (latestLogsByBook.length === 0) {
+      return [[], []];
     }
 
-    const booksWithLastLog = await this.prisma.book.findMany({
-      where: { id: { in: idsInOrder } },
-      include: {
-        logs: {
-          where: { userId },
-          orderBy: { startedAt: { sort: 'desc', nulls: 'last' } },
-          take: 1,
+    // [두 번째 쿼리]
+    // 첫 번째 쿼리에서 찾은 bookId와 startedAt이 정확히 일치하는
+    // 모든 독서 기록의 상세 정보를 한 번의 쿼리로 가져옴
+    // DTO에 필요한 최소한의 필드만 선택(select)
+    const recentReadingLogs = await this.prisma.readingLog.findMany({
+      where: {
+        userId,
+        OR: latestLogsByBook.map((log) => ({
+          bookId: log.bookId,
+          startedAt: log._max.startedAt,
+        })),
+      },
+      select: {
+        bookId: true, // 정렬의 기준이 되므로 포함
+        book: {
+          select: {
+            id: true,
+            title: true,
+            totalPagesCount: true,
+            isbn: true,
+          },
+        },
+        page: {
+          select: {
+            id: true,
+            number: true,
+          },
         },
       },
     });
 
-    return { booksWithLastLog, idsInOrder };
+    // [결과 정렬]
+    // 두 번째 쿼리의 결과는 순서가 보장되지 않으므로, 첫 번째 쿼리 결과의 순서에 맞게 정렬
+    const recentReadingsMap = new Map(
+      recentReadingLogs.map((log) => [
+        log.bookId,
+        { book: log.book, page: log.page },
+      ]),
+    );
+
+    const sortedRecentReadings = latestLogsByBook
+      .map((log) => recentReadingsMap.get(log.bookId))
+      .filter((result): result is TempReadingResult => result !== undefined);
+
+    // [데이터 변환]
+    // 정렬된 결과 객체 배열을 두 개의 개별 배열로 분리
+    const books: BookData[] = sortedRecentReadings.map((r) => r.book);
+    const pages: PageData[] = sortedRecentReadings.map((r) => r.page);
+
+    // 최종적으로 튜플 형태로 반환
+    return [books, pages];
   }
 }
