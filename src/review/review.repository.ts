@@ -9,7 +9,10 @@ import { ReviewWithLikedData } from './type/review-with-liked-data.type';
 export class ReviewRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async createReview(data: CreateReviewData): Promise<ReviewData> {
+  async createReview(
+    data: CreateReviewData,
+    nickname: string,
+  ): Promise<ReviewData> {
     const review = await this.prisma.review.create({
       data: {
         userId: data.userId,
@@ -30,6 +33,7 @@ export class ReviewRepository {
     return {
       id: review.id,
       userId: review.userId,
+      nickname: nickname,
       bookId: review.bookId,
       content: review.content,
       createdAt: review.createdAt,
@@ -41,7 +45,6 @@ export class ReviewRepository {
   async getReviewsByBookId(
     bookId: number,
     userId: string,
-    nickname: string,
   ): Promise<ReviewWithLikedData[]> {
     const reviews = await this.prisma.review.findMany({
       where: { bookId },
@@ -53,6 +56,9 @@ export class ReviewRepository {
           where: { userId: userId }, // 현재 유저만 필터링
           select: { id: true }, // 존재 여부만 확인
         },
+        user: {
+          select: { name: true },
+        },
       },
     });
 
@@ -63,7 +69,7 @@ export class ReviewRepository {
       content: review.content,
       createdAt: review.createdAt,
       likeCount: review._count.likedBy,
-      nickname: nickname,
+      nickname: review.user.name,
       liked: review.likedBy.length > 0, // 한 번에 Boolean 계산
       isAuthor: review.userId === userId,
       rating: review.rating.toNumber(),
@@ -74,6 +80,7 @@ export class ReviewRepository {
     const review = await this.prisma.review.findUnique({
       where: { id },
       include: {
+        user: { select: { name: true } },
         _count: {
           select: { likedBy: true },
         },
@@ -85,6 +92,7 @@ export class ReviewRepository {
     return {
       id: review.id,
       userId: review.userId,
+      nickname: review.user.name,
       bookId: review.bookId,
       content: review.content,
       createdAt: review.createdAt,
@@ -98,6 +106,7 @@ export class ReviewRepository {
       where: { id },
       data,
       include: {
+        user: { select: { name: true } },
         _count: {
           select: { likedBy: true },
         },
@@ -107,6 +116,7 @@ export class ReviewRepository {
     return {
       id: review.id,
       userId: review.userId,
+      nickname: review.user.name,
       bookId: review.bookId,
       content: review.content,
       createdAt: review.createdAt,

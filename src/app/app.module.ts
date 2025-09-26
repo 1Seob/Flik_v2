@@ -20,6 +20,7 @@ import { ReadModule } from 'src/read/read.module';
 import { redis } from 'src/search/redis.provider';
 import { ScheduleModule } from '@nestjs/schedule';
 import { RankingScheduler } from 'src/book/ranking.scheduler';
+import { setIds } from 'src/common/id.store';
 
 @Module({
   imports: [
@@ -45,6 +46,11 @@ export class AppModule implements NestModule, OnModuleInit {
   }
 
   async onModuleInit() {
+    //ID 배열 초기화
+    const bookIds = await this.searchRepository.getAllBookIds();
+    setIds(bookIds);
+    console.log(`총 ${bookIds.length}개의 책 ID를 메모리에 로딩했습니다.`);
+
     console.log('Redis 데이터 초기화 중...');
     await redis.flushall(); //모든 Redis 데이터 삭제
     console.log('Redis 데이터 초기화 완료.');

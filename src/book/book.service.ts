@@ -16,6 +16,8 @@ import { BookSearchQuery } from 'src/search/query/book-search-query';
 import { SearchRepository } from 'src/search/search.repository';
 import { RecentBookListDto } from './dto/recent-book.dto';
 import { UserBaseInfo } from 'src/auth/type/user-base-info.type';
+import { DetailedBookDto } from './dto/detailed-book.dto';
+import { ids, getRandomNIdsUnique } from '../common/id.store';
 
 @Injectable()
 export class BookService {
@@ -277,5 +279,39 @@ export class BookService {
     );
 
     return RecentBookListDto.from(books, pages, urls);
+  }
+
+  async getDetailedBookById(
+    bookId: number,
+    userId: string,
+  ): Promise<DetailedBookDto> {
+    const book = await this.bookRepository.getBookById(bookId);
+    if (!book) {
+      throw new NotFoundException('책을 찾을 수 없습니다.');
+    }
+
+    const averageRating =
+      await this.bookRepository.getAverageRatingByBookId(bookId);
+    const isSaved = await this.bookRepository.isBookSavedByUser(userId, bookId);
+    const url = await this.getBookCoverImageUrlByNaverSearchApi(book.isbn);
+    const topReviews = await this.bookRepository.getTopReviewsByBookId(bookId);
+    const randomBookIds = getRandomNIdsUnique(4, ids);
+    const randomBooks = await this.bookRepository.getBooksByIds(randomBookIds);
+    const randomUrls: (string | null)[] = await Promise.all(
+      randomBooks.map((b) => this.getBookCoverImageUrlByNaverSearchApi(b.isbn)),
+    );
+    const firstPage = await this.bookRepository.getFirstPageOfBook(bookId);
+
+    return DetailedBookDto.from(
+      book,
+      topReviews,
+      topReviews.map((r) => r.nickname),
+      randomBooks,
+      averageRating ?? 0,
+      isSaved,
+      firstPage?.content ?? '',
+      url,
+      randomUrls,
+    );
   }
 }
