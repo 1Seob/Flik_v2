@@ -4,6 +4,7 @@ import { CreateReviewData } from './type/create-review-data.type';
 import { ReviewData } from './type/review-data.type';
 import { UpdateReviewData } from './type/update-review-data.type';
 import { ReviewWithLikedData } from './type/review-with-liked-data.type';
+import { MyReviewData } from './type/my-review-data.type';
 
 @Injectable()
 export class ReviewRepository {
@@ -175,5 +176,32 @@ export class ReviewRepository {
       },
     });
     return !!like;
+  }
+
+  async getReviewsByUserId(userId: string): Promise<MyReviewData[]> {
+    const reviews = await this.prisma.review.findMany({
+      where: { userId },
+      include: {
+        _count: {
+          select: { likedBy: true },
+        },
+        likedBy: {
+          where: { userId: userId }, // 현재 유저만 필터링
+          select: { id: true }, // 존재 여부만 확인
+        },
+        book: { select: { title: true } },
+      },
+    });
+
+    return reviews.map((review) => ({
+      id: review.id,
+      bookId: review.bookId,
+      bookTitle: review.book.title,
+      content: review.content,
+      createdAt: review.createdAt,
+      likeCount: review._count.likedBy,
+      liked: review.likedBy.length > 0, // 한 번에 Boolean 계산
+      rating: review.rating.toNumber(),
+    }));
   }
 }
