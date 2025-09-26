@@ -5,6 +5,8 @@ import { SaveBookData } from './type/save-book-data.type';
 import { UpdateBookData } from './type/update-book-data.type';
 import { redis } from '../search/redis.provider';
 import { PageData } from 'src/page/type/page-type';
+import { Prisma } from '@prisma/client';
+import { ReviewData } from 'src/review/type/review-data.type';
 
 type TempReadingResult = {
   book: BookData;
@@ -283,5 +285,128 @@ export class BookRepository {
 
     // 최종적으로 튜플 형태로 반환
     return [books, pages];
+  }
+
+  async getAverageRatingByBookId(bookId: number): Promise<number | null> {
+    const result = await this.prisma.review.aggregate({
+      where: { bookId },
+      _avg: {
+        rating: true,
+      },
+    });
+
+    // Prisma의 Decimal → number 변환 처리
+    return result._avg.rating
+      ? new Prisma.Decimal(result._avg.rating).toNumber()
+      : null;
+  }
+
+  async getTopReviewsByBookId(bookId: number): Promise<ReviewData[]> {
+    // 1. 좋아요 Top1
+    const topLike = await this.prisma.review.findFirst({
+      where: { bookId },
+      orderBy: [{ likedBy: { _count: 'desc' } }, { createdAt: 'desc' }],
+      include: {
+        user: { select: { name: true } },
+        _count: {
+          select: { likedBy: true },
+        },
+      },
+    });
+
+    // 2. 별점 Top2 (좋아요 → 최신순 보조정렬)
+    const topRatings = await this.prisma.review.findMany({
+      where: { bookId },
+      orderBy: [
+        { rating: 'desc' },
+        { likedBy: { _count: 'desc' } },
+        { createdAt: 'desc' },
+      ],
+      take: 3, // 일단 3개 가져와서 나중에 중복 제거
+      include: {
+        user: { select: { name: true } },
+        _count: {
+          select: { likedBy: true },
+        },
+      },
+    });
+
+    // 3. 병합 + 중복 제거
+    const merged: ReviewData[] = [];
+    const seen = new Set<number>();
+
+    if (topLike) {
+      merged.push({
+        id: topLike.id,
+        userId: topLike.userId,
+        nickname: topLike.user.name,
+        bookId: topLike.bookId,
+        content: topLike.content,
+        likeCount: topLike._count.likedBy,
+        rating: Number(topLike.rating),
+        createdAt: topLike.createdAt,
+      });
+      seen.add(topLike.id);
+    }
+
+    for (const r of topRatings) {
+      if (seen.has(r.id)) continue; // 중복 제거
+      merged.push({
+        id: r.id,
+        userId: r.userId,
+        nickname: r.user.name,
+        bookId: r.bookId,
+        content: r.content,
+        likeCount: r._count.likedBy,
+        rating: Number(r.rating),
+        createdAt: r.createdAt,
+      });
+    }
+
+    // 4. 3개가 안 되면 나머지 채우기 (리뷰 수가 부족한 경우)
+    if (merged.length < 3) {
+      const fillers = await this.prisma.review.findMany({
+        where: { bookId, id: { notIn: Array.from(seen) } },
+        orderBy: [{ createdAt: 'desc' }],
+        take: 3 - merged.length,
+        include: {
+          user: { select: { name: true } },
+          _count: { select: { likedBy: true } },
+        },
+      });
+
+      for (const f of fillers) {
+        merged.push({
+          id: f.id,
+          userId: f.userId,
+          nickname: f.user.name,
+          bookId: f.bookId,
+          content: f.content,
+          likeCount: f._count.likedBy,
+          rating: Number(f.rating),
+          createdAt: f.createdAt,
+        });
+      }
+    }
+
+    return merged.slice(0, 3);
+  }
+
+  async getBooksByIds(bookIds: number[]): Promise<BookData[]> {
+    return this.prisma.book.findMany({
+      where: {
+        id: { in: bookIds },
+        deletedAt: null,
+      },
+    });
+  }
+
+  async getFirstPageOfBook(bookId: number): Promise<PageData | null> {
+    return this.prisma.page.findFirst({
+      where: {
+        bookId: bookId,
+        number: 1,
+      },
+    });
   }
 }

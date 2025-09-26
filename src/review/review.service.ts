@@ -48,7 +48,10 @@ export class ReviewService {
       rating: payload.rating,
     };
 
-    const createdReview = await this.reviewRepository.createReview(createData);
+    const createdReview = await this.reviewRepository.createReview(
+      createData,
+      user.name,
+    );
     const createdReviewWithLiked = {
       ...createdReview,
       nickname: user.name,
@@ -69,7 +72,6 @@ export class ReviewService {
     const reviews = await this.reviewRepository.getReviewsByBookId(
       bookId,
       user.id,
-      user.name,
     );
     return ReviewListDto.from(reviews);
   }

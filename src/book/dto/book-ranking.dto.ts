@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { BookRankingWithStatusData } from '../type/book-ranking-data-with-status-data.type';
-import { BookData } from '../type/book-data.type';
+import { SimpleBookDto } from './simple-book.dto';
 
 export enum RankStatus {
   UP = 'UP',
@@ -31,43 +31,6 @@ export class RankChangeDto {
   }
 }
 
-export class RankingBookDto {
-  @ApiProperty({
-    description: '책 ID',
-    type: Number,
-  })
-  id!: number;
-
-  @ApiProperty({
-    description: '책 제목',
-    type: String,
-  })
-  title!: string;
-
-  @ApiProperty({
-    description: '책 커버 이미지 URL',
-    type: String,
-    nullable: true,
-  })
-  coverImageUrl!: string | null;
-
-  static from(data: BookData, url?: string | null): RankingBookDto {
-    return {
-      id: data.id,
-      title: data.title,
-      coverImageUrl: url ?? null,
-    };
-  }
-
-  static fromArray(
-    data: BookData[],
-    url?: (string | null)[],
-  ): RankingBookDto[] {
-    const urls = url ?? data.map(() => null);
-    return data.map((book, index) => RankingBookDto.from(book, urls[index]));
-  }
-}
-
 export class BookRankingDto {
   @ApiProperty({
     description: '책 랭킹',
@@ -77,9 +40,9 @@ export class BookRankingDto {
 
   @ApiProperty({
     description: '책 정보',
-    type: RankingBookDto,
+    type: SimpleBookDto,
   })
-  book!: RankingBookDto;
+  book!: SimpleBookDto;
 
   @ApiProperty({
     type: RankChangeDto,
@@ -93,14 +56,14 @@ export class BookRankingDto {
   ): BookRankingDto {
     return {
       rank: data.rank,
-      book: RankingBookDto.from(data.book, url),
+      book: SimpleBookDto.from(data.book, url),
       rankChange: RankChangeDto.from(data.status, data.rankChange),
     };
   }
 
   static fromArray(
     data: BookRankingWithStatusData[],
-    url?: (string | null)[],
+    url: (string | null)[],
   ): BookRankingDto[] {
     const urls = url ?? data.map(() => null);
     return data.map((book, index) => BookRankingDto.from(book, urls[index]));

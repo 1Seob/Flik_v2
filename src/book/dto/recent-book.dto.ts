@@ -1,47 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { BookData } from '../type/book-data.type';
 import { PageData } from 'src/page/type/page-type';
-
-export class SimpleBookDto {
-  @ApiProperty({
-    description: '책 ID',
-    type: Number,
-  })
-  id!: number;
-
-  @ApiProperty({
-    description: '책 제목',
-    type: String,
-  })
-  title!: string;
-
-  @ApiProperty({
-    description: '총 페이지 수',
-    type: Number,
-  })
-  totalPages!: number;
-
-  @ApiProperty({
-    description: '책 커버 이미지 URL',
-    type: String,
-    nullable: true,
-  })
-  coverImageUrl!: string | null;
-
-  static from(data: BookData, url?: string | null): SimpleBookDto {
-    return {
-      id: data.id,
-      title: data.title,
-      totalPages: data.totalPagesCount,
-      coverImageUrl: url ?? null,
-    };
-  }
-
-  static fromArray(data: BookData[], url?: (string | null)[]): SimpleBookDto[] {
-    const urls = url ?? data.map(() => null);
-    return data.map((book, index) => SimpleBookDto.from(book, urls[index]));
-  }
-}
+import { BasicBookDto } from './basic-book.dto';
 
 export class SimplePageDto {
   @ApiProperty({
@@ -67,9 +27,9 @@ export class SimplePageDto {
 export class RecentBookDto {
   @ApiProperty({
     description: '책 정보',
-    type: SimpleBookDto,
+    type: BasicBookDto,
   })
-  book!: SimpleBookDto;
+  book!: BasicBookDto;
 
   @ApiProperty({
     description: '최근 읽은 페이지 정보',
@@ -83,7 +43,7 @@ export class RecentBookDto {
     url?: string | null,
   ): RecentBookDto {
     return {
-      book: SimpleBookDto.from(data, url),
+      book: BasicBookDto.from(data, url),
       recentPage: SimplePageDto.from(page),
     };
   }
