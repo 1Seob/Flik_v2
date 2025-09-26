@@ -34,6 +34,7 @@ import { RecommendService } from './recommend.service';
 import { BookRankingListDto } from './dto/book-ranking.dto';
 import { RankingService } from './ranking.service';
 import { RecentBookListDto } from './dto/recent-book.dto';
+import { DetailedBookDto } from './dto/detailed-book.dto';
 
 @Controller('books')
 @ApiTags('Book API')
@@ -116,6 +117,19 @@ export class BookController {
   @ApiOkResponse({ type: BookDto })
   async getBookById(@Param('id', ParseIntPipe) id: number): Promise<BookDto> {
     return this.bookService.getBookById(id);
+  }
+
+  @Get(':id/detail')
+  @Version('1')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @ApiOkResponse({ type: DetailedBookDto })
+  @ApiOperation({ summary: '책 상세 조회' })
+  async getDetailedBookById(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: UserBaseInfo,
+  ): Promise<DetailedBookDto> {
+    return this.bookService.getDetailedBookById(id, user.id);
   }
 
   @Post(':id/views')
