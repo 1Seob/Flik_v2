@@ -13,6 +13,7 @@ import { BookRepository } from 'src/book/book.repository';
 import { UpdateReviewPayload } from './payload/update-review.paylaod';
 import { UpdateReviewData } from './type/update-review-data.type';
 import { BadWordsFilterService } from 'src/user/bad-words-filter.service';
+import { MyReviewListDto } from './dto/my-review.dto';
 
 @Injectable()
 export class ReviewService {
@@ -133,5 +134,10 @@ export class ReviewService {
     }
 
     await this.reviewRepository.deleteReview(id);
+  }
+
+  async getUserReviews(user: UserBaseInfo): Promise<MyReviewListDto> {
+    const reviews = await this.reviewRepository.getReviewsByUserId(user.id);
+    return MyReviewListDto.from(reviews);
   }
 }

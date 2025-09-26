@@ -26,6 +26,7 @@ import { JwtAuthGuard } from '../auth/guard/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorator/user.decorator';
 import { UserBaseInfo } from '../auth/type/user-base-info.type';
 import { UpdateReviewPayload } from './payload/update-review.paylaod';
+import { MyReviewListDto } from './dto/my-review.dto';
 
 @Controller('reviews')
 @ApiTags('Review API')
@@ -43,6 +44,18 @@ export class ReviewController {
     @CurrentUser() user: UserBaseInfo,
   ): Promise<ReviewDto> {
     return this.reviewService.createReview(payload, user);
+  }
+
+  @Get()
+  @Version('1')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOkResponse({ type: MyReviewListDto })
+  @ApiOperation({ summary: '유저의 리뷰들 조회' })
+  async getUserReviews(
+    @CurrentUser() user: UserBaseInfo,
+  ): Promise<MyReviewListDto> {
+    return this.reviewService.getUserReviews(user);
   }
 
   @Get(':id')
