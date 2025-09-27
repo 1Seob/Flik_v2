@@ -7,6 +7,8 @@ import { PageData } from 'src/page/type/page-type';
 import { subDays } from 'date-fns';
 import { CreateReadingStartLogData } from './type/create-reading-start-log-data.typte';
 import { CreateReadingEndLogData } from './type/create-reading-end-log-data.type';
+import { redis } from 'src/search/redis.provider';
+import { SentenceLikeData } from 'src/page/type/sentence-like-type';
 
 @Injectable()
 export class ReadRepository {
@@ -233,6 +235,30 @@ export class ReadRepository {
       where: {
         bookId: bookId,
         number: 1,
+      },
+    });
+  }
+
+  async incrementBookViews(bookId: number, title: string): Promise<void> {
+    await this.prisma.book.update({
+      where: { id: bookId },
+      data: {
+        views: {
+          increment: 1,
+        },
+      },
+    });
+    await redis.zincrby('autocomplete:views', 1, title);
+  }
+
+  async getLikedSentencesByBookId(
+    bookId: number,
+    userId: string,
+  ): Promise<SentenceLikeData[]> {
+    return this.prisma.sentenceLike.findMany({
+      where: {
+        bookId,
+        userId,
       },
     });
   }

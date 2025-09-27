@@ -30,6 +30,7 @@ import { ReadingProgressListDto } from './dto/reading-progress.dto';
 import { CalendarQuery } from './query/calendar.query';
 import { ReadingStreakDto } from './dto/reading-streak.dto';
 import { PageDto } from 'src/page/dto/page.dto';
+import { LastPageDto } from './dto/last-page-dto';
 
 @Controller('read')
 @ApiTags('Read API')
@@ -67,11 +68,11 @@ export class ReadController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: '책의 마지막으로 진입한 페이지 조회 (이어읽기)' })
-  @ApiOkResponse({ type: PageDto })
+  @ApiOkResponse({ type: LastPageDto })
   async getLastPage(
     @Param('id', ParseIntPipe) id: number,
     @CurrentUser() user: UserBaseInfo,
-  ): Promise<PageDto> {
+  ): Promise<LastPageDto> {
     return this.readService.getLastPage(id, user);
   }
 
