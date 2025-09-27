@@ -236,14 +236,6 @@ export class BookService {
     }
   }
 
-  async incrementBookViews(bookId: number): Promise<void> {
-    const book = await this.bookRepository.getBookById(bookId);
-    if (!book) {
-      throw new NotFoundException('책을 찾을 수 없습니다.');
-    }
-    await this.bookRepository.incrementBookViews(bookId, book.title);
-  }
-
   async updateBookPages(bookId: number, fileName: string): Promise<void> {
     const book = await this.bookRepository.getBookById(bookId);
     if (!book) {

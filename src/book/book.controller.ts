@@ -132,17 +132,6 @@ export class BookController {
     return this.bookService.getDetailedBookById(id, user.id);
   }
 
-  @Post(':id/views')
-  @Version('1')
-  @ApiOperation({ summary: '책 조회수 증가' })
-  @ApiNoContentResponse()
-  @HttpCode(204)
-  async incrementBookViews(
-    @Param('id', ParseIntPipe) id: number,
-  ): Promise<void> {
-    return this.bookService.incrementBookViews(id);
-  }
-
   @Get(':id/pages/download')
   @Version('1')
   @ApiOkResponse({ type: PageListDto })
