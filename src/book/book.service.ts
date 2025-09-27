@@ -19,6 +19,7 @@ import { UserBaseInfo } from 'src/auth/type/user-base-info.type';
 import { DetailedBookDto } from './dto/detailed-book.dto';
 import { ids, getRandomNIdsUnique } from '../common/id.store';
 import { BasicBookListDto } from './dto/basic-book.dto';
+import { SimpleBookListDto } from './dto/simple-book.dto';
 
 @Injectable()
 export class BookService {
@@ -306,5 +307,14 @@ export class BookService {
       url,
       randomUrls,
     );
+  }
+
+  async getBookSuggestions(): Promise<SimpleBookListDto> {
+    const randomBookIds = getRandomNIdsUnique(6, ids);
+    const books = await this.bookRepository.getBooksByIds(randomBookIds);
+    const urls: (string | null)[] = await Promise.all(
+      books.map((book) => this.getBookCoverImageUrlByNaverSearchApi(book.isbn)),
+    );
+    return SimpleBookListDto.from(books, urls);
   }
 }
