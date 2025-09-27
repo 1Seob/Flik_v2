@@ -1,9 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { RecommendRepository } from './recommend.repository';
 import { PrismaService } from 'src/common/services/prisma.service';
-import { BookListDto } from './dto/book.dto';
-import { BookData } from './type/book-data.type';
 import { BookService } from './book.service';
+import { SimpleBookListDto } from './dto/simple-book.dto';
 
 /* 추천 점수 가중치
 const WEIGHTS = {
@@ -20,14 +19,14 @@ export class RecommendService {
     private readonly bookService: BookService,
   ) {}
 
-  async getRecommendedBooks(): Promise<BookListDto> {
+  async getRecommendedBooks(): Promise<SimpleBookListDto> {
     const books = await this.recommendRepository.getRecommendedBooks();
     const urls: (string | null)[] = await Promise.all(
       books.map((book) =>
         this.bookService.getBookCoverImageUrlByNaverSearchApi(book.isbn),
       ),
     );
-    return BookListDto.from(books, urls);
+    return SimpleBookListDto.from(books, urls);
   }
 
   /*
