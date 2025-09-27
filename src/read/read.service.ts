@@ -26,9 +26,9 @@ import { CalendarQuery } from './query/calendar.query';
 import { ReadingStreakDto } from './dto/reading-streak.dto';
 import { format, toZonedTime } from 'date-fns-tz';
 import { ReadingStreakData } from './type/reading-streak-data.type';
-import { PageDto } from 'src/page/dto/page.dto';
 import { CreateReadingStartLogData } from './type/create-reading-start-log-data.typte';
 import { CreateReadingEndLogData } from './type/create-reading-end-log-data.type';
+import { LastPageDto } from './dto/last-page-dto';
 
 @Injectable()
 export class ReadService {
@@ -281,11 +281,18 @@ export class ReadService {
     return ReadingStreakDto.from(data);
   }
 
-  async getLastPage(bookId: number, user: UserBaseInfo): Promise<PageDto> {
+  async getLastPage(bookId: number, user: UserBaseInfo): Promise<LastPageDto> {
     const book = await this.readRepository.getBookById(bookId);
     if (!book) {
       throw new NotFoundException('책을 찾을 수 없습니다.');
     }
+
+    await this.readRepository.incrementBookViews(bookId, book.title);
+
+    const likedSentences = await this.readRepository.getLikedSentencesByBookId(
+      bookId,
+      user.id,
+    );
 
     const lastPage = await this.readRepository.getLastNormalPage(
       bookId,
@@ -296,8 +303,8 @@ export class ReadService {
       if (!firstPage) {
         throw new NotFoundException('책의 첫 페이지를 찾을 수 없습니다.');
       }
-      return PageDto.from(firstPage);
+      return LastPageDto.from(firstPage, likedSentences);
     }
-    return PageDto.from(lastPage);
+    return LastPageDto.from(lastPage, likedSentences);
   }
 }

@@ -175,18 +175,6 @@ export class BookRepository {
     return savedBook !== null;
   }
 
-  async incrementBookViews(bookId: number, title: string): Promise<void> {
-    await this.prisma.book.update({
-      where: { id: bookId },
-      data: {
-        views: {
-          increment: 1,
-        },
-      },
-    });
-    await redis.zincrby('autocomplete:views', 1, title);
-  }
-
   async updateBookPages(bookId: number, pages: string[]): Promise<void> {
     await this.prisma.$transaction([
       this.prisma.page.deleteMany({
