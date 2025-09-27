@@ -7,6 +7,7 @@ import { redis } from '../search/redis.provider';
 import { PageData } from 'src/page/type/page-type';
 import { Prisma } from '@prisma/client';
 import { ReviewData } from 'src/review/type/review-data.type';
+import { BookWithSummaryData } from './type/book-with-summary.type';
 
 type TempReadingResult = {
   book: BookData;
@@ -396,5 +397,17 @@ export class BookRepository {
         number: 1,
       },
     });
+  }
+
+  async getAiBook(): Promise<BookWithSummaryData | null> {
+    const books = await this.prisma.$queryRaw<BookWithSummaryData[]>`
+      SELECT id, title, author, isbn, ai_summary AS summary
+      FROM "book"
+      WHERE ai_summary IS NOT NULL
+      ORDER BY RANDOM()
+      LIMIT 1
+    `;
+
+    return books.length > 0 ? books[0] : null;
   }
 }
