@@ -20,7 +20,7 @@ import {
   ApiTags,
   ApiBearerAuth,
 } from '@nestjs/swagger';
-import { BookDto, BookListDto } from './dto/book.dto';
+import { BookDto } from './dto/book.dto';
 import { SaveBookPayload } from './payload/save-book.payload';
 import { PatchUpdateBookPayload } from './payload/patch-update-book.payload';
 import { JwtAuthGuard } from '../auth/guard/jwt-auth.guard';
@@ -111,6 +111,14 @@ export class BookController {
   @ApiOkResponse({ type: BasicBookListDto })
   async getBooks(@Query() query: BookSearchQuery): Promise<BasicBookListDto> {
     return this.bookService.getBooks(query);
+  }
+
+  @Get('suggestions')
+  @Version('1')
+  @ApiOperation({ summary: '(검색 결과 없을 때) 추천 책 조회' })
+  @ApiOkResponse({ type: SimpleBookListDto })
+  async getBookSuggestions(): Promise<SimpleBookListDto> {
+    return this.bookService.getBookSuggestions();
   }
 
   @Get(':id')
