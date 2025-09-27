@@ -35,6 +35,8 @@ import { BookRankingListDto } from './dto/book-ranking.dto';
 import { RankingService } from './ranking.service';
 import { RecentBookListDto } from './dto/recent-book.dto';
 import { DetailedBookDto } from './dto/detailed-book.dto';
+import { SimpleBookListDto } from './dto/simple-book.dto';
+import { BasicBookListDto } from './dto/basic-book.dto';
 
 @Controller('books')
 @ApiTags('Book API')
@@ -85,9 +87,9 @@ export class BookController {
 
   @Get('recommend')
   @Version('1')
-  @ApiOkResponse({ type: BookListDto })
+  @ApiOkResponse({ type: SimpleBookListDto })
   @ApiOperation({ summary: '추천 책 조회' })
-  async getRecommendedBooks(): Promise<BookListDto> {
+  async getRecommendedBooks(): Promise<SimpleBookListDto> {
     return this.recommendService.getRecommendedBooks();
   }
 
@@ -96,18 +98,18 @@ export class BookController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: '유저가 북마크한 책 반환' })
-  @ApiOkResponse({ type: BookListDto })
+  @ApiOkResponse({ type: BasicBookListDto })
   async getSavedBooksByUser(
     @CurrentUser() user: UserBaseInfo,
-  ): Promise<BookListDto> {
+  ): Promise<BasicBookListDto> {
     return this.bookService.getSavedBooksByUser(user.id);
   }
 
   @Get('search')
   @Version('1')
   @ApiOperation({ summary: '책 검색' })
-  @ApiOkResponse({ type: BookListDto })
-  async getBooks(@Query() query: BookSearchQuery): Promise<BookListDto> {
+  @ApiOkResponse({ type: BasicBookListDto })
+  async getBooks(@Query() query: BookSearchQuery): Promise<BasicBookListDto> {
     return this.bookService.getBooks(query);
   }
 
