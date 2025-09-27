@@ -18,6 +18,7 @@ import { RecentBookListDto } from './dto/recent-book.dto';
 import { UserBaseInfo } from 'src/auth/type/user-base-info.type';
 import { DetailedBookDto } from './dto/detailed-book.dto';
 import { ids, getRandomNIdsUnique } from '../common/id.store';
+import { BasicBookListDto } from './dto/basic-book.dto';
 
 @Injectable()
 export class BookService {
@@ -143,14 +144,14 @@ export class BookService {
     await this.bookRepository.unsaveBookFromUser(userId, bookId);
   }
 
-  async getSavedBooksByUser(userId: string): Promise<BookListDto> {
+  async getSavedBooksByUser(userId: string): Promise<BasicBookListDto> {
     const savedBooks = await this.bookRepository.getSavedBooksByUser(userId);
     const urls: (string | null)[] = await Promise.all(
       savedBooks.map((book) =>
         this.getBookCoverImageUrlByNaverSearchApi(book.isbn),
       ),
     );
-    return BookListDto.from(savedBooks, urls);
+    return BasicBookListDto.from(savedBooks, urls);
   }
 
   private async checkImageExists(url: string): Promise<boolean> {
@@ -246,14 +247,14 @@ export class BookService {
     await this.bookRepository.updateBookPages(bookId, pages);
   }
 
-  async getBooks(query: BookSearchQuery): Promise<BookListDto> {
+  async getBooks(query: BookSearchQuery): Promise<BasicBookListDto> {
     const books = await this.searchRepository.getBooks(query);
 
     const urls: (string | null)[] = await Promise.all(
       books.map((book) => this.getBookCoverImageUrlByNaverSearchApi(book.isbn)),
     );
 
-    return BookListDto.from(books, urls);
+    return BasicBookListDto.from(books, urls);
   }
 
   async getRecentBooks(user: UserBaseInfo): Promise<RecentBookListDto> {
