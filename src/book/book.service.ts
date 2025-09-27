@@ -20,6 +20,7 @@ import { DetailedBookDto } from './dto/detailed-book.dto';
 import { ids, getRandomNIdsUnique } from '../common/id.store';
 import { BasicBookListDto } from './dto/basic-book.dto';
 import { SimpleBookListDto } from './dto/simple-book.dto';
+import { AiBookDto } from './dto/ai-book.dto';
 
 @Injectable()
 export class BookService {
@@ -316,5 +317,14 @@ export class BookService {
       books.map((book) => this.getBookCoverImageUrlByNaverSearchApi(book.isbn)),
     );
     return SimpleBookListDto.from(books, urls);
+  }
+
+  async getAiBook(): Promise<AiBookDto> {
+    const book = await this.bookRepository.getAiBook();
+    if (!book) {
+      throw new NotFoundException('AI 요약 책을 찾을 수 없습니다.');
+    }
+    const url = await this.getBookCoverImageUrlByNaverSearchApi(book.isbn);
+    return AiBookDto.from(book, url);
   }
 }

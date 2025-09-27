@@ -37,6 +37,7 @@ import { RecentBookListDto } from './dto/recent-book.dto';
 import { DetailedBookDto } from './dto/detailed-book.dto';
 import { SimpleBookListDto } from './dto/simple-book.dto';
 import { BasicBookListDto } from './dto/basic-book.dto';
+import { AiBookDto } from './dto/ai-book.dto';
 
 @Controller('books')
 @ApiTags('Book API')
@@ -55,6 +56,14 @@ export class BookController {
   @HttpCode(204)
   async updateBookPages(@Body() payload: UpdatePagesPayload): Promise<void> {
     return this.bookService.updateBookPages(payload.bookId, payload.fileName);
+  }
+
+  @Get('ai')
+  @Version('1')
+  @ApiOperation({ summary: 'AI 요약 포함 책 제공' })
+  @ApiOkResponse({ type: AiBookDto })
+  async getAiBook(): Promise<AiBookDto> {
+    return this.bookService.getAiBook();
   }
 
   @Get('autocomplete')
