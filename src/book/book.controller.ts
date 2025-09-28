@@ -41,7 +41,8 @@ import { AiBookDto } from './dto/ai-book.dto';
 import { HistoryDto } from './dto/history/history.dto';
 import { HistoryService } from './history.service';
 import { CompletedBookDto } from './dto/history/completed-book.dto';
-import { PatchCompletedBookPayload } from './payload/patch-completed-book.payload';
+import { ToggleCompletedBookPayload } from './payload/toggle-completed-book.payload';
+import { PatchUpdateBookCompletionPayload } from './payload/patch-update-book-completion.payload';
 
 @Controller('books')
 @ApiTags('Book API')
@@ -166,11 +167,28 @@ export class BookController {
   })
   @ApiOkResponse({ type: CompletedBookDto })
   async completeBook(
-    @Body() payload: PatchCompletedBookPayload,
+    @Body() payload: ToggleCompletedBookPayload,
     @Param('id', ParseIntPipe) id: number,
     @CurrentUser() user: UserBaseInfo,
   ): Promise<CompletedBookDto> {
     return this.historyService.completeBook(id, payload, user.id);
+  }
+
+  @Patch(':id/completed')
+  @Version('1')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({
+    summary: '책 완독 정보 수정',
+    description: 'id는 완독 정보 ID입니다.',
+  })
+  @ApiOkResponse({ type: CompletedBookDto })
+  async updateCompletedBook(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() payload: PatchUpdateBookCompletionPayload,
+    @CurrentUser() user: UserBaseInfo,
+  ): Promise<CompletedBookDto> {
+    return this.historyService.updateCompletedBook(id, payload, user.id);
   }
 
   @Get(':id/detail')
