@@ -14,7 +14,10 @@ import { ToggleCompletedBookPayload } from './payload/toggle-completed-book.payl
 import { PatchUpdateBookCompletionPayload } from './payload/patch-update-book-completion.payload';
 import { UpdateBookCompletionData } from './type/history/update-book-completion-data.type';
 import { fromZonedTime } from 'date-fns-tz';
-import { from } from 'rxjs';
+import { HistoryDto } from './dto/history/history.dto';
+import { ReadingBookData } from './type/history/reading-book-data.type';
+import { BookCompletionWithBookData } from './type/history/book-completion-with-book-data.type';
+import { LatestReadingLogWithBookData } from './type/history/latest-reading-log-with-book-data.type';
 
 @Injectable()
 export class HistoryService {
@@ -24,18 +27,47 @@ export class HistoryService {
     private readonly bookRepository: BookRepository,
   ) {}
 
-  /*
   async getUserHistory(userId: string): Promise<HistoryDto> {
-    const readingBooksData =
-      await this.historyRepository.getReadingBooks(userId);
-    const completedBooksData =
-      await this.historyRepository.getCompletedBooks(userId);
+    const completions: BookCompletionWithBookData[] =
+      await this.historyRepository.getUserBookCompletions(userId);
+    const completedBooksData: CompletedBookData[] = completions.map((c) => ({
+      id: c.id,
+      book: c.book,
+      startedAt: c.startedAt,
+      endedAt: c.endedAt,
+      completed: true,
+    }));
+    const completedBookIds = completions.map((c) => c.bookId);
 
-    return {
-      readingBooks: ReadingBookDto.fromArray(readingBooksData),
-      completedBooks: BasicBookDto.fromArray(completedBooksData),
-    };
-  } */
+    const readings: LatestReadingLogWithBookData[] =
+      await this.historyRepository.findLatestLogsByUser(
+        userId,
+        completedBookIds,
+      );
+
+    const readingBooksData: ReadingBookData[] = readings.map((r) => ({
+      book: r.book,
+      lastPageNumber: r.log.pageNumber,
+    }));
+
+    const readingUrls = await Promise.all(
+      readingBooksData.map((data) =>
+        this.bookService.getBookCoverImageUrlByNaverSearchApi(data.book.isbn),
+      ),
+    );
+    const completedUrls = await Promise.all(
+      completedBooksData.map((data) =>
+        this.bookService.getBookCoverImageUrlByNaverSearchApi(data.book.isbn),
+      ),
+    );
+
+    return HistoryDto.from(
+      readingBooksData,
+      completedBooksData,
+      readingUrls,
+      completedUrls,
+    );
+  }
 
   async completeBook(
     bookId: number,
@@ -67,7 +99,6 @@ export class HistoryService {
       }
       await this.historyRepository.deleteBookCompletion(userId, bookId);
       const data: CompletedBookData = {
-        id: null,
         book: book,
         startedAt: null,
         endedAt: null,
@@ -92,7 +123,6 @@ export class HistoryService {
 
     const completedBook = await this.historyRepository.completeBook(data);
     const createdData: CompletedBookData = {
-      id: completedBook.id,
       book: book,
       startedAt: completedBook.startedAt,
       endedAt: completedBook.endedAt,
@@ -106,11 +136,15 @@ export class HistoryService {
   }
 
   async updateCompletedBook(
-    id: number,
+    bookId: number,
     payload: PatchUpdateBookCompletionPayload,
     userId: string,
   ): Promise<CompletedBookDto> {
-    const completion = await this.historyRepository.getBookCompletionById(id);
+    const completion =
+      await this.historyRepository.getBookCompletionByUserIdAndBookId(
+        userId,
+        bookId,
+      );
     if (!completion || completion.userId !== userId) {
       throw new NotFoundException('완독 정보를 찾을 수 없습니다.');
     }
@@ -141,13 +175,15 @@ export class HistoryService {
       endedAt: endedAt,
     };
 
-    const updated = await this.historyRepository.updateBookCompletion(id, data);
+    const updated = await this.historyRepository.updateBookCompletion(
+      completion.id,
+      data,
+    );
 
     const url = await this.bookService.getBookCoverImageUrlByNaverSearchApi(
       book.isbn,
     );
     const updatedData: CompletedBookData = {
-      id: updated.id,
       book: book,
       startedAt: updated.startedAt,
       endedAt: updated.endedAt,
