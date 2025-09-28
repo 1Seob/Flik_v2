@@ -38,6 +38,10 @@ import { DetailedBookDto } from './dto/detailed-book.dto';
 import { SimpleBookListDto } from './dto/simple-book.dto';
 import { BasicBookListDto } from './dto/basic-book.dto';
 import { AiBookDto } from './dto/ai-book.dto';
+import { HistoryDto } from './dto/history/history.dto';
+import { HistoryService } from './history.service';
+import { CompletedBookDto } from './dto/history/completed-book.dto';
+import { PatchCompletedBookPayload } from './payload/patch-completed-book.payload';
 
 @Controller('books')
 @ApiTags('Book API')
@@ -47,6 +51,7 @@ export class BookController {
     private readonly searchService: SearchService,
     private readonly recommendService: RecommendService,
     private readonly rankingService: RankingService,
+    private readonly historyService: HistoryService,
   ) {}
 
   @Post()
@@ -73,6 +78,18 @@ export class BookController {
   async getAutocomplete(@Query() query: BookSearchQuery) {
     return this.searchService.getAutocompleteSuggestions(query.query);
   }
+
+  /*
+  @Get('history')
+  @Version('1')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '유저 히스토리 조회' })
+  @ApiOkResponse({ type: HistoryDto })
+  async getUserHistory(@CurrentUser() user: UserBaseInfo): Promise<HistoryDto> {
+    return this.historyService.getUserHistory(user.id);
+  }
+    */
 
   @Get('ranking')
   @Version('1')
@@ -136,6 +153,24 @@ export class BookController {
   @ApiOkResponse({ type: BookDto })
   async getBookById(@Param('id', ParseIntPipe) id: number): Promise<BookDto> {
     return this.bookService.getBookById(id);
+  }
+
+  @Post(':id/complete')
+  @Version('1')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({
+    summary: '책 완독 처리 (토글 형식)',
+    description:
+      'completed 필드를 true로 보내면 완독 처리, false로 보내면 완독 해제',
+  })
+  @ApiOkResponse({ type: CompletedBookDto })
+  async completeBook(
+    @Body() payload: PatchCompletedBookPayload,
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: UserBaseInfo,
+  ): Promise<CompletedBookDto> {
+    return this.historyService.completeBook(id, payload, user.id);
   }
 
   @Get(':id/detail')
