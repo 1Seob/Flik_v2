@@ -4,6 +4,8 @@ import { CreateBookCompletionData } from './type/history/create-book-completion-
 import { ReadingLogData } from 'src/read/type/reading-log-data.type';
 import { BookCompletionData } from './type/history/book-completion-data.type';
 import { UpdateBookCompletionData } from './type/history/update-book-completion-data.type';
+import { BookCompletionWithBookData } from './type/history/book-completion-with-book-data.type';
+import { LatestReadingLogWithBookData } from './type/history/latest-reading-log-with-book-data.type';
 
 @Injectable()
 export class HistoryRepository {
@@ -38,10 +40,12 @@ export class HistoryRepository {
   }
 
   async deleteBookCompletion(userId: string, bookId: number): Promise<void> {
-    await this.prisma.bookCompletion.deleteMany({
+    await this.prisma.bookCompletion.delete({
       where: {
-        userId,
-        bookId,
+        userId_bookId: {
+          userId,
+          bookId,
+        },
       },
     });
   }
@@ -59,9 +63,17 @@ export class HistoryRepository {
     return count > 0;
   }
 
-  async getBookCompletionById(id: number): Promise<BookCompletionData | null> {
+  async getBookCompletionByUserIdAndBookId(
+    userId: string,
+    bookId: number,
+  ): Promise<BookCompletionData | null> {
     return this.prisma.bookCompletion.findUnique({
-      where: { id },
+      where: {
+        userId_bookId: {
+          userId,
+          bookId,
+        },
+      },
     });
   }
 
@@ -76,5 +88,98 @@ export class HistoryRepository {
         endedAt: data.endedAt,
       },
     });
+  }
+
+  async getUserBookCompletions(
+    userId: string,
+  ): Promise<BookCompletionWithBookData[]> {
+    const completions = await this.prisma.bookCompletion.findMany({
+      where: { userId },
+      include: {
+        book: {
+          select: {
+            id: true,
+            title: true,
+            author: true,
+            isbn: true,
+            views: true,
+            totalPagesCount: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+
+    return completions.map((c) => ({
+      id: c.id,
+      userId: c.userId,
+      bookId: c.bookId,
+      startedAt: c.startedAt,
+      endedAt: c.endedAt,
+      book: c.book,
+    }));
+  }
+
+  async findLatestLogsByUser(
+    userId: string,
+    excludeBookIds: number[] = [],
+  ): Promise<LatestReadingLogWithBookData[]> {
+    // 1. bookId별 최신 startedAt 뽑기
+    const grouped = await this.prisma.readingLog.groupBy({
+      by: ['bookId'],
+      where: {
+        userId,
+        startedAt: { not: null },
+        NOT: excludeBookIds.length
+          ? { bookId: { in: excludeBookIds } }
+          : undefined,
+      },
+      _max: {
+        startedAt: true,
+      },
+    });
+
+    if (grouped.length === 0) return [];
+
+    // 2. 실제 ReadingLog + Book join
+    const logs = await this.prisma.readingLog.findMany({
+      where: {
+        userId,
+        OR: grouped.map((g) => ({
+          bookId: g.bookId,
+          startedAt: g._max.startedAt,
+        })),
+      },
+      include: {
+        book: true,
+      },
+      orderBy: {
+        startedAt: 'desc',
+      },
+    });
+
+    // 3. DTO 매핑
+    return logs.map((log) => ({
+      log: {
+        id: log.id,
+        userId: log.userId,
+        bookId: log.bookId,
+        pageId: log.pageId,
+        pageNumber: log.pageNumber,
+        startedAt: log.startedAt,
+        endedAt: log.endedAt,
+        durationSec: log.durationSec,
+      },
+      book: {
+        id: log.book.id,
+        title: log.book.title,
+        author: log.book.author,
+        isbn: log.book.isbn,
+        views: log.book.views,
+        totalPagesCount: log.book.totalPagesCount,
+      },
+    }));
   }
 }
