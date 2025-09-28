@@ -8,6 +8,8 @@ import { RecommendRepository } from './recommend.repository';
 import { RecommendService } from './recommend.service';
 import { RankingRepository } from './ranking.repository';
 import { RankingService } from './ranking.service';
+import { HistoryRepository } from './history.repository';
+import { HistoryService } from './history.service';
 
 @Module({
   providers: [
@@ -18,6 +20,8 @@ import { RankingService } from './ranking.service';
     RecommendService,
     RankingRepository,
     RankingService,
+    HistoryRepository,
+    HistoryService,
   ],
   controllers: [BookController],
   imports: [SearchModule],
