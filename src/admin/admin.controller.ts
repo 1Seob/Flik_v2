@@ -2,26 +2,15 @@ import {
   Body,
   Controller,
   Post,
-  Get,
   Delete,
   Version,
-  UseGuards,
   ParseIntPipe,
   Param,
   HttpCode,
-  Query,
 } from '@nestjs/common';
-import {
-  ApiOkResponse,
-  ApiOperation,
-  ApiTags,
-  ApiBearerAuth,
-  ApiNoContentResponse,
-} from '@nestjs/swagger';
+import { ApiOperation, ApiTags, ApiNoContentResponse } from '@nestjs/swagger';
 import { AdminService } from './admin.service';
 import { UpdatePagesPayload } from 'src/book/payload/update-pages-payload';
-import { ReadingLogDto } from 'src/read/dto/reading-log.dto';
-import { JwtAuthGuard } from 'src/auth/guard/jwt-auth.guard';
 
 @Controller('admin')
 @ApiTags('Admin API')
