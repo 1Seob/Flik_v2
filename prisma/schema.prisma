@@ -28,6 +28,7 @@ model User {
   notifications         Notification[]
   readingStreakHistory  ReadingStreakHistory[]
   sentenceLikes         SentenceLike[]
+  bookCompletion        BookCompletion[]
 
   @@map("user")
 }
@@ -54,6 +55,7 @@ model Book {
   sentenceLikes         SentenceLike[]
   recommend             Recommend[]
   rankingHistory        BookRanking[]
+  bookCompletion        BookCompletion[]
 
   @@map("book")
 }
@@ -229,6 +231,26 @@ model BookRanking {
   @@unique([calculatedAt, bookId])  // 특정 시점에 동일한 책이 중복 저장되는 것을 방지
   @@index([calculatedAt, rank])     // 특정 시점의 랭킹을 빠르게 조회하기 위한 인덱스
   @@map("book_ranking")
+}
+
+model BookCompletion {
+  id            Int       @id @default(autoincrement())
+
+  userId        String    @map("user_id")
+  bookId        Int       @map("book_id")
+
+  startedAt     DateTime  @map("started_at")   
+  endedAt       DateTime  @default(now()) @map("ended_at")   
+
+  createdAt     DateTime  @default(now()) @map("created_at")
+  
+  user          User      @relation(fields: [userId], references: [id])
+  book          Book      @relation(fields: [bookId], references: [id])
+  
+  @@unique([userId, bookId])
+  @@index([userId]) 
+
+  @@map("book_completion")
 }
 
 
