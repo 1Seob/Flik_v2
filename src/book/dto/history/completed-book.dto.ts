@@ -5,6 +5,13 @@ import { CompletedBookData } from 'src/book/type/history/completed-book-data.typ
 
 export class CompletedBookDto {
   @ApiProperty({
+    description: '완독 정보 ID',
+    type: Number,
+    nullable: true,
+  })
+  id!: number | null;
+
+  @ApiProperty({
     description: '책 정보',
     type: BasicBookDto,
   })
@@ -34,6 +41,7 @@ export class CompletedBookDto {
 
   static from(data: CompletedBookData, url?: string | null): CompletedBookDto {
     return {
+      id: data.id,
       book: BasicBookDto.from(data.book, url),
       startedAt: this.toKST(data.startedAt),
       endedAt: this.toKST(data.endedAt),

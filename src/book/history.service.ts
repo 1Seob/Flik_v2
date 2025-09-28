@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -9,7 +10,12 @@ import { BookService } from './book.service';
 import { CreateBookCompletionData } from './type/history/create-book-completion-data.type';
 import { CompletedBookDto } from './dto/history/completed-book.dto';
 import { CompletedBookData } from './type/history/completed-book-data.type';
-import { PatchCompletedBookPayload } from './payload/patch-completed-book.payload';
+import { ToggleCompletedBookPayload } from './payload/toggle-completed-book.payload';
+import { PatchUpdateBookCompletionPayload } from './payload/patch-update-book-completion.payload';
+import { UpdateBookCompletionData } from './type/history/update-book-completion-data.type';
+import { fromZonedTime } from 'date-fns-tz';
+import { from } from 'rxjs';
+
 @Injectable()
 export class HistoryService {
   constructor(
@@ -33,7 +39,7 @@ export class HistoryService {
 
   async completeBook(
     bookId: number,
-    payload: PatchCompletedBookPayload,
+    payload: ToggleCompletedBookPayload,
     userId: string,
   ): Promise<CompletedBookDto> {
     const book = await this.bookRepository.getBookById(bookId);
@@ -61,6 +67,7 @@ export class HistoryService {
       }
       await this.historyRepository.deleteBookCompletion(userId, bookId);
       const data: CompletedBookData = {
+        id: null,
         book: book,
         startedAt: null,
         endedAt: null,
@@ -85,6 +92,7 @@ export class HistoryService {
 
     const completedBook = await this.historyRepository.completeBook(data);
     const createdData: CompletedBookData = {
+      id: completedBook.id,
       book: book,
       startedAt: completedBook.startedAt,
       endedAt: completedBook.endedAt,
@@ -95,5 +103,57 @@ export class HistoryService {
       book.isbn,
     );
     return CompletedBookDto.from(createdData, url);
+  }
+
+  async updateCompletedBook(
+    id: number,
+    payload: PatchUpdateBookCompletionPayload,
+    userId: string,
+  ): Promise<CompletedBookDto> {
+    const completion = await this.historyRepository.getBookCompletionById(id);
+    if (!completion || completion.userId !== userId) {
+      throw new NotFoundException('완독 정보를 찾을 수 없습니다.');
+    }
+    if (completion.userId !== userId) {
+      throw new ForbiddenException('유저 id가 일치하지 않습니다.');
+    }
+
+    const book = await this.bookRepository.getBookById(completion.bookId);
+    if (!book) {
+      throw new NotFoundException('책을 찾을 수 없습니다.');
+    }
+
+    const startedAt = fromZonedTime(
+      payload.startedAt ?? completion.startedAt,
+      'Asia/Seoul',
+    );
+    const endedAt = fromZonedTime(
+      payload.endedAt ?? completion.endedAt,
+      'Asia/Seoul',
+    );
+
+    if (startedAt && endedAt && startedAt > endedAt) {
+      throw new BadRequestException('시작일은 종료일보다 이후일 수 없습니다.');
+    }
+
+    const data: UpdateBookCompletionData = {
+      startedAt: startedAt,
+      endedAt: endedAt,
+    };
+
+    const updated = await this.historyRepository.updateBookCompletion(id, data);
+
+    const url = await this.bookService.getBookCoverImageUrlByNaverSearchApi(
+      book.isbn,
+    );
+    const updatedData: CompletedBookData = {
+      id: updated.id,
+      book: book,
+      startedAt: updated.startedAt,
+      endedAt: updated.endedAt,
+      completed: true,
+    };
+
+    return CompletedBookDto.from(updatedData, url);
   }
 }
