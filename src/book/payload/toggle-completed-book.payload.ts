@@ -1,7 +1,7 @@
 import { IsBoolean } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
-export class PatchCompletedBookPayload {
+export class ToggleCompletedBookPayload {
   @IsBoolean()
   @ApiProperty({
     description: '완료 여부',
