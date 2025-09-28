@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { SentenceLikeDto } from 'src/page/dto/sentence-like.dto';
-import { PageData } from 'src/page/type/page-type';
-import { SentenceLikeData } from 'src/page/type/sentence-like-type';
+import { SentenceLikeDto } from 'src/sentence-like/dto/sentence-like.dto';
+import { PageData } from 'src/sentence-like/type/page-type';
+import { SentenceLikeData } from 'src/sentence-like/type/sentence-like-type';
 
 export class LastPageDto {
   @ApiProperty({

@@ -3,12 +3,12 @@ import { Injectable } from '@nestjs/common';
 import { UserBaseInfo } from 'src/auth/type/user-base-info.type';
 import { ReadingLogData } from './type/reading-log-data.type';
 import { BookData } from 'src/book/type/book-data.type';
-import { PageData } from 'src/page/type/page-type';
+import { PageData } from 'src/sentence-like/type/page-type';
 import { subDays } from 'date-fns';
 import { CreateReadingStartLogData } from './type/create-reading-start-log-data.typte';
 import { CreateReadingEndLogData } from './type/create-reading-end-log-data.type';
 import { redis } from 'src/search/redis.provider';
-import { SentenceLikeData } from 'src/page/type/sentence-like-type';
+import { SentenceLikeData } from 'src/sentence-like/type/sentence-like-type';
 
 @Injectable()
 export class ReadRepository {

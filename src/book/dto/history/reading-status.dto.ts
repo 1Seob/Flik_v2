@@ -67,7 +67,7 @@ export class ReadingStatusDto {
     description: '문장 좋아요 목록',
     type: [SimpleSentenceLikeDto],
   })
-  sentenceLikes!: SimpleSentenceLikeDto[];
+  likedSentences!: SimpleSentenceLikeDto[];
 
   static from(
     data: ReadingStatusData,
@@ -79,7 +79,7 @@ export class ReadingStatusDto {
       lastPageNumber: data.lastPageNumber,
       startedAt: this.toKST(data.startedAt),
       endedAt: this.toKST(data.endedAt),
-      sentenceLikes: SimpleSentenceLikeDto.fromArray(sentenceLikes),
+      likedSentences: SimpleSentenceLikeDto.fromArray(sentenceLikes),
     };
   }
 

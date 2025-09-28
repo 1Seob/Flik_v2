@@ -7,7 +7,7 @@ import { UserBaseInfo } from 'src/auth/type/user-base-info.type';
 import { SentenceLikeData } from './type/sentence-like-type';
 
 @Injectable()
-export class PageRepository {
+export class SentenceLikeRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   async getBookById(bookId: number): Promise<BookData | null> {
@@ -76,14 +76,6 @@ export class PageRepository {
       where: {
         pageId,
         text,
-        userId,
-      },
-    });
-  }
-
-  async getSentenceLikesByUserId(userId: string): Promise<SentenceLikeData[]> {
-    return this.prisma.sentenceLike.findMany({
-      where: {
         userId,
       },
     });
