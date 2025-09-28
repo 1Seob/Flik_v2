@@ -80,17 +80,18 @@ export class BookController {
     return this.searchService.getAutocompleteSuggestions(query.query);
   }
 
-  /*
   @Get('history')
   @Version('1')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: '유저 히스토리 조회' })
+  @ApiOperation({
+    summary: '유저 히스토리 조회',
+    description: '가장 최근의 기록이 리스트의 앞쪽에 오도록 정렬되어 있습니다.',
+  })
   @ApiOkResponse({ type: HistoryDto })
   async getUserHistory(@CurrentUser() user: UserBaseInfo): Promise<HistoryDto> {
     return this.historyService.getUserHistory(user.id);
   }
-    */
 
   @Get('ranking')
   @Version('1')
@@ -104,7 +105,11 @@ export class BookController {
   @Version('1')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: '유저가 최근에 읽은 책들 조회(최대 10권)' })
+  @ApiOperation({
+    summary: '유저가 최근에 읽은 책들 조회(최대 10권)',
+    description:
+      '가장 최근에 읽은 책이 리스트의 앞쪽에 오도록 정렬되어 있습니다.',
+  })
   @ApiOkResponse({ type: RecentBookListDto })
   async getRecentBooks(
     @CurrentUser() user: UserBaseInfo,
@@ -124,7 +129,10 @@ export class BookController {
   @Version('1')
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
-  @ApiOperation({ summary: '유저가 북마크한 책 반환' })
+  @ApiOperation({
+    summary: '유저가 북마크한 책 반환',
+    description: '가장 최신 기록이 리스트의 앞쪽에 오도록 정렬되어 있습니다.',
+  })
   @ApiOkResponse({ type: BasicBookListDto })
   async getSavedBooksByUser(
     @CurrentUser() user: UserBaseInfo,
@@ -179,8 +187,7 @@ export class BookController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @ApiOperation({
-    summary: '책 완독 정보 수정',
-    description: 'id는 완독 정보 ID입니다.',
+    summary: '책 완독 정보(시작일, 종료일) 수정',
   })
   @ApiOkResponse({ type: CompletedBookDto })
   async updateCompletedBook(
