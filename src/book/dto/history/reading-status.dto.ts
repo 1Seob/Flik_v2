@@ -53,17 +53,15 @@ export class ReadingStatusDto {
     description: '시작 날짜',
     type: String,
     format: 'date-time',
-    nullable: true,
   })
-  startedAt!: string | null;
+  startedAt!: string;
 
   @ApiProperty({
     description: '완료 날짜',
     type: String,
     format: 'date-time',
-    nullable: true,
   })
-  endedAt!: string | null;
+  endedAt!: string;
 
   @ApiProperty({
     description: '문장 좋아요 목록',

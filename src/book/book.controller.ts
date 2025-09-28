@@ -217,7 +217,11 @@ export class BookController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @ApiOkResponse({ type: ReadingStatusDto })
-  @ApiOperation({ summary: '책 독서 현황 조회' })
+  @ApiOperation({
+    summary: '책 독서 현황 조회',
+    description:
+      '페이지 번호가 낮은 문장 좋아요부터 리스트의 앞쪽에 오도록 정렬되어 있습니다.',
+  })
   async getReadingStatusByBookId(
     @Param('id', ParseIntPipe) id: number,
     @CurrentUser() user: UserBaseInfo,
