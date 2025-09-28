@@ -6,6 +6,7 @@ import { BookCompletionData } from './type/history/book-completion-data.type';
 import { UpdateBookCompletionData } from './type/history/update-book-completion-data.type';
 import { BookCompletionWithBookData } from './type/history/book-completion-with-book-data.type';
 import { LatestReadingLogWithBookData } from './type/history/latest-reading-log-with-book-data.type';
+import { SimpleSentenceLikeData } from './type/history/simple-sentence-like-data.type';
 
 @Injectable()
 export class HistoryRepository {
@@ -35,6 +36,22 @@ export class HistoryRepository {
       },
       orderBy: {
         startedAt: 'asc', // 가장 처음 기록
+      },
+    });
+  }
+
+  async findLastLogByUserAndBook(
+    userId: string,
+    bookId: number,
+  ): Promise<ReadingLogData | null> {
+    return this.prisma.readingLog.findFirst({
+      where: {
+        userId,
+        bookId,
+        startedAt: { not: null }, // 진입 로그 기준
+      },
+      orderBy: {
+        startedAt: 'desc', // 가장 최근 기록
       },
     });
   }
@@ -180,6 +197,33 @@ export class HistoryRepository {
         views: log.book.views,
         totalPagesCount: log.book.totalPagesCount,
       },
+    }));
+  }
+
+  async getSentenceLikesByUserAndBook(
+    userId: string,
+    bookId: number,
+  ): Promise<SimpleSentenceLikeData[]> {
+    const sentenceLikes = await this.prisma.sentenceLike.findMany({
+      where: { userId, bookId },
+      include: {
+        page: {
+          select: {
+            number: true,
+          },
+        },
+      },
+      orderBy: {
+        page: {
+          number: 'asc', // 페이지 번호 낮은 순
+        },
+      },
+    });
+
+    return sentenceLikes.map((sl) => ({
+      id: sl.id,
+      text: sl.text,
+      pageNumber: sl.page.number,
     }));
   }
 }
