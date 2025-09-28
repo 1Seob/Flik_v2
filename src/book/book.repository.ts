@@ -4,7 +4,7 @@ import { BookData } from './type/book-data.type';
 import { SaveBookData } from './type/save-book-data.type';
 import { UpdateBookData } from './type/update-book-data.type';
 import { redis } from '../search/redis.provider';
-import { PageData } from 'src/page/type/page-type';
+import { PageData } from 'src/sentence-like/type/page-type';
 import { Prisma } from '@prisma/client';
 import { ReviewData } from 'src/review/type/review-data.type';
 import { BookWithSummaryData } from './type/book-with-summary.type';
@@ -59,13 +59,6 @@ export class BookRepository {
     });
   }
 
-  async deleteBook(bookId: number): Promise<void> {
-    await this.prisma.book.update({
-      where: { id: bookId },
-      data: { deletedAt: new Date() },
-    });
-  }
-
   async getBookByTitleAndAuthor(
     title: string,
     author: string,
@@ -107,26 +100,6 @@ export class BookRepository {
         bookId: true,
       },
       orderBy: { number: 'asc' },
-    });
-  }
-
-  async updateBook(bookId: number, data: UpdateBookData): Promise<BookData> {
-    return this.prisma.book.update({
-      where: { id: bookId },
-      data: {
-        title: data.title,
-        author: data.author,
-        isbn: data.isbn ?? null,
-        totalPagesCount: data.totalPagesCount,
-      },
-      select: {
-        id: true,
-        title: true,
-        author: true,
-        isbn: true,
-        views: true,
-        totalPagesCount: true,
-      },
     });
   }
 
@@ -174,27 +147,6 @@ export class BookRepository {
       },
     });
     return savedBook !== null;
-  }
-
-  async updateBookPages(bookId: number, pages: string[]): Promise<void> {
-    await this.prisma.$transaction([
-      this.prisma.page.deleteMany({
-        where: { bookId },
-      }),
-      this.prisma.page.createMany({
-        data: pages.map((content, index) => ({
-          content,
-          number: index + 1,
-          bookId,
-        })),
-      }),
-      this.prisma.book.update({
-        where: { id: bookId },
-        data: {
-          totalPagesCount: pages.length,
-        },
-      }),
-    ]);
   }
 
   async findRecentBooksAndPages(

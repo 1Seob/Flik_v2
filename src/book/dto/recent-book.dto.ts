@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { BookData } from '../type/book-data.type';
-import { PageData } from 'src/page/type/page-type';
+import { PageData } from 'src/sentence-like/type/page-type';
 import { BasicBookDto } from './basic-book.dto';
 
 export class SimplePageDto {

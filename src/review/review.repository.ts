@@ -49,6 +49,7 @@ export class ReviewRepository {
   ): Promise<ReviewWithLikedData[]> {
     const reviews = await this.prisma.review.findMany({
       where: { bookId },
+      orderBy: { createdAt: 'desc' }, // 최신 리뷰가 위로 오도록 정렬
       include: {
         _count: {
           select: { likedBy: true },
@@ -181,6 +182,7 @@ export class ReviewRepository {
   async getReviewsByUserId(userId: string): Promise<MyReviewData[]> {
     const reviews = await this.prisma.review.findMany({
       where: { userId },
+      orderBy: { createdAt: 'desc' }, // 최신 리뷰가 위로 오도록 정렬
       include: {
         _count: {
           select: { likedBy: true },

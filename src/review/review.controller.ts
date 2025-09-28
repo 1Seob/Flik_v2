@@ -51,7 +51,10 @@ export class ReviewController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOkResponse({ type: MyReviewListDto })
-  @ApiOperation({ summary: '유저의 리뷰들 조회' })
+  @ApiOperation({
+    summary: '유저의 리뷰들 조회',
+    description: '최신 리뷰가 리스트의 앞쪽에 오도록 정렬',
+  })
   async getUserReviews(
     @CurrentUser() user: UserBaseInfo,
   ): Promise<MyReviewListDto> {
@@ -62,7 +65,10 @@ export class ReviewController {
   @Version('1')
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
-  @ApiOperation({ summary: '책의 리뷰들 조회' })
+  @ApiOperation({
+    summary: '책의 리뷰들 조회',
+    description: '최신 리뷰가 리스트의 앞쪽에 오도록 정렬',
+  })
   @ApiOkResponse({ type: ReviewListDto })
   async getReviewsByBookId(
     @Param('id', ParseIntPipe) id: number,

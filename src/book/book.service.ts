@@ -11,7 +11,7 @@ import { parsePagesFromJson } from './parsing';
 import { PatchUpdateBookPayload } from './payload/patch-update-book.payload';
 import { UpdateBookData } from './type/update-book-data.type';
 import axios from 'axios';
-import { PageListDto } from 'src/page/dto/page.dto';
+import { PageListDto } from 'src/sentence-like/dto/page.dto';
 import { BookSearchQuery } from 'src/search/query/book-search-query';
 import { SearchRepository } from 'src/search/search.repository';
 import { RecentBookListDto } from './dto/recent-book.dto';
@@ -69,15 +69,6 @@ export class BookService {
   }
     */
 
-  async deleteBook(bookId: number): Promise<void> {
-    const book = await this.bookRepository.getBookById(bookId);
-    if (!book) {
-      throw new NotFoundException('책을 찾을 수 없습니다.');
-    }
-
-    await this.bookRepository.deleteBook(bookId);
-  }
-
   async getBookPages(bookId: number): Promise<PageListDto> {
     const book = await this.bookRepository.getBookById(bookId);
     if (!book) {
@@ -90,35 +81,6 @@ export class BookService {
       book.totalPagesCount,
       pages,
     );
-  }
-
-  async patchUpdateBook(
-    bookId: number,
-    payload: PatchUpdateBookPayload,
-  ): Promise<BookDto> {
-    if (payload.title === null) {
-      throw new BadRequestException('title은 null이 될 수 없습니다.');
-    }
-    if (payload.author === null) {
-      throw new BadRequestException('author은 null이 될 수 없습니다.');
-    }
-
-    const book = await this.bookRepository.getBookById(bookId);
-    if (!book) {
-      throw new NotFoundException('책을 찾을 수 없습니다.');
-    }
-
-    const url = await this.getBookCoverImageUrlByNaverSearchApi(book.isbn);
-
-    const data: UpdateBookData = {
-      title: payload.title,
-      author: payload.author,
-      isbn: payload.isbn ?? null,
-      totalPagesCount: payload.totalPages,
-    };
-
-    const updatedBook = await this.bookRepository.updateBook(bookId, data);
-    return BookDto.from(updatedBook, url);
   }
 
   async saveBookToUser(bookId: number, userId: string): Promise<BookDto> {
@@ -237,16 +199,6 @@ export class BookService {
       }
       return null;
     }
-  }
-
-  async updateBookPages(bookId: number, fileName: string): Promise<void> {
-    const book = await this.bookRepository.getBookById(bookId);
-    if (!book) {
-      throw new NotFoundException('책을 찾을 수 없습니다.');
-    }
-
-    const pages = parsePagesFromJson(fileName);
-    await this.bookRepository.updateBookPages(bookId, pages);
   }
 
   async getBooks(query: BookSearchQuery): Promise<BasicBookListDto> {
