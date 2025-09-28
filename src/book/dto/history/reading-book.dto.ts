@@ -10,7 +10,7 @@ export class ReadingBookDto {
   book!: BasicBookDto;
 
   @ApiProperty({
-    description: '마지막 페이지 번호',
+    description: '마지막 독서 페이지 번호',
     type: Number,
   })
   lastPageNumber!: number;

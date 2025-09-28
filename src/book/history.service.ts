@@ -18,6 +18,9 @@ import { HistoryDto } from './dto/history/history.dto';
 import { ReadingBookData } from './type/history/reading-book-data.type';
 import { BookCompletionWithBookData } from './type/history/book-completion-with-book-data.type';
 import { LatestReadingLogWithBookData } from './type/history/latest-reading-log-with-book-data.type';
+import { ReadingStatusDto } from './dto/history/reading-status.dto';
+import { SimpleSentenceLikeData } from './type/history/simple-sentence-like-data.type';
+import { ReadingStatusData } from './type/history/reading-status-data.type';
 
 @Injectable()
 export class HistoryService {
@@ -191,5 +194,65 @@ export class HistoryService {
     };
 
     return CompletedBookDto.from(updatedData, url);
+  }
+
+  async getReadingStatusByBookId(
+    bookId: number,
+    userId: string,
+  ): Promise<ReadingStatusDto> {
+    const book = await this.bookRepository.getBookById(bookId);
+    if (!book) {
+      throw new NotFoundException('책을 찾을 수 없습니다.');
+    }
+
+    const likedSentences: SimpleSentenceLikeData[] =
+      await this.historyRepository.getSentenceLikesByUserAndBook(
+        userId,
+        bookId,
+      );
+
+    const url = await this.bookService.getBookCoverImageUrlByNaverSearchApi(
+      book.isbn,
+    );
+
+    const lastLog = await this.historyRepository.findLastLogByUserAndBook(
+      userId,
+      bookId,
+    );
+    if (!lastLog || !lastLog.startedAt) {
+      throw new NotFoundException('해당 책에 대한 독서 기록이 없습니다.');
+    }
+
+    const completion =
+      await this.historyRepository.getBookCompletionByUserIdAndBookId(
+        userId,
+        bookId,
+      );
+
+    if (!completion) {
+      const firstLog = await this.historyRepository.findFirstLogByUserAndBook(
+        userId,
+        bookId,
+      );
+      if (!firstLog || !firstLog.startedAt) {
+        throw new NotFoundException('해당 책에 대한 독서 기록이 없습니다.');
+      }
+      const data: ReadingStatusData = {
+        book: book,
+        lastPageNumber: lastLog.pageNumber,
+        startedAt: firstLog.startedAt,
+        endedAt: lastLog.startedAt,
+      };
+      return ReadingStatusDto.from(data, likedSentences, url);
+    }
+
+    const data: ReadingStatusData = {
+      book: book,
+      lastPageNumber: lastLog.pageNumber,
+      startedAt: completion.startedAt,
+      endedAt: completion.endedAt,
+    };
+
+    return ReadingStatusDto.from(data, likedSentences, url);
   }
 }

@@ -43,6 +43,7 @@ import { HistoryService } from './history.service';
 import { CompletedBookDto } from './dto/history/completed-book.dto';
 import { ToggleCompletedBookPayload } from './payload/toggle-completed-book.payload';
 import { PatchUpdateBookCompletionPayload } from './payload/patch-update-book-completion.payload';
+import { ReadingStatusDto } from './dto/history/reading-status.dto';
 
 @Controller('books')
 @ApiTags('Book API')
@@ -209,6 +210,23 @@ export class BookController {
     @CurrentUser() user: UserBaseInfo,
   ): Promise<DetailedBookDto> {
     return this.bookService.getDetailedBookById(id, user.id);
+  }
+
+  @Get(':id/status')
+  @Version('1')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @ApiOkResponse({ type: ReadingStatusDto })
+  @ApiOperation({
+    summary: '책 독서 현황 조회',
+    description:
+      '페이지 번호가 낮은 문장 좋아요부터 리스트의 앞쪽에 오도록 정렬되어 있습니다.',
+  })
+  async getReadingStatusByBookId(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: UserBaseInfo,
+  ): Promise<ReadingStatusDto> {
+    return this.historyService.getReadingStatusByBookId(id, user.id);
   }
 
   @Get(':id/pages/download')
