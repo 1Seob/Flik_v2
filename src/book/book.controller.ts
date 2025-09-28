@@ -26,7 +26,7 @@ import { PatchUpdateBookPayload } from './payload/patch-update-book.payload';
 import { JwtAuthGuard } from '../auth/guard/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorator/user.decorator';
 import { UserBaseInfo } from '../auth/type/user-base-info.type';
-import { PageListDto } from 'src/page/dto/page.dto';
+import { PageListDto } from 'src/sentence-like/dto/page.dto';
 import { UpdatePagesPayload } from './payload/update-pages-payload';
 import { SearchService } from 'src/search/search.service';
 import { BookSearchQuery } from 'src/search/query/book-search-query';
@@ -55,15 +55,6 @@ export class BookController {
     private readonly rankingService: RankingService,
     private readonly historyService: HistoryService,
   ) {}
-
-  @Post()
-  @Version('1')
-  @ApiOperation({ summary: '책 페이지 업데이트' })
-  @ApiNoContentResponse()
-  @HttpCode(204)
-  async updateBookPages(@Body() payload: UpdatePagesPayload): Promise<void> {
-    return this.bookService.updateBookPages(payload.bookId, payload.fileName);
-  }
 
   @Get('ai')
   @Version('1')
@@ -157,14 +148,6 @@ export class BookController {
     return this.bookService.getBookSuggestions();
   }
 
-  @Get(':id')
-  @Version('1')
-  @ApiOperation({ summary: '책 조회' })
-  @ApiOkResponse({ type: BookDto })
-  async getBookById(@Param('id', ParseIntPipe) id: number): Promise<BookDto> {
-    return this.bookService.getBookById(id);
-  }
-
   @Post(':id/complete')
   @Version('1')
   @ApiBearerAuth()
@@ -252,26 +235,6 @@ export class BookController {
   }
   // 프로젝트 루트 디렉토리에 있는 원문 텍스트 파일의 이름을 fileName으로 받습니다. ex) Frankenstein.txt
   */
-
-  @Patch(':id')
-  @Version('1')
-  @ApiOperation({ summary: '책 정보 수정' })
-  @ApiOkResponse({ type: BookDto })
-  async updateBook(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() payload: PatchUpdateBookPayload,
-  ): Promise<BookDto> {
-    return this.bookService.patchUpdateBook(id, payload);
-  }
-
-  @Delete(':id')
-  @Version('1')
-  @HttpCode(204)
-  @ApiOperation({ summary: 'DB에서 책 삭제' })
-  @ApiNoContentResponse()
-  async deleteBook(@Param('id', ParseIntPipe) id: number): Promise<void> {
-    return this.bookService.deleteBook(id);
-  }
 
   @Post(':id/save')
   @Version('1')

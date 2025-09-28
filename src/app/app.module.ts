@@ -15,24 +15,26 @@ import { BookModule } from '../book/book.module';
 import { ReviewModule } from '../review/review.module';
 import { SearchModule } from 'src/search/search.module';
 import { SearchRepository } from 'src/search/search.repository';
-import { PageModule } from 'src/page/page.module';
+import { SentenceLikeModule } from 'src/sentence-like/sentence-like.module';
 import { ReadModule } from 'src/read/read.module';
 import { redis } from 'src/search/redis.provider';
 import { ScheduleModule } from '@nestjs/schedule';
 import { RankingScheduler } from 'src/book/ranking.scheduler';
 import { setIds } from 'src/common/id.store';
+import { AdminModule } from 'src/admin/admin.module';
 
 @Module({
   imports: [
     AuthModule,
     UserModule,
     BookModule,
-    PageModule,
     configModule,
     CommonModule,
     ReadModule,
     ReviewModule,
     SearchModule,
+    SentenceLikeModule,
+    AdminModule,
     ScheduleModule.forRoot(),
   ],
   controllers: [AppController],
