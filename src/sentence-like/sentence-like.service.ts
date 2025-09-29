@@ -73,4 +73,12 @@ export class SentenceLikeService {
 
     return this.sentenceLikeRepository.deleteSentenceLike(id);
   }
+
+  async getSentenceLikeById(id: number): Promise<SentenceLikeDto> {
+    const like = await this.sentenceLikeRepository.getSentenceLikeById(id);
+    if (!like) {
+      throw new NotFoundException('문장 좋아요를 찾을 수 없습니다.');
+    }
+    return SentenceLikeDto.from(like);
+  }
 }
