@@ -15,7 +15,7 @@ export class RankingService {
   async getBookRankings(): Promise<BookRankingListDto> {
     // 1. 최신 랭킹 데이터를 가져옵니다.
     const latestRankings: BookRankingData[] =
-      await this.rankingRepository.findLatestRankings(10);
+      await this.rankingRepository.findLatestRankings(9);
     if (latestRankings.length === 0) return BookRankingListDto.from([]);
 
     const latestBookIds = latestRankings.map((r) => r.book.id);

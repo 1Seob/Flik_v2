@@ -42,6 +42,16 @@ export class SentenceLikeController {
     return this.sentenceLikeService.createSentenceLike(payload, user);
   }
 
+  @Get(':id')
+  @Version('1')
+  @ApiOperation({ summary: '문장 좋아요 조회' })
+  @ApiOkResponse({ type: SentenceLikeDto })
+  async getSentenceLikeById(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<SentenceLikeDto> {
+    return this.sentenceLikeService.getSentenceLikeById(id);
+  }
+
   @Delete(':id')
   @Version('1')
   @ApiBearerAuth()

@@ -148,6 +148,14 @@ export class BookController {
     return this.bookService.getBookSuggestions();
   }
 
+  @Get(':id')
+  @Version('1')
+  @ApiOperation({ summary: '책 조회' })
+  @ApiOkResponse({ type: BookDto })
+  async getBookById(@Param('id', ParseIntPipe) id: number): Promise<BookDto> {
+    return this.bookService.getBookById(id);
+  }
+
   @Post(':id/complete')
   @Version('1')
   @ApiBearerAuth()
