@@ -4,12 +4,9 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { BookRepository } from './book.repository';
-import { BookDto, BookListDto } from './dto/book.dto';
+import { BookDto } from './dto/book.dto';
 import { SaveBookPayload } from './payload/save-book.payload';
 import { SaveBookData } from './type/save-book-data.type';
-import { parsePagesFromJson } from './parsing';
-import { PatchUpdateBookPayload } from './payload/patch-update-book.payload';
-import { UpdateBookData } from './type/update-book-data.type';
 import axios from 'axios';
 import { PageListDto } from 'src/sentence-like/dto/page.dto';
 import { BookSearchQuery } from 'src/search/query/book-search-query';
@@ -21,6 +18,7 @@ import { ids, getRandomNIdsUnique } from '../common/id.store';
 import { BasicBookListDto } from './dto/basic-book.dto';
 import { SimpleBookListDto } from './dto/simple-book.dto';
 import { AiBookDto } from './dto/ai-book.dto';
+import { redis } from 'src/search/redis.provider';
 
 @Injectable()
 export class BookService {
@@ -35,6 +33,7 @@ export class BookService {
     'https://openapi.naver.com/v1/search/book_adv.json';
   private readonly naverClientId = process.env.NAVER_CLIENT_ID;
   private readonly naverClientSecret = process.env.NAVER_CLIENT_SECRET;
+  private readonly googleApiKey = process.env.GOOGLE_API_KEY;
 
   async getBookById(bookId: number): Promise<BookDto> {
     const book = await this.bookRepository.getBookById(bookId);
@@ -196,6 +195,51 @@ export class BookService {
         console.error(`[Naver] API 요청 실패 (ISBN=${isbn}):`, err.message);
       } else {
         console.error(`[Naver] API 요청 실패 (ISBN=${isbn}):`, err);
+      }
+      return null;
+    }
+  }
+
+  async getBookCoverImageUrlByGoogleBooksApi(
+    isbn: string | null,
+  ): Promise<string | null> {
+    if (!isbn) {
+      return null;
+    }
+
+    const cacheKey = `book:cover:${isbn}`;
+
+    // 1) 캐시 조회
+    const cached = await redis.get(cacheKey);
+    if (cached !== null) {
+      return cached;
+    }
+
+    const googleUrl = `https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}&maxResults=1&key=${this.googleApiKey}`;
+
+    try {
+      const res = await axios.get(googleUrl);
+      const links = res.data?.items?.[0]?.volumeInfo?.imageLinks;
+
+      if (!links) return null;
+
+      // 아무 해상도나 우선 반환
+      for (const key in links) {
+        if (typeof links[key] === 'string') {
+          await redis.set(cacheKey, links[key], 'EX', 23 * 60 * 60); // 23시간 캐시
+          return links[key];
+        }
+      }
+
+      return null;
+    } catch (err) {
+      if (err instanceof Error) {
+        console.error(
+          `[GoogleBooks] API 요청 실패 (ISBN=${isbn}):`,
+          err.message,
+        );
+      } else {
+        console.error(`[GoogleBooks] API 요청 실패 (ISBN=${isbn}):`, err);
       }
       return null;
     }
