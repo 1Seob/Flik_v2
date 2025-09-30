@@ -83,4 +83,19 @@ export class SearchRepository {
     });
     return books.map((book) => book.id);
   }
+
+  async getAllBookIsbns(): Promise<(string | null)[]> {
+    const books = await this.prisma.book.findMany({
+      where: {
+        deletedAt: null,
+        NOT: {
+          isbn: null, // ISBN이 null이 아닌 책만 조회
+        },
+      },
+      select: {
+        isbn: true,
+      },
+    });
+    return books.map((book) => book.isbn);
+  }
 }
