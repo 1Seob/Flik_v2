@@ -22,6 +22,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { RankingScheduler } from 'src/book/ranking.scheduler';
 import { setIds } from 'src/common/id.store';
 import { AdminModule } from 'src/admin/admin.module';
+import { BookService } from 'src/book/book.service';
 
 @Module({
   imports: [
@@ -41,7 +42,10 @@ import { AdminModule } from 'src/admin/admin.module';
   providers: [AppService, RankingScheduler],
 })
 export class AppModule implements NestModule, OnModuleInit {
-  constructor(private readonly searchRepository: SearchRepository) {}
+  constructor(
+    private readonly searchRepository: SearchRepository,
+    private readonly bookService: BookService,
+  ) {}
 
   configure(consumer: MiddlewareConsumer) {
     consumer.apply(LoggerMiddleware).forRoutes('*');
@@ -60,5 +64,39 @@ export class AppModule implements NestModule, OnModuleInit {
     console.log('데이터베이스에서 책 정보를 Redis로 로딩 중...');
     await this.searchRepository.loadBooksToRedis();
     console.log('Redis 로딩 완료!');
+    this.warmUpCache();
+  }
+
+  private async warmUpCache() {
+    // 비동기로 돌리되, 앱 부팅은 지연 안 시킴
+    (async () => {
+      console.log('🚀 Redis warm-up 시작');
+      try {
+        const isCoverImageCachingInitialized: boolean = false; // 책 표지 이미지 캐싱 초기화 여부
+
+        if (isCoverImageCachingInitialized) {
+          let urlCount = 0;
+
+          const bookIsbns = await this.searchRepository.getAllBookIsbns();
+          console.log(
+            `총 ${bookIsbns.length}개의 책 ISBN을 가져왔습니다. (캐싱 대상: ${bookIsbns.filter((isbn) => isbn !== null).length}개)`,
+          );
+          for (const isbn of bookIsbns) {
+            const url =
+              await this.bookService.getBookCoverImageUrlByGoogleBooksApi(isbn);
+            if (url) {
+              urlCount++;
+              console.log(`[Preload] cover cached for isbn=${isbn}`);
+            } else console.log(`[Preload]❌ no cover found for isbn=${isbn}`);
+            await new Promise((resolve) => setTimeout(resolve, 1000)); // 1초 sleep
+          }
+          console.log(
+            `모든 책 표지 이미지 캐싱 완료! 총 ${urlCount}개 캐시됨.`,
+          );
+        }
+      } catch (e) {
+        console.error('❌ Redis warm-up 실패:', e);
+      }
+    })();
   }
 }
