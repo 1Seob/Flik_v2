@@ -154,4 +154,12 @@ export class UserService {
       user.profileImagePath,
     );
   }
+
+  async getProfileImageUrlById(userId: string): Promise<string> {
+    const user = await this.userRepository.getUserById(userId);
+    if (!user) {
+      throw new NotFoundException('사용자를 찾을 수 없습니다.');
+    }
+    return this.getProfileImageUrl(user);
+  }
 }
