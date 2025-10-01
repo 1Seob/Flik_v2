@@ -3,5 +3,5 @@ export type BookWithSummaryData = {
   title: string;
   author: string;
   isbn: string | null;
-  summary: string;
+  aiSummary: string;
 };

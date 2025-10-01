@@ -37,7 +37,7 @@ import { RecentBookListDto } from './dto/recent-book.dto';
 import { DetailedBookDto } from './dto/detailed-book.dto';
 import { SimpleBookListDto } from './dto/simple-book.dto';
 import { BasicBookListDto } from './dto/basic-book.dto';
-import { AiBookDto } from './dto/ai-book.dto';
+import { AiBookDto, AiBookListDto } from './dto/ai-book.dto';
 import { HistoryDto } from './dto/history/history.dto';
 import { HistoryService } from './history.service';
 import { CompletedBookDto } from './dto/history/completed-book.dto';
@@ -111,9 +111,9 @@ export class BookController {
 
   @Get('recommend')
   @Version('1')
-  @ApiOkResponse({ type: SimpleBookListDto })
+  @ApiOkResponse({ type: AiBookListDto })
   @ApiOperation({ summary: '추천 책 조회' })
-  async getRecommendedBooks(): Promise<SimpleBookListDto> {
+  async getRecommendedBooks(): Promise<AiBookListDto> {
     return this.recommendService.getRecommendedBooks();
   }
 
