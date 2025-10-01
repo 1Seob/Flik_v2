@@ -38,8 +38,33 @@ export class AiBookDto {
       id: data.id,
       title: data.title,
       author: data.author,
-      summary: data.summary,
+      summary: data.aiSummary,
       coverImageUrl: url ?? null,
+    };
+  }
+
+  static fromArray(
+    data: BookWithSummaryData[],
+    url?: (string | null)[],
+  ): AiBookDto[] {
+    const urls = url ?? data.map(() => null);
+    return data.map((book, index) => AiBookDto.from(book, urls[index]));
+  }
+}
+
+export class AiBookListDto {
+  @ApiProperty({
+    description: 'AI 요약 책 목록',
+    type: [AiBookDto],
+  })
+  books!: AiBookDto[];
+
+  static from(
+    data: BookWithSummaryData[],
+    url?: (string | null)[],
+  ): AiBookListDto {
+    return {
+      books: AiBookDto.fromArray(data, url),
     };
   }
 }
