@@ -103,4 +103,14 @@ export class UserController {
   async getUserById(@Param('id') id: string): Promise<UserDto> {
     return this.userService.getUserById(id);
   }
+
+  @Get(':id/profile-image-url')
+  @Version('1')
+  @ApiOkResponse({ type: String })
+  @ApiOperation({
+    summary: '유저의 프로필 사진 URL 요청 (12시간 유효)',
+  })
+  async getProfileImageUrlById(@Param('id') id: string): Promise<string> {
+    return this.userService.getProfileImageUrlById(id);
+  }
 }
