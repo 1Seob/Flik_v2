@@ -1,6 +1,7 @@
 import { PrismaService } from 'src/common/services/prisma.service';
 import { Injectable } from '@nestjs/common';
 import { BookData } from './type/book-data.type';
+import { BookWithSummaryData } from './type/book-with-summary.type';
 
 @Injectable()
 export class RecommendRepository {
@@ -133,5 +134,24 @@ export class RecommendRepository {
     return this.prisma.book.findMany({
       where: { id: { in: bookIds } },
     });
+  }
+
+  async getBooksWithSummaryByIds(
+    ids: number[],
+  ): Promise<BookWithSummaryData[]> {
+    const books = await this.prisma.book.findMany({
+      where: { id: { in: ids } },
+      select: {
+        id: true,
+        title: true,
+        author: true,
+        isbn: true,
+        aiSummary: true,
+      },
+    });
+    return books.map((book) => ({
+      ...book,
+      aiSummary: book.aiSummary ?? '',
+    }));
   }
 }

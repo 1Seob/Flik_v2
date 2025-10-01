@@ -3,6 +3,8 @@ import { RecommendRepository } from './recommend.repository';
 import { PrismaService } from 'src/common/services/prisma.service';
 import { BookService } from './book.service';
 import { SimpleBookListDto } from './dto/simple-book.dto';
+import { AiBookListDto } from './dto/ai-book.dto';
+import { BookWithSummaryData } from './type/book-with-summary.type';
 
 /* 추천 점수 가중치
 const WEIGHTS = {
@@ -19,14 +21,17 @@ export class RecommendService {
     private readonly bookService: BookService,
   ) {}
 
-  async getRecommendedBooks(): Promise<SimpleBookListDto> {
+  async getRecommendedBooks(): Promise<AiBookListDto> {
     const books = await this.recommendRepository.getRecommendedBooks();
+    const ids = books.map((b) => b.id);
+    const data: BookWithSummaryData[] =
+      await this.recommendRepository.getBooksWithSummaryByIds(ids);
     const urls: (string | null)[] = await Promise.all(
       books.map((book) =>
         this.bookService.getBookCoverImageUrlByNaverSearchApi(book.isbn),
       ),
     );
-    return SimpleBookListDto.from(books, urls);
+    return AiBookListDto.from(data, urls);
   }
 
   /*
