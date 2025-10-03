@@ -19,6 +19,7 @@ import { BasicBookListDto } from './dto/basic-book.dto';
 import { SimpleBookListDto } from './dto/simple-book.dto';
 import { AiBookDto } from './dto/ai-book.dto';
 import { redis } from 'src/search/redis.provider';
+import { BookData } from './type/book-data.type';
 
 @Injectable()
 export class BookService {
@@ -283,26 +284,43 @@ export class BookService {
 
     const averageRating =
       await this.bookRepository.getAverageRatingByBookId(bookId);
-    const isSaved = await this.bookRepository.isBookSavedByUser(userId, bookId);
     const url = await this.getBookCoverImageUrlByNaverSearchApi(book.isbn);
     const topReviews = await this.bookRepository.getTopReviewsByBookId(bookId);
-    const randomBookIds = getRandomNIdsUnique(4, ids);
-    const randomBooks = await this.bookRepository.getBooksByIds(randomBookIds);
-    const randomUrls: (string | null)[] = await Promise.all(
-      randomBooks.map((b) => this.getBookCoverImageUrlByNaverSearchApi(b.isbn)),
+
+    const otherBooksByAuthor = await this.bookRepository.getOtherBooksByAuthor(
+      book.author,
+      bookId,
+      4,
+    );
+    const otherBooksByAuthorUrl: (string | null)[] = await Promise.all(
+      otherBooksByAuthor.map((b) =>
+        this.getBookCoverImageUrlByNaverSearchApi(b.isbn),
+      ),
+    );
+    let similarBooks: BookData[] = [];
+    if (otherBooksByAuthor.length < 4) {
+      const needed = 4 - otherBooksByAuthor.length;
+      const randomBookIds = getRandomNIdsUnique(needed, ids);
+      similarBooks = await this.bookRepository.getBooksByIds(randomBookIds);
+    }
+
+    const similarBooksUrls: (string | null)[] = await Promise.all(
+      similarBooks.map((b) =>
+        this.getBookCoverImageUrlByNaverSearchApi(b.isbn),
+      ),
     );
     const firstPage = await this.bookRepository.getFirstPageOfBook(bookId);
-
     return DetailedBookDto.from(
       book,
       topReviews,
       topReviews.map((r) => r.nickname),
-      randomBooks,
+      similarBooks,
+      otherBooksByAuthor,
       averageRating ?? 0,
-      isSaved,
       firstPage?.content ?? '',
       url,
-      randomUrls,
+      similarBooksUrls,
+      otherBooksByAuthorUrl,
     );
   }
 
