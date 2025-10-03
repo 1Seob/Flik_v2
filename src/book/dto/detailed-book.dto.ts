@@ -42,12 +42,6 @@ export class DetailedBookDto {
   averageRating!: number;
 
   @ApiProperty({
-    description: '책 저장 여부',
-    type: Boolean,
-  })
-  isSaved!: boolean;
-
-  @ApiProperty({
     description: '책 커버 이미지 URL',
     type: String,
     nullable: true,
@@ -67,6 +61,12 @@ export class DetailedBookDto {
   similarBooks!: BasicBookDto[];
 
   @ApiProperty({
+    description: '같은 작가의 책 목록',
+    type: [BasicBookDto],
+  })
+  otherBooksByAuthor!: BasicBookDto[];
+
+  @ApiProperty({
     description: '미리보기',
     type: String,
   })
@@ -77,13 +77,16 @@ export class DetailedBookDto {
     reviews: ReviewData[],
     nicknames: string[],
     similarBooks: BookData[],
+    otherBooksByAuthor: BookData[],
     averageRating: number,
-    isSaved: boolean,
     preview: string,
     url?: string | null,
     similarBooksUrl?: (string | null)[],
+    otherBooksByAuthorUrl?: (string | null)[],
   ): DetailedBookDto {
     const similarBooksUrls = similarBooksUrl ?? similarBooks.map(() => null);
+    const otherBooksByAuthorUrls =
+      otherBooksByAuthorUrl ?? otherBooksByAuthor.map(() => null);
     return {
       id: data.id,
       title: data.title,
@@ -92,10 +95,13 @@ export class DetailedBookDto {
       totalPages: data.totalPagesCount,
       coverImageUrl: url ?? null,
       averageRating: averageRating,
-      isSaved: isSaved,
       preview: preview,
       bestReviews: SimpleReviewDto.fromArray(reviews, nicknames),
       similarBooks: BasicBookDto.fromArray(similarBooks, similarBooksUrls),
+      otherBooksByAuthor: BasicBookDto.fromArray(
+        otherBooksByAuthor,
+        otherBooksByAuthorUrls,
+      ),
     };
   }
 }

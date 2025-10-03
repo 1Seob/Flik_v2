@@ -362,4 +362,19 @@ export class BookRepository {
 
     return books.length > 0 ? books[0] : null;
   }
+
+  async getOtherBooksByAuthor(
+    author: string,
+    excludeBookId: number,
+    limit = 5,
+  ): Promise<BookData[]> {
+    return this.prisma.book.findMany({
+      where: {
+        author,
+        id: { not: excludeBookId },
+      },
+      take: limit,
+      orderBy: { views: 'desc' },
+    });
+  }
 }
