@@ -10,21 +10,15 @@ export class ReadingProgressDto {
   book!: BookDto;
 
   @ApiProperty({
-    description: '최대 페이지',
-  })
-  maxPageRead!: number;
-
-  @ApiProperty({
-    description: '달성률',
+    description: '마지막 독서 페이지 번호',
     type: Number,
   })
-  progress!: number;
+  lastPageNumber!: number;
 
   static from(data: ReadingProgressData): ReadingProgressDto {
     return {
       book: BookDto.from(data.book),
-      maxPageRead: data.maxPageRead,
-      progress: data.progress,
+      lastPageNumber: data.lastPageNumber,
     };
   }
 
@@ -38,11 +32,11 @@ export class ReadingProgressListDto {
     description: '읽기 진행 목록',
     type: [ReadingProgressDto],
   })
-  logs!: ReadingProgressDto[];
+  progresses!: ReadingProgressDto[];
 
   static from(data: ReadingProgressData[]): ReadingProgressListDto {
     return {
-      logs: ReadingProgressDto.fromArray(data),
+      progresses: ReadingProgressDto.fromArray(data),
     };
   }
 }

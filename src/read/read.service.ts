@@ -9,7 +9,10 @@ import { UserBaseInfo } from 'src/auth/type/user-base-info.type';
 import { CreateReadingEndLogPayload } from './payload/create-reading-end-log.payload';
 import { ReadingLogDto, ReadingLogListDto } from './dto/reading-log.dto';
 import { DateQuery } from './query/date.query';
-import { ReadingProgressListDto } from './dto/reading-progress.dto';
+import {
+  ReadingProgressDto,
+  ReadingProgressListDto,
+} from './dto/reading-progress.dto';
 import {
   endOfDay,
   endOfMonth,
@@ -29,6 +32,7 @@ import { ReadingStreakData } from './type/reading-streak-data.type';
 import { CreateReadingStartLogData } from './type/create-reading-start-log-data.typte';
 import { CreateReadingEndLogData } from './type/create-reading-end-log-data.type';
 import { LastPageDto } from './dto/last-page-dto';
+import { PageData } from 'src/sentence-like/type/page-type';
 
 @Injectable()
 export class ReadService {
@@ -208,8 +212,7 @@ export class ReadService {
 
       readingProgressList.push({
         book: book,
-        maxPageRead: maxPage,
-        progress: Math.min(progress, 100), // 100%를 넘지 않도록 처리
+        lastPageNumber: maxPage,
       });
     }
     return readingProgressList;
@@ -306,5 +309,48 @@ export class ReadService {
       return LastPageDto.from(firstPage, likedSentences);
     }
     return LastPageDto.from(lastPage, likedSentences);
+  }
+
+  async getReadingProgressByBookId(
+    bookId: number,
+    user: UserBaseInfo,
+  ): Promise<ReadingProgressDto> {
+    const book = await this.readRepository.getBookById(bookId);
+    if (!book) {
+      throw new NotFoundException('책을 찾을 수 없습니다.');
+    }
+    const lastPage = await this.readRepository.getLastNormalPage(
+      bookId,
+      user.id,
+    );
+    if (!lastPage) {
+      return ReadingProgressDto.from({
+        book: book,
+        lastPageNumber: 0,
+      } as ReadingProgressData);
+    }
+    const data: ReadingProgressData = {
+      book: book,
+      lastPageNumber: lastPage.number,
+    };
+    return ReadingProgressDto.from(data);
+  }
+
+  async getReadingProgress(
+    user: UserBaseInfo,
+  ): Promise<ReadingProgressListDto> {
+    const lastPages = await this.readRepository.getAllLastNormalPagesWithBooks(
+      user.id,
+    );
+    if (lastPages.length === 0) {
+      return ReadingProgressListDto.from([]);
+    }
+    const data: ReadingProgressData[] = lastPages.map((lastPage) => {
+      return {
+        book: lastPage.book,
+        lastPageNumber: lastPage.number,
+      };
+    });
+    return ReadingProgressListDto.from(data);
   }
 }

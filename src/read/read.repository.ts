@@ -262,4 +262,26 @@ export class ReadRepository {
       },
     });
   }
+
+  async getAllLastNormalPagesWithBooks(
+    userId: string,
+  ): Promise<(PageData & { book: BookData })[]> {
+    const logs = await this.prisma.readingLog.findMany({
+      where: {
+        userId: userId,
+      },
+      orderBy: {
+        startedAt: { sort: 'desc', nulls: 'last' },
+      },
+      select: {
+        page: true,
+        book: true,
+      },
+      distinct: ['bookId'],
+    });
+    return logs.map((log) => ({
+      ...log.page,
+      book: log.book,
+    }));
+  }
 }

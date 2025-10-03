@@ -23,7 +23,10 @@ import { UserBaseInfo } from 'src/auth/type/user-base-info.type';
 import { CreateReadingEndLogPayload } from './payload/create-reading-end-log.payload';
 import { ReadingLogDto } from './dto/reading-log.dto';
 import { DateQuery } from './query/date.query';
-import { ReadingProgressListDto } from './dto/reading-progress.dto';
+import {
+  ReadingProgressDto,
+  ReadingProgressListDto,
+} from './dto/reading-progress.dto';
 import { CalendarQuery } from './query/calendar.query';
 import { ReadingStreakDto } from './dto/reading-streak.dto';
 import { LastPageDto } from './dto/last-page-dto';
@@ -59,20 +62,16 @@ export class ReadController {
     return this.readService.getReadingProgressLogsByDate(dateQuery, user);
   }
 
-  @Get('last-page/:id')
+  @Get('progress')
   @Version('1')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({
-    summary: '책의 마지막으로 진입한 페이지 조회 (이어읽기)',
-    description: 'id는 책의 ID입니다.',
-  })
-  @ApiOkResponse({ type: LastPageDto })
-  async getLastPage(
-    @Param('id', ParseIntPipe) id: number,
+  @ApiOperation({ summary: '유저의 읽기 진행도 전체 조회' })
+  @ApiOkResponse({ type: ReadingProgressListDto })
+  async getReadingProgress(
     @CurrentUser() user: UserBaseInfo,
-  ): Promise<LastPageDto> {
-    return this.readService.getLastPage(id, user);
+  ): Promise<ReadingProgressListDto> {
+    return this.readService.getReadingProgress(user);
   }
 
   @Post('start')
@@ -111,5 +110,38 @@ export class ReadController {
     @CurrentUser() user: UserBaseInfo,
   ): Promise<ReadingLogDto> {
     return this.readService.createReadingEndLog(payload, user);
+  }
+
+  @Get('last-page/:id')
+  @Version('1')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: '책의 마지막으로 진입한 페이지 조회 (이어읽기)',
+    description: 'id는 책의 ID입니다.',
+  })
+  @ApiOkResponse({ type: LastPageDto })
+  async getLastPage(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: UserBaseInfo,
+  ): Promise<LastPageDto> {
+    return this.readService.getLastPage(id, user);
+  }
+
+  @Get('progress/:id')
+  @Version('1')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: '책의 읽기 진행도 조회',
+    description:
+      'id는 책의 ID입니다. 읽은 적이 없는 책의 경우 lasgtPageNumber는 0으로 반환됩니다.',
+  })
+  @ApiOkResponse({ type: ReadingProgressDto })
+  async getReadingProgressByBookId(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: UserBaseInfo,
+  ): Promise<ReadingProgressDto> {
+    return this.readService.getReadingProgressByBookId(id, user);
   }
 }

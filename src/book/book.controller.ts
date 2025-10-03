@@ -21,13 +21,10 @@ import {
   ApiBearerAuth,
 } from '@nestjs/swagger';
 import { BookDto } from './dto/book.dto';
-import { SaveBookPayload } from './payload/save-book.payload';
-import { PatchUpdateBookPayload } from './payload/patch-update-book.payload';
 import { JwtAuthGuard } from '../auth/guard/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorator/user.decorator';
 import { UserBaseInfo } from '../auth/type/user-base-info.type';
 import { PageListDto } from 'src/sentence-like/dto/page.dto';
-import { UpdatePagesPayload } from './payload/update-pages-payload';
 import { SearchService } from 'src/search/search.service';
 import { BookSearchQuery } from 'src/search/query/book-search-query';
 import { RecommendService } from './recommend.service';
@@ -211,7 +208,7 @@ export class BookController {
   @ApiOperation({
     summary: '책 독서 현황 조회',
     description:
-      '페이지 번호가 낮은 문장 좋아요부터 리스트의 앞쪽에 오도록 정렬되어 있습니다.',
+      '나의 서재 - 독서 현황에서 호출하는 용도입니다. 페이지 번호가 낮은 문장 좋아요부터 리스트의 앞쪽에 오도록 정렬되어 있습니다.',
   })
   async getReadingStatusByBookId(
     @Param('id', ParseIntPipe) id: number,
