@@ -32,7 +32,6 @@ import { ReadingStreakData } from './type/reading-streak-data.type';
 import { CreateReadingStartLogData } from './type/create-reading-start-log-data.typte';
 import { CreateReadingEndLogData } from './type/create-reading-end-log-data.type';
 import { LastPageDto } from './dto/last-page-dto';
-import { PageData } from 'src/sentence-like/type/page-type';
 
 @Injectable()
 export class ReadService {

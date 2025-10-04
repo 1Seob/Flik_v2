@@ -83,41 +83,6 @@ export class BookService {
     );
   }
 
-  async saveBookToUser(bookId: number, userId: string): Promise<BookDto> {
-    const book = await this.bookRepository.getBookById(bookId);
-    if (!book) {
-      throw new NotFoundException('책을 찾을 수 없습니다.');
-    }
-
-    const url = await this.getBookCoverImageUrlByNaverSearchApi(book.isbn);
-
-    await this.bookRepository.saveBookToUser(userId, bookId);
-    return BookDto.from(book, url);
-  }
-
-  async unsaveBookFromUser(bookId: number, userId: string): Promise<void> {
-    const book = await this.bookRepository.getBookById(bookId);
-    if (!book) {
-      throw new NotFoundException('책을 찾을 수 없습니다.');
-    }
-    const isSaved = await this.bookRepository.isBookSavedByUser(userId, bookId);
-    if (!isSaved) {
-      throw new BadRequestException('유저가 보관한 책이 아닙니다.');
-    }
-
-    await this.bookRepository.unsaveBookFromUser(userId, bookId);
-  }
-
-  async getSavedBooksByUser(userId: string): Promise<BasicBookListDto> {
-    const savedBooks = await this.bookRepository.getSavedBooksByUser(userId);
-    const urls: (string | null)[] = await Promise.all(
-      savedBooks.map((book) =>
-        this.getBookCoverImageUrlByNaverSearchApi(book.isbn),
-      ),
-    );
-    return BasicBookListDto.from(savedBooks, urls);
-  }
-
   private async checkImageExists(url: string): Promise<boolean> {
     try {
       const res = await axios.head(url);
@@ -273,10 +238,7 @@ export class BookService {
     return RecentBookListDto.from(books, pages, urls);
   }
 
-  async getDetailedBookById(
-    bookId: number,
-    userId: string,
-  ): Promise<DetailedBookDto> {
+  async getDetailedBookById(bookId: number): Promise<DetailedBookDto> {
     const book = await this.bookRepository.getBookById(bookId);
     if (!book) {
       throw new NotFoundException('책을 찾을 수 없습니다.');
