@@ -114,21 +114,6 @@ export class BookController {
     return this.recommendService.getRecommendedBooks();
   }
 
-  @Get('save')
-  @Version('1')
-  @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
-  @ApiOperation({
-    summary: '유저가 북마크한 책 반환',
-    description: '가장 최신 기록이 리스트의 앞쪽에 오도록 정렬되어 있습니다.',
-  })
-  @ApiOkResponse({ type: BasicBookListDto })
-  async getSavedBooksByUser(
-    @CurrentUser() user: UserBaseInfo,
-  ): Promise<BasicBookListDto> {
-    return this.bookService.getSavedBooksByUser(user.id);
-  }
-
   @Get('search')
   @Version('1')
   @ApiOperation({ summary: '책 검색' })
@@ -189,15 +174,12 @@ export class BookController {
 
   @Get(':id/detail')
   @Version('1')
-  @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
   @ApiOkResponse({ type: DetailedBookDto })
   @ApiOperation({ summary: '책 상세 조회' })
   async getDetailedBookById(
     @Param('id', ParseIntPipe) id: number,
-    @CurrentUser() user: UserBaseInfo,
   ): Promise<DetailedBookDto> {
-    return this.bookService.getDetailedBookById(id, user.id);
+    return this.bookService.getDetailedBookById(id);
   }
 
   @Get(':id/status')
@@ -240,31 +222,4 @@ export class BookController {
   }
   // 프로젝트 루트 디렉토리에 있는 원문 텍스트 파일의 이름을 fileName으로 받습니다. ex) Frankenstein.txt
   */
-
-  @Post(':id/save')
-  @Version('1')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: '책 북마크' })
-  @ApiOkResponse({ type: BookDto })
-  async saveBookToUser(
-    @Param('id', ParseIntPipe) id: number,
-    @CurrentUser() user: UserBaseInfo,
-  ): Promise<BookDto> {
-    return this.bookService.saveBookToUser(id, user.id);
-  }
-
-  @Delete(':id/save')
-  @Version('1')
-  @HttpCode(204)
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: '책 북마크 해제' })
-  @ApiNoContentResponse()
-  async unsaveBookFromUser(
-    @Param('id', ParseIntPipe) id: number,
-    @CurrentUser() user: UserBaseInfo,
-  ): Promise<void> {
-    return this.bookService.unsaveBookFromUser(id, user.id);
-  }
 }

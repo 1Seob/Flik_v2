@@ -103,52 +103,6 @@ export class BookRepository {
     });
   }
 
-  async saveBookToUser(userId: string, bookId: number): Promise<void> {
-    await this.prisma.bookSave.create({
-      data: {
-        userId,
-        bookId,
-      },
-    });
-  }
-
-  async unsaveBookFromUser(userId: string, bookId: number): Promise<void> {
-    await this.prisma.bookSave.delete({
-      where: {
-        userId_bookId: { userId, bookId },
-      },
-    });
-  }
-
-  async getSavedBooksByUser(userId: string): Promise<BookData[]> {
-    const savedBooks = await this.prisma.bookSave.findMany({
-      where: { userId },
-      select: {
-        book: {
-          select: {
-            id: true,
-            title: true,
-            author: true,
-            isbn: true,
-            views: true,
-            totalPagesCount: true,
-          },
-        },
-      },
-      orderBy: { createdAt: 'desc' }, // 가장 최근에 저장된 순서대로
-    });
-    return savedBooks.map((item) => item.book);
-  }
-
-  async isBookSavedByUser(userId: string, bookId: number): Promise<boolean> {
-    const savedBook = await this.prisma.bookSave.findUnique({
-      where: {
-        userId_bookId: { userId, bookId },
-      },
-    });
-    return savedBook !== null;
-  }
-
   async findRecentBooksAndPages(
     userId: string,
     limit = 10,
