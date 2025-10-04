@@ -23,6 +23,7 @@ import { RankingScheduler } from 'src/book/ranking.scheduler';
 import { setIds } from 'src/common/id.store';
 import { AdminModule } from 'src/admin/admin.module';
 import { BookService } from 'src/book/book.service';
+import { LibraryModule } from 'src/library/library.module';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { BookService } from 'src/book/book.service';
     CommonModule,
     ReadModule,
     ReviewModule,
+    LibraryModule,
     SearchModule,
     SentenceLikeModule,
     AdminModule,
