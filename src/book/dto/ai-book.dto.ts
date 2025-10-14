@@ -38,7 +38,7 @@ export class AiBookDto {
       id: data.id,
       title: data.title,
       author: data.author,
-      summary: data.aiSummary,
+      summary: data.summary,
       coverImageUrl: url ?? null,
     };
   }
