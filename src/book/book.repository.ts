@@ -2,8 +2,6 @@ import { PrismaService } from 'src/common/services/prisma.service';
 import { Injectable } from '@nestjs/common';
 import { BookData } from './type/book-data.type';
 import { SaveBookData } from './type/save-book-data.type';
-import { UpdateBookData } from './type/update-book-data.type';
-import { redis } from '../search/redis.provider';
 import { PageData } from 'src/sentence-like/type/page-type';
 import { Prisma } from '@prisma/client';
 import { ReviewData } from 'src/review/type/review-data.type';
@@ -315,6 +313,14 @@ export class BookRepository {
     `;
 
     return books.length > 0 ? books[0] : null;
+  }
+
+  async getSummaryByBookId(bookId: number): Promise<string | null> {
+    const book = await this.prisma.book.findUnique({
+      where: { id: bookId },
+      select: { aiSummary: true },
+    });
+    return book?.aiSummary ?? null;
   }
 
   async getOtherBooksByAuthor(

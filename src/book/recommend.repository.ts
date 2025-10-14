@@ -151,7 +151,7 @@ export class RecommendRepository {
     });
     return books.map((book) => ({
       ...book,
-      aiSummary: book.aiSummary ?? '',
+      summary: book.aiSummary ?? '',
     }));
   }
 }
