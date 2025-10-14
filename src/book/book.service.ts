@@ -5,8 +5,6 @@ import {
 } from '@nestjs/common';
 import { BookRepository } from './book.repository';
 import { BookDto } from './dto/book.dto';
-import { SaveBookPayload } from './payload/save-book.payload';
-import { SaveBookData } from './type/save-book-data.type';
 import axios from 'axios';
 import { PageListDto } from 'src/sentence-like/dto/page.dto';
 import { BookSearchQuery } from 'src/search/query/book-search-query';
@@ -271,7 +269,9 @@ export class BookService {
         this.getBookCoverImageUrlByNaverSearchApi(b.isbn),
       ),
     );
+    const summary = await this.bookRepository.getSummaryByBookId(bookId);
     const firstPage = await this.bookRepository.getFirstPageOfBook(bookId);
+    const firstPageContent = firstPage?.content ?? '';
     return DetailedBookDto.from(
       book,
       topReviews,
@@ -279,7 +279,7 @@ export class BookService {
       similarBooks,
       otherBooksByAuthor,
       averageRating ?? 0,
-      firstPage?.content ?? '',
+      summary ?? firstPageContent,
       url,
       similarBooksUrls,
       otherBooksByAuthorUrl,
@@ -297,6 +297,7 @@ export class BookService {
 
   async getAiBook(): Promise<AiBookDto> {
     const book = await this.bookRepository.getAiBook();
+    console.log(book);
     if (!book) {
       throw new NotFoundException('AI 요약 책을 찾을 수 없습니다.');
     }

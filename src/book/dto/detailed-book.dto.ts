@@ -3,6 +3,7 @@ import { BookData } from '../type/book-data.type';
 import { BasicBookDto } from './basic-book.dto';
 import { ReviewData } from 'src/review/type/review-data.type';
 import { SimpleReviewDto } from 'src/review/dto/simple-review.dto';
+import { SimpleBookDto } from './simple-book.dto';
 
 export class DetailedBookDto {
   @ApiProperty({
@@ -56,15 +57,15 @@ export class DetailedBookDto {
 
   @ApiProperty({
     description: '유사 책 목록',
-    type: [BasicBookDto],
+    type: [SimpleBookDto],
   })
-  similarBooks!: BasicBookDto[];
+  similarBooks!: SimpleBookDto[];
 
   @ApiProperty({
     description: '같은 작가의 책 목록',
-    type: [BasicBookDto],
+    type: [SimpleBookDto],
   })
-  otherBooksByAuthor!: BasicBookDto[];
+  otherBooksByAuthor!: SimpleBookDto[];
 
   @ApiProperty({
     description: '미리보기',
@@ -97,8 +98,8 @@ export class DetailedBookDto {
       averageRating: averageRating,
       preview: preview,
       bestReviews: SimpleReviewDto.fromArray(reviews, nicknames),
-      similarBooks: BasicBookDto.fromArray(similarBooks, similarBooksUrls),
-      otherBooksByAuthor: BasicBookDto.fromArray(
+      similarBooks: SimpleBookDto.fromArray(similarBooks, similarBooksUrls),
+      otherBooksByAuthor: SimpleBookDto.fromArray(
         otherBooksByAuthor,
         otherBooksByAuthorUrls,
       ),
