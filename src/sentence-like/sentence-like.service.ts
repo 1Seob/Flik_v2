@@ -81,4 +81,20 @@ export class SentenceLikeService {
     }
     return SentenceLikeDto.from(like);
   }
+
+  async getUserSentenceLikesByBookId(
+    bookId: number,
+    user: UserBaseInfo,
+  ): Promise<SentenceLikeListDto> {
+    const book = await this.sentenceLikeRepository.getBookById(bookId);
+    if (!book) {
+      throw new NotFoundException('책을 찾을 수 없습니다.');
+    }
+    const likedSentences =
+      await this.sentenceLikeRepository.getLikedSentencesByBookId(
+        bookId,
+        user.id,
+      );
+    return SentenceLikeListDto.from(likedSentences);
+  }
 }
