@@ -1,13 +1,13 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { ReadingProgressData } from '../type/reading-progress-data.type';
-import { BookDto } from 'src/book/dto/book.dto';
+import { DownloadedBookDto } from 'src/book/dto/downloaded-book.dto';
 
 export class ReadingProgressDto {
   @ApiProperty({
     description: '읽은 책',
-    type: BookDto,
+    type: DownloadedBookDto,
   })
-  book!: BookDto;
+  book!: DownloadedBookDto;
 
   @ApiProperty({
     description: '마지막 독서 페이지 번호',
@@ -17,7 +17,7 @@ export class ReadingProgressDto {
 
   static from(data: ReadingProgressData): ReadingProgressDto {
     return {
-      book: BookDto.from(data.book),
+      book: DownloadedBookDto.from(data.book),
       lastPageNumber: data.lastPageNumber,
     };
   }
