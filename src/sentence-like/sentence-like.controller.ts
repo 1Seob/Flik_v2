@@ -42,6 +42,23 @@ export class SentenceLikeController {
     return this.sentenceLikeService.createSentenceLike(payload, user);
   }
 
+  @Get('book/:id')
+  @Version('1')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @ApiOkResponse({ type: SentenceLikeListDto })
+  @ApiOperation({
+    summary: '책에 대한 유저의 문장 좋아요들 조회',
+    description:
+      'id는 책 ID입니다. 인덱스가 있는 이유는 실제 페이지의 text와 일치하는 지 체크하기 위함입니다.',
+  })
+  async getUserSentenceLikesByBookId(
+    @Param('id', ParseIntPipe) bookId: number,
+    @CurrentUser() user: UserBaseInfo,
+  ): Promise<SentenceLikeListDto> {
+    return this.sentenceLikeService.getUserSentenceLikesByBookId(bookId, user);
+  }
+
   @Get(':id')
   @Version('1')
   @ApiOperation({ summary: '문장 좋아요 조회' })

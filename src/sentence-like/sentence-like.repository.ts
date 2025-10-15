@@ -80,4 +80,16 @@ export class SentenceLikeRepository {
       },
     });
   }
+
+  async getLikedSentencesByBookId(
+    bookId: number,
+    userId: string,
+  ): Promise<SentenceLikeData[]> {
+    return this.prisma.sentenceLike.findMany({
+      where: {
+        bookId,
+        userId,
+      },
+    });
+  }
 }

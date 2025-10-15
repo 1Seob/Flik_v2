@@ -10,12 +10,6 @@ export class SentenceLikeDto {
   id!: number;
 
   @ApiProperty({
-    description: '사용자 ID',
-    type: String,
-  })
-  userId!: string;
-
-  @ApiProperty({
     description: '책 ID',
     type: Number,
   })
@@ -55,7 +49,6 @@ export class SentenceLikeDto {
   static from(data: SentenceLikeData): SentenceLikeDto {
     return {
       id: data.id,
-      userId: data.userId,
       bookId: data.bookId,
       pageId: data.pageId,
       text: data.text,

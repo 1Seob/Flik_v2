@@ -251,18 +251,6 @@ export class ReadRepository {
     await redis.zincrby('autocomplete:views', 1, title);
   }
 
-  async getLikedSentencesByBookId(
-    bookId: number,
-    userId: string,
-  ): Promise<SentenceLikeData[]> {
-    return this.prisma.sentenceLike.findMany({
-      where: {
-        bookId,
-        userId,
-      },
-    });
-  }
-
   async getAllLastNormalPagesWithBooks(
     userId: string,
   ): Promise<(PageData & { book: BookData })[]> {

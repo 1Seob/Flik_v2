@@ -291,11 +291,6 @@ export class ReadService {
 
     await this.readRepository.incrementBookViews(bookId, book.title);
 
-    const likedSentences = await this.readRepository.getLikedSentencesByBookId(
-      bookId,
-      user.id,
-    );
-
     const lastPage = await this.readRepository.getLastNormalPage(
       bookId,
       user.id,
@@ -305,9 +300,9 @@ export class ReadService {
       if (!firstPage) {
         throw new NotFoundException('책의 첫 페이지를 찾을 수 없습니다.');
       }
-      return LastPageDto.from(firstPage, likedSentences);
+      return LastPageDto.from(book.id, firstPage);
     }
-    return LastPageDto.from(lastPage, likedSentences);
+    return LastPageDto.from(book.id, lastPage);
   }
 
   async getReadingProgressByBookId(
