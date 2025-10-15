@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { PageData } from '../type/page-type';
-import { BookDto } from 'src/book/dto/book.dto';
+import { DownloadedBookDto } from '../../book/dto/downloaded-book.dto';
 
 export class PageDto {
   @ApiProperty({
@@ -44,9 +44,9 @@ export class PageDto {
 export class PageListDto {
   @ApiProperty({
     description: '책 정보',
-    type: BookDto,
+    type: DownloadedBookDto,
   })
-  book!: BookDto;
+  book!: DownloadedBookDto;
 
   @ApiProperty({
     description: '페이지 총 개수',
@@ -61,9 +61,10 @@ export class PageListDto {
   pages!: PageDto[];
 
   static from(
-    book: BookDto,
+    book: DownloadedBookDto,
     totalPagesCount: number,
     pages: PageData[],
+    url?: string | null,
   ): PageListDto {
     return {
       book,

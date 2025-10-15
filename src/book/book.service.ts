@@ -13,11 +13,12 @@ import { RecentBookListDto } from './dto/recent-book.dto';
 import { UserBaseInfo } from 'src/auth/type/user-base-info.type';
 import { DetailedBookDto } from './dto/detailed-book.dto';
 import { ids, getRandomNIdsUnique } from '../common/id.store';
-import { BasicBookListDto } from './dto/basic-book.dto';
+import { BasicBookDto, BasicBookListDto } from './dto/basic-book.dto';
 import { SimpleBookListDto } from './dto/simple-book.dto';
 import { AiBookDto } from './dto/ai-book.dto';
 import { redis } from 'src/search/redis.provider';
 import { BookData } from './type/book-data.type';
+import { DownloadedBookDto } from 'src/book/dto/downloaded-book.dto';
 
 @Injectable()
 export class BookService {
@@ -75,7 +76,7 @@ export class BookService {
     const url = await this.getBookCoverImageUrlByNaverSearchApi(book.isbn);
     const pages = await this.bookRepository.getBookPages(bookId);
     return PageListDto.from(
-      BookDto.from(book, url),
+      DownloadedBookDto.from(book, url),
       book.totalPagesCount,
       pages,
     );
